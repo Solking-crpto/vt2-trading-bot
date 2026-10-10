@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+coverage/
+*.log
+.DS_Store
+
+# VT2 Database and Data Cache
+data/*.db
+data/archive/
+data/history/
+reports/alpha-factory/trades.csv
+reports/alpha-factory/equity_curve.csv

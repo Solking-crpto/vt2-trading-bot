@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VT2 — Verifiable Trading Technology | Think. Verify. Trade.</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#070a12">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('vt2_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Collapsible Left Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo">VT2</div>
+          <div class="brand-text">
+            <h1 class="brand-title">VT2 CORE</h1>
+            <div class="tagline">Think. Verify. Trade.</div>
+          </div>
+        </div>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" role="tablist">
+        <button class="nav-item active" data-tab="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span class="nav-label">Overview & Terminal</span>
+        </button>
+        <button class="nav-item" data-tab="scanner">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+          <span class="nav-label">Market Scanner</span>
+          <span class="nav-badge" id="scannerCount">0</span>
+        </button>
+        <button class="nav-item" data-tab="chart">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <span class="nav-label">Interactive Chart</span>
+        </button>
+        <button class="nav-item" data-tab="agents">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 3.3 2 6.1 4.9 7.3L9 21h6l.1-3.7c2.9-1.2 4.9-4 4.9-7.3a8 8 0 0 0-8-8z"/><path d="M9 10h.01"/><path d="M15 10h.01"/></svg>
+          <span class="nav-label">AI Deliberation</span>
+        </button>
+        <button class="nav-item nav-highlight" data-tab="verification">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          <span class="nav-label">Verification Suite</span>
+          <span class="nav-pill">9/9</span>
+        </button>
+        <button class="nav-item" data-tab="autotrading">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="14" x="3" y="6" rx="2"/><path d="M12 2v4"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M9 17h6"/></svg>
+          <span class="nav-label">Automated Trading</span>
+          <span class="status-dot dot-inactive" id="autoNavDot"></span>
+        </button>
+        <button class="nav-item" data-tab="positions">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4"/><circle cx="18" cy="13" r="1"/></svg>
+          <span class="nav-label">Positions & Orders</span>
+          <span class="nav-badge" id="positionsCount">0</span>
+        </button>
+        <button class="nav-item" data-tab="risk">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="nav-label">Risk Engine</span>
+        </button>
+        <button class="nav-item" data-tab="journal">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+          <span class="nav-label">Trade Journal</span>
+        </button>
+        <button class="nav-item" data-tab="backtest">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/></svg>
+          <span class="nav-label">Backtesting</span>
+        </button>
+        <button class="nav-item" data-tab="environment">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span class="nav-label">System Health</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="nav-label">Settings & Risk</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status-indicator">
+          <span class="status-pulse-dot"></span>
+          <span class="status-text" id="sidebarFeedText">Bitget V2 Live</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Application Container -->
+    <div class="app-main">
+      <!-- Slim Top Status Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <!-- Market Mode Switcher (Stocks | Crypto | Both) -->
+          <div class="mode-switcher" id="marketModeSwitcher" title="Switch active market mode (Stocks tokenized US equities 24/7, Crypto continuous 24/7, or Both)">
+            <button class="mode-btn active" data-mode="stocks" id="modeBtnStocks">
+              <span class="mode-dot"></span>
+              Stocks
+            </button>
+            <button class="mode-btn" data-mode="crypto" id="modeBtnCrypto">
+              <span class="mode-dot"></span>
+              Crypto
+            </button>
+            <button class="mode-btn" data-mode="both" id="modeBtnBoth">
+              <span class="mode-dot"></span>
+              Both
+            </button>
+          </div>
+
+          <!-- Market Viewing & Bot Badges -->
+          <div class="market-status-pills" style="display: flex; gap: 6px; align-items: center;">
+            <span class="badge badge-neutral" id="viewingMarketBadge" style="font-size: 11px; padding: 2px 7px;">Viewing: Stocks</span>
+            <span class="badge badge-neutral" id="botMarketBadge" style="font-size: 11px; padding: 2px 7px;">Bot: Stocks</span>
+          </div>
+
+          <!-- Cooldown Active Countdown Badge -->
+          <div id="headerCooldownBadge" class="badge badge-short" style="display: none; font-size: 11px; padding: 2px 8px; animation: pulse 2s infinite;" title="Kill Switch or Stop Loss Cooldown Active">
+            ⏱ COOLDOWN: <span id="headerCooldownTime" class="mono-num">29:45</span>
+          </div>
+
+          <!-- Strict Safety Badge -->
+          <div class="safety-badge" id="envBadge" title="Mainnet execution is architecturally blocked on server and client.">
+            <span class="safety-dot"></span>
+            <span>PAPER TRADING ONLY</span>
+          </div>
+
+          <div class="feed-indicator" id="feedIndicator">
+            <span class="feed-dot"></span>
+            <span id="feedStatus">Checking feed...</span>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="stat-item">
+            <span class="stat-label">Simulated Equity</span>
+            <span class="stat-value text-success mono-num" id="headerEquity">$10,000.00</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Daily P&L</span>
+            <span class="stat-value mono-num" id="headerDailyPnl">+$0.00 (0.0%)</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Aggregate Open Risk</span>
+            <span class="stat-value mono-num" id="headerOpenRisk">0.0% / 1.0%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Sentiment Monitor</span>
+            <span class="stat-value mono-num" id="headerSentiment">
+              <span class="badge badge-neutral" id="sentimentBadge">IDLE</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="rescan-group">
+            <select id="autoRescanSelect" class="form-control form-control-sm select-auto-rescan" title="Auto-rescan frequency">
+              <option value="0">Auto: Off</option>
+              <option value="60000">Auto: 1m</option>
+              <option value="300000">Auto: 5m</option>
+              <option value="900000">Auto: 15m</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="topRescanBtn" title="Force fresh universe scan bypassing cache">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+              <span>Rescan</span>
+            </button>
+          </div>
+
+          <button class="btn-theme-toggle" id="themeToggleBtn" title="Switch Theme (Dark / Light)">
+            <svg id="themeIconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          </button>
+
+          <!-- Master Emergency Kill Switch -->
+          <button class="btn-kill-switch" id="masterKillSwitchBtn" title="Emergency halt: shuts down automated trading and closes all positions immediately">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <span>KILL SWITCH</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="app-container">
+        <!-- Safety & Status Alert Banner -->
+        <div class="alert-banner" id="safetyAlertBanner">
+          <div class="alert-banner-content">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <strong>Deterministic Safety Policy Active:</strong> Operating in strict paper trading mode. Mainnet execution requests are rejected on both client and server (HTTP 403). Real capital risk is zero.
+            </div>
+          </div>
+          <div id="connectionLatency" class="mono-num">Latency: --ms</div>
+        </div>
+
+        <!-- 1. OVERVIEW TAB -->
+        <section id="tab-overview" class="tab-content active">
+          <div class="grid-4">
+            <div class="card">
+              <div class="card-title">Simulated Equity</div>
+              <div class="card-metric text-success mono-num" id="ovEquity">$10,000.00</div>
+              <div class="card-subtext mono-num" id="ovStartEquity">Start of Day: $10,000.00</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Daily Loss / Limit</div>
+              <div class="card-metric mono-num" id="ovDailyLoss">$0.00 / $200.00</div>
+              <div class="card-subtext mono-num" id="ovDailyLossPct">0.00% of 2.00% hard stop</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Open Positions</div>
+              <div class="card-metric mono-num" id="ovOpenPositions">0 / 1 Max</div>
+              <div class="card-subtext mono-num" id="ovExposure">Exposure: $0.00 notional</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Consecutive Losses</div>
+              <div class="card-metric mono-num" id="ovLossStreak">0 / 3 Pause</div>
+              <div class="card-subtext mono-num" id="ovCooldown">Cooldown: Inactive</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">Bitcoin Macro Context (4h Filter)</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <div>
+                  <div style="font-size: 20px; font-weight: 700;" class="mono-num" id="ovBtcPrice">$--</div>
+                  <div class="card-subtext" id="ovBtcExplanation">Awaiting market scanner...</div>
+                </div>
+                <div id="ovBtcBadge" class="badge badge-neutral">NEUTRAL</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">System & Execution Guards</div>
+              <ul class="agent-bullets" style="margin-top: 10px;">
+                <li>Environment: <strong>PAPER (Simulated Execution)</strong></li>
+                <li>Mainnet Execution: <strong class="text-danger">Permanently Disabled & Intercepted (HTTP 403)</strong></li>
+                <li>Fee Model: 0.05% Taker · 0.02% Maker · 0.02% Base Slippage</li>
+                <li>Database: Durable Native Node.js SQLite (<span class="mono-num">data/vt2.db</span>)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Top Ranked Scanner Opportunity</div>
+            <div id="topOpportunityBanner" style="padding: 10px; color: var(--text-secondary);">
+              Scanning eligible Bitget USDT perpetuals...
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. MARKET SCANNER TAB -->
+        <section id="tab-scanner" class="tab-content">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2>Eligible Bitget USDT Perpetuals Scanner</h2>
+              <span id="scannerDataSourceBadge" class="badge badge-long">Live Bitget V2</span>
+              <span id="scannerStatusFeedback" class="mono-num" style="font-size: 12px; color: var(--text-secondary);"></span>
+            </div>
+            <div class="section-actions">
+              <button class="btn btn-primary btn-sm" id="refreshScannerBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Rescan Markets</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Score</th>
+                  <th>Symbol</th>
+                  <th>Bias</th>
+                  <th>Price</th>
+                  <th>4h EMA20</th>
+                  <th>15m RSI</th>
+                  <th>5m RVOL</th>
+                  <th>Proposed Entry</th>
+                  <th>Stop Loss</th>
+                  <th>Take Profit</th>
+                  <th>Net R:R</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="scannerTableBody">
+                <tr><td colspan="12" style="text-align: center; color: var(--text-muted);">Loading scanner...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Tokenized US Equities Universe Table (Bitget 24/7 Futures) -->
+          <div class="card" style="margin-top: 20px;" id="equityUniverseSection">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div class="card-title" style="margin-bottom: 2px;">🏛️ Verified Tokenized US Equities Universe (Bitget 24/7 Futures)</div>
+                <div style="font-size: 11.5px; color: var(--text-secondary);">
+                  24 verified contracts classified with Bitget <code>isRwa: "YES"</code> continuous 24/7 perpetual futures.
+                </div>
+              </div>
+              <span class="badge badge-long mono-num" id="equityUniverseCount">24 Equities</span>
+            </div>
+            <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Underlying / Sector</th>
+                    <th>24h Volume (USDT)</th>
+                    <th>24h Change</th>
+                    <th>Current Price</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="equityUniverseTableBody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 18px;">Loading equity universe specifications...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-title">Disqualified / Rejected Market Setups</div>
+            <div class="table-responsive" style="margin-top: 10px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Reason</th>
+                    <th>Explanation</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="rejectedTableBody">
+                  <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No rejected setups yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. INTERACTIVE CHART TAB -->
+        <section id="tab-chart" class="tab-content">
+          <div class="chart-container">
+            <div class="chart-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <select id="chartSymbolSelect" class="btn btn-secondary" style="font-weight: 700;">
+                  <option value="BTCUSDT">BTCUSDT</option>
+                  <option value="ETHUSDT">ETHUSDT</option>
+                  <option value="SOLUSDT">SOLUSDT</option>
+                  <option value="XRPUSDT">XRPUSDT</option>
+                  <option value="DOGEUSDT">DOGEUSDT</option>
+                </select>
+                <div class="btn-group" id="timeframeButtons">
+                  <button data-tf="5m">5m</button>
+                  <button data-tf="15m" class="active">15m</button>
+                  <button data-tf="4h">4h</button>
+                </div>
+                <span id="chartDataSourceBadge" class="badge badge-long">Live Bitget V2</span>
+              </div>
+
+              <div class="chart-controls">
+                <span style="font-size: 11px; color: var(--text-muted);">Overlays:</span>
+                <label style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" id="toggleEma20" checked> EMA 20
+                </label>
+                <label style="font-size: 11px; color: #fbbf24; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" id="toggleEma50" checked> EMA 50
+                </label>
+                <label style="font-size: 11px; color: #a855f7; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" id="toggleEma200" checked> EMA 200
+                </label>
+              </div>
+            </div>
+
+            <div style="position: relative; width: 100%; height: 440px;">
+              <canvas id="tradingCanvas" style="width: 100%; height: 100%;"></canvas>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; justify-content: space-between;">
+              <span id="chartCandleInfo" class="mono-num">Candles: 80 | Timeframe: 15m</span>
+              <span>Zero Look-Ahead Bias Enforced</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. AI AGENTS DELIBERATION TAB -->
+        <section id="tab-agents" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>AI Multi-Agent Deliberation Pipeline</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="aiModeLabel">
+                AI Engine: Deterministic Multi-Agent Rule Engine (Transparent, Rules-Based)
+              </div>
+            </div>
+            <button class="btn btn-primary" id="runDeliberationBtn">⚡ Deliberate Top Candidate</button>
+          </div>
+
+          <!-- Account Gate Active Banner (Cooldown, Lockout, Pause) -->
+          <div id="deliberationBlockedBanner" class="alert-banner" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--color-danger); color: #ffffff; margin-bottom: 16px;">
+            <div class="alert-banner-content">
+              <span style="font-size: 20px;">⚠️</span>
+              <div>
+                <div style="font-weight: 700; color: var(--color-danger);" id="delibBannerTitle">Account Gate Active: COOLDOWN_ACTIVE</div>
+                <div style="font-size: 12px; color: var(--text-secondary);" id="delibBannerSubtitle">
+                  Automated and manual order submissions are restricted. Cooldown active until <span id="delibBannerResumeTime" class="mono-num">--:--</span> (Remaining: <strong id="delibBannerCountdown" class="mono-num text-warning">--:--</strong>). Panels below show market analysis only.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Agent 1: Market Intelligence -->
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-role text-info">🧠 1. Market Intelligence Agent</div>
+                <span class="badge badge-neutral mono-num" id="agent1Confidence">Confidence: --</span>
+              </div>
+              <p id="agent1Hypothesis" style="font-size: 13px; margin-bottom: 8px; font-weight: 600;">Awaiting candidate proposal...</p>
+              <ul class="agent-bullets" id="agent1Evidence">
+                <li>No candidate analyzed yet</li>
+              </ul>
+            </div>
+
+            <!-- Agent 2: Adversarial Review -->
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-role text-danger">⚔️ 2. Adversarial Review Agent</div>
+                <span class="badge badge-neutral" id="agent2Verdict">Verdict: --</span>
+              </div>
+              <p style="font-size: 13px; margin-bottom: 8px; font-weight: 600;">Counter-Evidence & Invalidation Challenges:</p>
+              <ul class="agent-bullets" id="agent2Challenges">
+                <li>No critique performed yet</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Coordinator Result -->
+          <div class="card" style="margin-top: 14px;">
+            <div class="card-title">⚖️ 3. Deterministic Risk Engine & Execution Coordinator Verdict</div>
+            <div id="coordinatorResultBanner" style="padding: 16px; border-radius: 8px; background: var(--bg-surface); margin-top: 8px;">
+              <div style="font-weight: 700; font-size: 16px;" id="coordinatorTitle">No active deliberation</div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;" id="coordinatorDescription">
+                Select a setup from the Market Scanner or click "Deliberate Top Candidate".
+              </div>
+              <div id="coordinatorActionBox" style="margin-top: 14px; display: none;">
+                <!-- Live Adjustable Entry Size (%) -->
+                <div style="background: var(--bg-card); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-weight: 700; font-size: 13px;">Adjust Entry Size Allocation (%)</label>
+                    <span class="badge badge-neutral mono-num" id="deliberationAllocBadge">10%</span>
+                  </div>
+                  <div class="range-slider-container">
+                    <input type="range" min="1" max="100" step="1" id="deliberationAllocSlider" class="range-slider" value="10">
+                    <input type="number" min="1" max="100" step="1" id="deliberationAllocInput" class="form-control mono-num" style="width: 75px; text-align: center;" value="10">
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;" id="deliberationAllocExplanation">
+                    Allocates <strong id="deliberationAllocText">10%</strong> of available trading allocation base.
+                    Calculated Size: <strong class="text-info mono-num" id="deliberationCalcQty">--</strong> |
+                    Est. Notional: <strong class="text-info mono-num" id="deliberationCalcNotional">$--</strong> |
+                    Equity at Risk: <strong class="text-warning mono-num" id="deliberationCalcRisk">--% (Strictly Capped)</strong>
+                  </div>
+                </div>
+                <button class="btn btn-success" id="executePaperOrderBtn">🚀 Place Simulated Paper Order</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. VERIFICATION SUITE TAB (PHASE 3 DEDICATED SECTION) -->
+        <section id="tab-verification" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>VT2 Core Verification Suite</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Rigorous deterministic verification across all 9 core capabilities. Verifies safety, models, calculations, and security guards live.
+              </div>
+            </div>
+            <div class="section-actions">
+              <button class="btn btn-primary" id="runAllVerificationsBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span>Run All 9 Verification Checks</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Verification Summary Banner -->
+          <div class="card verification-summary-card">
+            <div class="verif-summary-header">
+              <div>
+                <span class="verif-summary-title">System Verification Status</span>
+                <div class="verif-summary-subtitle" id="verifTimestamp">Last checked: Loading...</div>
+              </div>
+              <div class="verif-summary-badges">
+                <span class="badge badge-long mono-num" id="verifPassedCount">9 Passed</span>
+                <span class="badge badge-neutral mono-num" id="verifTotalCount">9 Total Capabilities</span>
+              </div>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="verifProgressBar" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <!-- 9 Verification Cards Grid -->
+          <div class="verification-grid" id="verificationCardsContainer">
+            <!-- Dynamically populated or seeded with cards -->
+          </div>
+        </section>
+
+        <!-- 6. AUTOMATED TRADING TAB (PHASE 7 DEDICATED SECTION) -->
+        <section id="tab-autotrading" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>Automated Paper Trading Engine</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Autonomous execution runner operating strictly in PAPER mode with hard daily quotas and safety bounds.
+              </div>
+            </div>
+            <div class="section-actions">
+              <span class="badge badge-long" id="autoStatusBadge">BOT: STOPPED</span>
+            </div>
+          </div>
+
+          <!-- Control Cards Grid -->
+          <div class="grid-3" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-title">Bot Status & Operation</div>
+              <div class="card-metric" id="autoStatusMetric">OFF</div>
+              <div class="card-subtext" id="autoStatusSubtext">Standing by for activation</div>
+              <div id="autoWaitingCountdownBox" style="display: none; margin-top: 10px; padding: 8px 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--color-warning); border-radius: 6px; font-size: 11.5px;">
+                ⏱ Resumes in: <strong id="autoWaitingCountdownTime" class="mono-num text-warning">--:--</strong> (<span id="autoWaitingReasonText">COOLDOWN_ACTIVE</span>)
+              </div>
+              <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-success btn-sm" id="autoStartBtn">▶ Start Bot</button>
+                <button class="btn btn-secondary btn-sm" id="autoStopBtn">⏹ Stop Bot</button>
+                <button class="btn btn-warning btn-sm" id="autoStopCloseBtn">⏹ Stop & Close All</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Daily Quota (00:00 UTC Reset)</div>
+              <div class="card-metric mono-num" id="autoTradesTodayMetric">0 / 3 Trades</div>
+              <div class="card-subtext" id="autoQuotaSubtext">Resets at 00:00 UTC</div>
+              <div style="margin-top: 14px;">
+                <label class="stat-label">Daily Trades Quota</label>
+                <input type="number" min="1" max="20" id="autoMaxTradesInput" class="form-control mono-num" value="3" style="width: 100px; margin-top: 4px;">
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Autonomous Target & Candidate Rules</div>
+              <div class="card-metric mono-num" id="autoCapacityMetric">1 Max Position</div>
+              <div class="card-subtext" id="autoFiltersSubtext">Min Score: 70 · Min R:R: 1.5</div>
+              <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label class="stat-label">Bot Universe</label>
+                  <select id="autoBotMarketModeSelect" class="form-control mono-num" style="width: 100%; margin-top: 4px;">
+                    <option value="stocks" selected>Stocks (Equities)</option>
+                    <option value="crypto">Crypto (24/7)</option>
+                    <option value="both">Both Markets</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="stat-label">Concurrent Cap</label>
+                  <select id="autoMaxConcurrentSelect" class="form-control mono-num" style="width: 100%; margin-top: 4px;">
+                    <option value="1">1 Position</option>
+                    <option value="2">2 Positions</option>
+                    <option value="3">3 Positions</option>
+                    <option value="4">4 Positions</option>
+                    <option value="5">5 Positions</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label class="stat-label">Candidate Priority</label>
+                  <select id="autoBotCandidateOrderSelect" class="form-control mono-num" style="width: 100%; margin-top: 4px;">
+                    <option value="equities_first">Equities First</option>
+                    <option value="best_score">Best Score</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="stat-label">Skip Rejections</label>
+                  <input type="number" min="1" max="60" id="autoCandidateSkipInput" class="form-control mono-num" value="5" style="width: 100%; margin-top: 4px;" title="Minutes to skip candidate on rule violation">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Activity Log -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="card-title">Automated Trading Live Activity Feed</div>
+              <span class="badge badge-neutral" id="autoActivityCount">0 events</span>
+            </div>
+            <div class="table-responsive" style="max-height: 380px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="autoActivityTableBody">
+                  <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 16px;">Bot has not run any cycles yet. Click "Start Bot" to activate.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. POSITIONS & ORDERS TAB -->
+        <section id="tab-positions" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>Active Simulated Positions</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="concurrentCapLabel">
+                Concurrent Position Cap: 1 Max (Configurable up to 5) · Aggregate Risk Cap: 1.0% Equity
+              </div>
+            </div>
+            <div class="section-actions">
+              <button class="btn btn-danger btn-sm" id="closeAllPositionsBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                <span>Close All Positions</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Position Lifecycle & Interactive Simulator Bar -->
+          <div class="card" style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="font-weight: 700; font-size: 14px;">⚡ Position Lifecycle & Protective Order Simulation</div>
+                <div style="font-size: 11px; color: var(--text-muted);">
+                  Test partial take-profit (+1.1%), breakeven fee protection, trailing stops, or stop losses live.
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" id="quickTestTradeBtn">⚡ Place Test Paper Trade</button>
+                <button class="btn btn-success btn-sm" id="simTickProfitBtn">📈 Simulate +1.2% Price Spike</button>
+                <button class="btn btn-danger btn-sm" id="simTickStopBtn">📉 Simulate -0.8% Price Drop</button>
+                <button class="btn btn-secondary btn-sm" id="checkSentimentBtn">🔍 Evaluate Sentiment Now</button>
+              </div>
+            </div>
+            <div id="posLifecycleNotification" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 12px; font-family: var(--font-mono);"></div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>Entry Price</th>
+                  <th>Current Price</th>
+                  <th>Quantity</th>
+                  <th>Notional</th>
+                  <th>Stop Loss</th>
+                  <th>Take Profit</th>
+                  <th>Unrealized P&L</th>
+                  <th>R-Multiple</th>
+                  <th>Sentiment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="positionsTableBody">
+                <tr><td colspan="13" style="text-align: center; color: var(--text-muted);">No open paper positions. Click "Place Test Paper Trade" to open one!</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Order Management & Execution History -->
+          <div class="card" style="margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="card-title">Order Execution History</div>
+              <button class="btn btn-secondary btn-sm" id="refreshOrdersBtn">🔄 Refresh Orders</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Status</th>
+                    <th>Req. Price</th>
+                    <th>Fill Price</th>
+                    <th>Quantity</th>
+                    <th>Notional</th>
+                    <th>Fee</th>
+                    <th>Environment</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                  <tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 16px;">Loading order history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. RISK DASHBOARD TAB -->
+        <section id="tab-risk" class="tab-content">
+          <div class="grid-4">
+            <div class="card">
+              <div class="card-title">Risk Budget per Trade</div>
+              <div class="card-metric mono-num">0.50%</div>
+              <div class="card-subtext mono-num">$50.00 max risk per trade</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Daily Loss Lockout</div>
+              <div class="card-metric text-warning mono-num">2.00%</div>
+              <div class="card-subtext mono-num">$200.00 hard SOD stop</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Consecutive Loss Pause</div>
+              <div class="card-metric text-danger mono-num">3 Losses</div>
+              <div class="card-subtext">Automatic trading pause</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Cooldown Period</div>
+              <div class="card-metric text-info mono-num">30 Minutes</div>
+              <div class="card-subtext">Post-exit pause timer</div>
+            </div>
+          </div>
+
+          <!-- Interactive Risk Sandbox Validator -->
+          <div class="card">
+            <div class="card-title">Deterministic Risk Engine Sandbox Validator</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              Test any hypothetical trade parameter set against the deterministic engine to verify whether it fails or passes.
+            </p>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+              <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Rule Presets:</span>
+              <button class="btn btn-secondary btn-sm" id="presetValidBtn">✅ Valid Long (Pass)</button>
+              <button class="btn btn-secondary btn-sm" id="presetStopCloseBtn">❌ Stop &lt;0.5% (Reject)</button>
+              <button class="btn btn-secondary btn-sm" id="presetStopFarBtn">❌ Stop &gt;0.8% (Reject)</button>
+              <button class="btn btn-secondary btn-sm" id="presetBadSideBtn">❌ Stop Wrong Side (Reject)</button>
+              <button class="btn btn-secondary btn-sm" id="presetLowRrBtn">❌ Low Net R:R (Reject)</button>
+              <button class="btn btn-secondary btn-sm" id="presetDailyLossBtn">❌ 2% Daily Loss (Lockout)</button>
+            </div>
+
+            <div class="grid-4" style="margin-bottom: 12px;">
+              <div>
+                <label class="stat-label">Symbol</label>
+                <select id="sandboxSymbol" class="form-control" style="width: 100%; margin-top: 4px;">
+                  <option value="BTCUSDT">BTCUSDT</option>
+                  <option value="ETHUSDT">ETHUSDT</option>
+                  <option value="SOLUSDT">SOLUSDT</option>
+                </select>
+              </div>
+              <div>
+                <label class="stat-label">Side</label>
+                <select id="sandboxSide" class="form-control" style="width: 100%; margin-top: 4px;">
+                  <option value="LONG">LONG</option>
+                  <option value="SHORT">SHORT</option>
+                </select>
+              </div>
+              <div>
+                <label class="stat-label">Entry Price</label>
+                <input type="number" id="sandboxEntry" value="60000" class="form-control mono-num" style="width: 100%; margin-top: 4px;">
+              </div>
+              <div>
+                <label class="stat-label">Stop Loss</label>
+                <input type="number" id="sandboxStop" value="59600" class="form-control mono-num" style="width: 100%; margin-top: 4px;">
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" id="testRiskSandboxBtn">🛡️ Evaluate Deterministic Risk Rules</button>
+            <div id="sandboxResultBox" style="margin-top: 12px; font-family: var(--font-mono); font-size: 12px;"></div>
+          </div>
+        </section>
+
+        <!-- 9. TRADE JOURNAL TAB -->
+        <section id="tab-journal" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>Durable Paper Trade Journal</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Every closed paper trade is persisted durably to SQLite with fee and holding time accounting.
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-secondary" id="exportJournalBtn">💾 Export Journal JSON</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>Quantity</th>
+                  <th>Realized P&L</th>
+                  <th>ROI %</th>
+                  <th>Holding Time</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody id="journalTableBody">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No trades closed yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Rejected Setups Archive -->
+          <div class="card" style="margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <div class="card-title">Disqualified & Rejected Trade Setups Archive</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">
+                  Durable historical archive of trade opportunities filtered out by the multi-agent deliberation pipeline or deterministic risk engine.
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="refreshRejectedBtn">🔄 Refresh Archive</button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Disqualification Reason</th>
+                    <th>Detailed Explanation</th>
+                    <th>Net R:R</th>
+                    <th>Score</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="journalRejectedTableBody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 16px;">Loading rejected setups history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10. BACKTESTING TAB -->
+        <section id="tab-backtest" class="tab-content">
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">Historical Walk-Forward Backtester</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              Chronological simulation with zero look-ahead bias. Conservatively resolves ambiguous candles with stop loss first.
+            </p>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+              <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Quick Walk-Forward Presets:</span>
+              <button class="btn btn-secondary btn-sm" id="btPresetBtcBtn">BTCUSDT (15m, 0.5% Risk)</button>
+              <button class="btn btn-secondary btn-sm" id="btPresetEthBtn">ETHUSDT (15m, 0.5% Risk)</button>
+              <button class="btn btn-secondary btn-sm" id="btPresetSolBtn">SOLUSDT (5m, 0.5% Risk)</button>
+            </div>
+
+            <div class="grid-4" style="margin-bottom: 14px;">
+              <div>
+                <label class="stat-label">Instrument</label>
+                <select id="btSymbol" class="form-control" style="width: 100%; margin-top: 4px;">
+                  <option value="BTCUSDT">BTCUSDT</option>
+                  <option value="ETHUSDT">ETHUSDT</option>
+                  <option value="SOLUSDT">SOLUSDT</option>
+                  <option value="XRPUSDT">XRPUSDT</option>
+                  <option value="DOGEUSDT">DOGEUSDT</option>
+                </select>
+              </div>
+              <div>
+                <label class="stat-label">Timeframe</label>
+                <select id="btTimeframe" class="form-control" style="width: 100%; margin-top: 4px;">
+                  <option value="15m">15m (Recommended)</option>
+                  <option value="5m">5m</option>
+                </select>
+              </div>
+              <div>
+                <label class="stat-label">Risk Per Trade</label>
+                <select id="btRisk" class="form-control" style="width: 100%; margin-top: 4px;">
+                  <option value="0.005">0.50% ($50 / trade)</option>
+                  <option value="0.01">1.00% ($100 / trade)</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="btn btn-primary" id="runBacktestBtn" style="width: 100%;">🔬 Execute Backtest</button>
+              </div>
+            </div>
+
+            <div id="btResultsContainer" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 8px;">
+                <div style="font-weight: 700; font-size: 14px;">Historical Walk-Forward Execution Report</div>
+                <span id="btDataSourceBadge" class="badge badge-long">Data source: Bitget historical</span>
+              </div>
+              <div class="grid-4" style="margin-top: 8px;">
+                <div class="card">
+                  <div class="card-title">Net P&L</div>
+                  <div class="card-metric mono-num" id="btNetPnl">$0.00</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">Win Rate</div>
+                  <div class="card-metric mono-num" id="btWinRate">0.0%</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">Profit Factor</div>
+                  <div class="card-metric mono-num" id="btProfitFactor">0.00</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">Max Drawdown</div>
+                  <div class="card-metric text-danger mono-num" id="btMaxDd">0.00%</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top: 14px;">
+                <div class="card-title">Trade-by-Trade Log</div>
+                <div class="table-responsive" style="margin-top: 8px;">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Side</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>P&L ($)</th>
+                        <th>ROI %</th>
+                        <th>Exit Reason</th>
+                        <th>Equity After</th>
+                      </tr>
+                    </thead>
+                    <tbody id="btTradesTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11. SYSTEM & HEALTH TAB -->
+        <section id="tab-environment" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>Exchange Connectivity, Security Gates & Diagnostics</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Deterministic safeguards, Bitget UTA adapter status, and node diagnostics.
+              </div>
+            </div>
+            <button class="btn btn-secondary" id="refreshHealthBtn">🔄 Refresh Diagnostics</button>
+          </div>
+
+          <!-- Operating Environment Gate -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">Operating Environment & Execution Safety Gate</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              The platform operates strictly in PAPER TRADING mode. Mainnet execution requests are blocked by default and rejected by server-side deterministic safety gates.
+            </p>
+
+            <div class="grid-3" style="margin-bottom: 14px;">
+              <div class="form-group">
+                <label>Current Active Environment</label>
+                <div style="font-family: var(--font-mono); font-weight: 700; font-size: 15px;" class="text-warning" id="activeEnvLabel">
+                  PAPER (Simulated Execution)
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Target Environment</label>
+                <select id="targetEnvSelect" class="form-control">
+                  <option value="PAPER">PAPER (Local Simulated Engine)</option>
+                  <option value="TESTNET">TESTNET (Bitget Official Demo)</option>
+                  <option value="MAINNET">MAINNET (Real Capital — Blocked)</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: flex-end; margin-bottom: 14px;">
+                <button class="btn btn-danger" id="switchEnvBtn" style="width: 100%;">⚡ Test Environment Switch</button>
+              </div>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="testDirectMainnetBtn">🚨 Test Direct Mainnet Order Interception Guard (/api/orders/live)</button>
+            </div>
+
+            <div id="envGateResponseBox" style="display: none; padding: 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 12px; margin-top: 8px;"></div>
+          </div>
+
+          <!-- HMAC-SHA256 Canonical Signature Verifier Card -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="card-title">🔐 Bitget Authenticated Client & HMAC-SHA256 Canonical Signature Verifier</div>
+              <span class="badge badge-long">OFFICIAL UTA V2 STANDARD</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+              Verifies server-side Bitget UTA v2 API HMAC-SHA256 request signing using the official canonical prehash scheme (timestamp + method + requestPath + body) while strictly guaranteeing zero credential exposure on the client.
+            </p>
+            <button class="btn btn-primary btn-sm" id="verifyBitgetSigBtn">🔐 Run Live Canonical HMAC-SHA256 Signature Verification</button>
+            <div id="bitgetSigOutputBox" style="display: none; margin-top: 12px; padding: 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 12px;"></div>
+          </div>
+
+          <!-- Native SQLite Persistence & State Recovery Status Card -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="card-title">💾 Native SQLite Database State & Restart Recovery Verifier</div>
+              <span class="badge badge-neutral mono-num">data/vt2.db</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+              Verifies that account equity state, active simulated positions, trade journal entries, and system settings are durably saved to the native Node.js SQLite engine and survive server restarts.
+            </p>
+            <button class="btn btn-secondary btn-sm" id="testSqliteRoundtripBtn">🔄 Verify SQLite Database State & Persistence (/api/system/database-status)</button>
+            <div id="sqliteStatusOutputBox" style="display: none; margin-top: 12px; padding: 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 12px;"></div>
+          </div>
+
+          <!-- Safeguards Matrix -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">10 Mandatory Independent Safety Safeguards</div>
+            <div class="table-responsive" style="margin-top: 12px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Safety Policy Safeguard</th>
+                    <th>Status</th>
+                    <th>Implementation Mechanism</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><strong>Mainnet Execution Disabled by Default</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>Hardcoded default `CURRENT_ENVIRONMENT = 'PAPER'`; master kill switch active</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><strong>Server-Side Environment Validation</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>`validateExecutionMode()` intercepts every order before processing</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><strong>Separate Exchange Adapters</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>Distinct adapters: `BitgetRestAdapter`, `BitgetAuthenticatedClient`, `PaperExecutionEngine`</td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td><strong>Explicit Refusal of Real Orders</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>`/api/orders/live` and `/api/orders/mainnet` throw `SafetyViolationError` (HTTP 403)</td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td><strong>No Credentials in Frontend Code</strong></td>
+                    <td><span class="badge badge-long">VERIFIED</span></td>
+                    <td>Frontend contains zero API keys or secrets; communication via backend REST</td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td><strong>No Credentials in Git or Logs</strong></td>
+                    <td><span class="badge badge-long">VERIFIED</span></td>
+                    <td>`.gitignore` protects `.env`; credential status helper masks all keys</td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td><strong>No Fallback from Testnet to Mainnet</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>Architecturally isolated; endpoints cannot cross-route</td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td><strong>No Silent Fallback to Simulated Success</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>Exchange network timeouts are explicitly surfaced; fixture data is clearly labeled</td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td><strong>Deterministic Risk Engine Overrides AI</strong></td>
+                    <td><span class="badge badge-long">ENFORCED</span></td>
+                    <td>Multi-agent coordinator requires unanimous pass through deterministic math rules</td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td><strong>Simulated Data Explicitly Labeled</strong></td>
+                    <td><span class="badge badge-long">LABELED</span></td>
+                    <td>Every paper order, balance, and position contains `isSimulated: true` flag</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- System Diagnostics & Vitals -->
+          <div class="grid-4" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-title">Server Uptime</div>
+              <div class="card-metric text-info mono-num" id="diagUptime">--</div>
+              <div class="card-subtext mono-num" id="diagNode">Node.js Runtime</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Heap Memory</div>
+              <div class="card-metric mono-num" id="diagHeap">-- MB</div>
+              <div class="card-subtext mono-num" id="diagRss">RSS: -- MB</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Feed Status</div>
+              <div class="card-metric text-warning" id="diagFeed">--</div>
+              <div class="card-subtext mono-num" id="diagLatency">Latency: --ms</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Live API Credentials</div>
+              <div class="card-metric" id="diagCreds">UNCONFIGURED</div>
+              <div class="card-subtext">Safe Sandbox Mode</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12. SETTINGS TAB -->
+        <section id="tab-settings" class="tab-content">
+          <div class="section-header">
+            <div>
+              <h2>System, Risk & Strategy Settings</h2>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Configure deterministic risk limits, strategy parameters, and eligible perpetual contracts.
+              </div>
+            </div>
+            <button class="btn btn-primary" id="saveSettingsBtn">💾 Save System Settings</button>
+          </div>
+
+          <div id="settingsAlertBanner" style="display: none; margin-bottom: 16px;" class="alert-banner"></div>
+
+          <!-- Appearance Setting -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">Terminal Appearance & Theme</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              Select your preferred visual appearance. Preferences are persisted automatically to SQLite and localStorage.
+            </p>
+
+            <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+              <label class="form-checkbox-label" style="font-size: 14px; font-weight: 600; cursor: pointer;">
+                <input type="radio" name="themeSetting" value="dark" id="themeOptDark" checked>
+                <span>🌙 Dark Mode <small style="color: var(--text-muted); font-weight: normal;">(High Contrast Dark)</small></span>
+              </label>
+              <label class="form-checkbox-label" style="font-size: 14px; font-weight: 600; cursor: pointer;">
+                <input type="radio" name="themeSetting" value="light" id="themeOptLight">
+                <span>☀️ Light Mode <small style="color: var(--text-muted); font-weight: normal;">(Clean Plain White)</small></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- 1. Risk Limits -->
+            <div class="card">
+              <div class="card-title">Deterministic Risk Engine Limits</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+                Strict parameters enforced on every trade proposal. AI agents cannot relax these limits.
+              </p>
+
+              <!-- Entry Size Allocation (1% - 100%) -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label style="margin-bottom: 0;">Entry Size Allocation (%)</label>
+                  <span class="badge badge-neutral mono-num" id="cfgEntryAllocBadge">10%</span>
+                </div>
+                <div class="range-slider-container">
+                  <input type="range" min="1" max="100" step="1" id="cfgEntryAllocSlider" class="range-slider" value="10">
+                  <input type="number" min="1" max="100" step="1" id="cfgEntryAllocInput" class="form-control mono-num" style="width: 75px; text-align: center;" value="10">
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                  <strong>Trading Allocation Base:</strong> Determines the portion of configured trading allocation used to calculate entry size.
+                  <span class="text-warning">Allocation % is distinct from equity risk:</span> stop-loss risk remains strictly capped at 0.5% (or configured risk/trade). Allocations above 10% require explicit confirmation.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Risk Budget per Trade (%)</label>
+                <input type="number" step="0.001" min="0.001" max="0.02" id="cfgRiskPerTrade" class="form-control mono-num" value="0.005">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 0.005 (0.50% of current equity)</div>
+              </div>
+
+              <div class="form-group">
+                <label>Daily Loss Limit (% SOD Equity)</label>
+                <input type="number" step="0.005" min="0.01" max="0.05" id="cfgMaxDailyLoss" class="form-control mono-num" value="0.02">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 0.02 (2.00% hard lockout)</div>
+              </div>
+
+              <div class="form-group">
+                <label>Max Concurrent Positions (1 - 5)</label>
+                <input type="number" step="1" min="1" max="5" id="cfgMaxConcurrentPositions" class="form-control mono-num" value="1">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 1 (Allows multiple non-correlated trades up to 5)</div>
+              </div>
+
+              <div class="form-group">
+                <label>Max Aggregate Open Risk Cap (%)</label>
+                <input type="number" step="0.1" min="0.5" max="2.0" id="cfgMaxAggregateOpenRisk" class="form-control mono-num" value="1.0">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 1.0% equity aggregate open risk cap across all positions</div>
+              </div>
+
+              <div class="form-group">
+                <label>Max Consecutive Losses Before Pause</label>
+                <input type="number" step="1" min="1" max="10" id="cfgMaxLosses" class="form-control mono-num" value="3">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 3 consecutive losing trades</div>
+              </div>
+
+              <div class="form-group">
+                <label>Cooldown Duration (Minutes)</label>
+                <input type="number" step="5" min="5" max="120" id="cfgCooldownMinutes" class="form-control mono-num" value="30">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 30 minutes pause following trade exit</div>
+              </div>
+            </div>
+
+            <!-- 2. Strategy Engine Parameters -->
+            <div class="card">
+              <div class="card-title">Baseline Strategy Parameters</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+                Multi-timeframe trend alignment (4h/15m/5m), volume filters, and reward-to-risk constraints.
+              </p>
+
+              <div class="form-group">
+                <label>Minimum Net Reward-to-Risk (R:R)</label>
+                <input type="number" step="0.1" min="1.0" max="5.0" id="cfgMinRR" class="form-control mono-num" value="1.5">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 1.5 after modeled exchange fees and slippage</div>
+              </div>
+
+              <div class="form-group">
+                <label>5m Relative Volume Spike Threshold (RVOL)</label>
+                <input type="number" step="0.1" min="1.0" max="5.0" id="cfgVolSpike" class="form-control mono-num" value="1.5">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 1.5x relative to the 20-candle SMA volume</div>
+              </div>
+
+              <div class="form-group">
+                <label>Target 4h ATR Multiplier</label>
+                <input type="number" step="0.1" min="1.0" max="4.0" id="cfgTargetAtr" class="form-control mono-num" value="1.8">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 1.8x ATR target distance</div>
+              </div>
+
+              <div class="form-group">
+                <label>Scan Universe Size (Top N by 24h Volume)</label>
+                <input type="number" step="5" min="5" max="100" id="cfgScanUniverseSize" class="form-control mono-num" value="30">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: 30 Bitget USDT perpetual contracts</div>
+              </div>
+
+              <div class="form-group">
+                <label>Minimum 24h Liquidity Filter (USDT Quote Volume)</label>
+                <input type="number" step="1000000" min="1000000" max="1000000000" id="cfgMinLiquidity" class="form-control mono-num" value="10000000">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Default: $10,000,000 USDT 24h quote volume threshold</div>
+              </div>
+
+              <div class="form-group">
+                <label>Stock Provider Integration</label>
+                <input type="text" class="form-control" readonly value="Bitget Tokenized Equity Perps (24/7 Continuous Futures)">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Unified under Bitget UTA v2 perpetual futures (settled in USDT, 8h funding cycles)</div>
+              </div>
+
+              <div class="form-group">
+                <label>Equity Entries When Underlying TradFi Market Closed</label>
+                <select id="cfgEquityEntriesClosed" class="form-control">
+                  <option value="ALLOW_WITH_WARNING" selected>Allow with Warning Badge (Default)</option>
+                  <option value="BLOCK">Block New Equity Entries When Underlying Closed</option>
+                </select>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Gating policy when underlying NYSE/NASDAQ exchange is closed (weekends, holidays, overnight).</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Eligible Contracts Universe -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-title">Eligible Bitget USDT Perpetual Contracts</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              Only contracts verified against Bitget exchange specifications and enabled here will be scanned.
+            </p>
+
+            <div class="grid-4">
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="contractBTC" checked>
+                <span><strong>BTCUSDT</strong> (Step 0.001)</span>
+              </label>
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="contractETH" checked>
+                <span><strong>ETHUSDT</strong> (Step 0.01)</span>
+              </label>
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="contractSOL" checked>
+                <span><strong>SOLUSDT</strong> (Step 0.1)</span>
+              </label>
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="contractXRP" checked>
+                <span><strong>XRPUSDT</strong> (Step 1.0)</span>
+              </label>
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="contractDOGE" checked>
+                <span><strong>DOGEUSDT</strong> (Step 10.0)</span>
+              </label>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- High Allocation Confirmation Modal -->
+  <div class="modal-overlay" id="allocationWarningModal" role="dialog" aria-modal="true" aria-labelledby="allocModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span style="font-size: 28px;" id="allocModalIcon">⚠️</span>
+        <div>
+          <div class="modal-title" id="allocModalTitle">High Allocation Confirmation</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="allocModalSubtitle">Deterministic Safety Verification Required</div>
+        </div>
+      </div>
+      <div class="modal-body" id="allocModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelAllocationBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmAllocationBtn">Confirm Allocation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Kill Switch Confirmation Modal -->
+  <div class="modal-overlay" id="killSwitchModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span style="font-size: 28px; color: var(--color-danger);">🚨</span>
+        <div>
+          <div class="modal-title text-danger">ENGAGE MASTER KILL SWITCH?</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Emergency System-Wide Trading Halt</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p>This action will immediately:</p>
+        <ul class="agent-bullets" style="margin-top: 8px;">
+          <li>Halt automated trading and lock the autonomous engine.</li>
+          <li>Market-close ALL open paper positions across all assets.</li>
+          <li>Cancel any active orders and log an emergency audit record.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelKillSwitchBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmKillSwitchBtn">ENGAGE KILL SWITCH</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/chart.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

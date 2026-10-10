@@ -1,0 +1,134 @@
+<USER_REQUEST>
+# VT2 Trading Bot: Upgrade Prompt for Antigravity
+
+Project: `C:\Users\DELL\Hackathon\VT2-Trading-Bot` (Node.js, `npm start`, http://localhost:3000)
+
+## Ground rules (apply to every phase)
+
+- Inspect the existing code before changing anything. Preserve the working Bitget public feed, `npm start`, the `index.js` startup guard, SQLite persistence, and all 59 existing tests.
+- Do not claim a feature is done unless you ran it and show the output. After each phase run `npm test` and report the real count.
+- Environment stays PAPER. Mainnet and live order execution stay blocked by default (HTTP 403 on `/api/environment` to MAINNET, `/api/orders/live`, `/api/orders/mainnet`). Automated mode must also be PAPER-only. Re-verify this after every phase.
+- Never put credentials in frontend code, logs, or Git. No withdrawal permissions anywhere.
+- Do not invent indicator thresholds or exit rules. Where a rule below says "default", expose it as a visible, editable setting and document it in `docs/risk-policy.md`.
+
+## Phase 0: Fix data-integrity problems first (blocking)
+
+The screenshots show inconsistent numbers:
+
+- Market Scanner and Overview show BTCUSDT around **$64,111 / $63,016**.
+- Interactive Analysis chart for BTCUSDT 15m shows prices around **$82,400 to $83,300**.
+
+These cannot both be live data. Find out which source each view uses (live Bitget, generated fixture, or cache) and fix it so that scanner, overview, chart, risk engine and paper engine all read **one** price source: the live Bitget V2 feed. Fixtures may be used only in tests and must be labeled "SYNTHETIC" anywhere they appear in the UI.
+
+Also: `/api/backtest` currently generates 200 synthetic candles when fixtures are short. Results from synthetic candles (win rate 54.84%, PF 1.27) must not be presented as strategy performance. Change the backtest to fetch real historical candles from Bitget (public candles endpoint, paginated) for the selected symbol/timeframe, and show a "Data source: Bitget historical / Synthetic" badge on every result. Keep chronological walk-forward, no look-ahead, stop-first on ambiguous candles, and fees/slippage/funding.
+
+Report what you found and fixed before moving on.
+
+## Phase 1: Rescan Markets must really rescan
+
+- The button calls a new or fixed `POST /api/market/scan` that bypasses any cache, pulls fresh tickers and candles (4h, 15m, 5m), recomputes EMA20/50/200, RSI, ATR, relative volume, BTC trend filter, signal-age check, then re-ranks.
+- Widen the universe: instead of the 5 hard-coded symbols, scan the top N (default 30, editable) Bitget USDT-FUTURES contracts by 24h quote volume from `/api/v2/mix/market/tickers?productType=USDT-FUTURES`, with a minimum-liquidity filter (editable default).
+- UI: button shows a spinner and disables while running, then shows "Scanned N markets in X ms at HH:MM:SS", the list updates in place, and the rejected-setups table shows each rejection reason. If the feed is down, show an error and keep the previous results marked "STALE".
+- Add an optional auto-rescan interval (off / 1 / 5 / 15 min).
+- Add a test proving a rescan with changed mock data changes the ranking.
+
+## Phase 2: Professional interface upgrade
+
+Keep the dark and light themes and the token system. Redesign the look, not the logic:
+
+- Typography: one UI sans-serif (Inter, system fallback) plus a monospace with **tabular numerals** for all prices, sizes and P&L so columns align.
+- Replace emoji in buttons and tabs with a consistent inline SVG icon set (lucide-style, single stroke weight).
+- Layout: replace the overflowing top tab bar (the last tab is cut off at "System & He...") with a left sidebar navigation that collapses to icons, and a slim top status bar (feed status + latency, environment, BTC trend, equity, daily P&L, kill switch).
+- Collapse the large yellow safety banner into a compact persistent "PAPER" badge with a tooltip, and a full explanation in System.
+- Number formatting: round prices to each contract's price tick/precision (e.g. `64,111.4`, not `64111.3577`), thousands separators, fixed decimals for R:R, green/red only for P&L and direction.
+- Cards: consistent spacing scale (4/8/12/16/24), 1px neutral borders, no heavy gradients, clear hierarchy (label small and muted, value large).
+- Tables: sticky headers, right-aligned numerics, row hover, compact density option.
+- Charts: crosshair with OHLC readout, symbol and timeframe selector, volume, RSI pane visible without scrolling, trade markers for entries, stops and targets.
+- Responsive down to mobile width; WCAG AA contrast in both themes.
+
+## Phase 3: Make all nine capabilities visible and runnable in the UI
+
+Add a sidebar section **"Verification"** (do not bury it inside a cut-off tab). It must contain one panel per capability, each with a "Run check" button and a pass/fail result with timestamp and raw detail, plus a "Run all" button:
+
+1. Chronological walk-forward backtesting
+2. Bitget HMAC-SHA256 signature verification (server-side only; never expose any secret to the browser)
+3. Mainnet interception and refusal (expect 403 and `MAINNET_EXECUTION_BLOCKED`)
+4. Paper engine lifecycle: open, partial TP, trailing stop, breakeven, stop-out
+5. Deterministic risk-engine checks and boundary conditions
+6. Entry allocation 1% to 100% with equity-risk cap enforcement
+7. High-allocation confirmation (>10% confirm, 100% strong warning, Cancel restores previous value)
+8. Light/Dark tokens and persistence across reload
+9. SQLite state restoration (write, restart-safe read, roundtrip)
+
+Where a check requires a server restart, show the last restart-verified result instead of faking it. The partial-TP value shown (+1.1%) must come from the actual configured setting, not a hard-coded string.
+
+## Phase 4: Multiple concurrent trades (changes a non-negotiable rule, so make it explicit)
+
+The current rule is "maximum one open position". Replace it with a **configurable** `maxConcurrentPositions` (default **1**, user-selectable up to 5) and add these guards, all enforced server-side in the deterministic risk engine:
+
+- **Aggregate open-risk cap**: total stop-loss risk across all open positions must not exceed a configurable cap (default **1.0% of equity**, hard max 2%). Per-trade risk stays 0.5% default, 1% hard max.
+- No two positions in the same symbol (default; setting to allow hedging stays off).
+- Optional correlation guard: warn or reject when adding another position in the same direction while BTC-correlated (editable, default warn).
+- Daily-loss limit (2%), consecutive-loss pause (3) and cooldown (30 min) still apply across the whole book.
+- Positions table shows every open position with its own entry, stop, TP1/TP, R-multiple, unrealized P&L, leverage, and a per-position Close button; plus a "Close all" button.
+- Tests: opening position N+1 beyond the cap is rejected with a clear rule code; aggregate cap rejection; daily-loss lockout with multiple positions.
+
+## Phase 5: Crypto / Stock market switch
+
+Add a segmented control in the top bar: **Crypto | Stocks**. The whole app (scanner, chart, analysis, AI deliberation, risk engine, paper engine, backtest, journal) runs on the selected market with the same indicators and the same risk rules.
+
+- Introduce a `MarketProvider` interface (`getUniverse`, `getCandles`, `getTicker`, `getContractRules`, `getSessionState`) with a `BitgetCryptoProvider` (existing) and a `StockProvider`.
+- **Data source decision (do not guess):** before coding the stock provider, list the realistic options and ask me to choose. Candidates to evaluate against their *current official docs*: Alpaca (free paper-trading account and market data), Bitget's own tokenized-stock or stock-perpetual products if they exist and are API-accessible, or another provider I already have access to. State the key I would need to create, and I will create it myself and put it in `.env`. Never ask me to paste secrets into chat.
+- Stock-specific rules that must be modeled and shown in the UI: regular-hours session state (open/closed/pre/post), no signals when closed (unless extended hours is explicitly supported), share-quantity rounding (whole shares unless fractional is supported), no leverage beyond what the paper account actually allows, commissions/slippage model, and stock-specific limits (e.g. pattern day-trader constraints) documented, not silently ignored.
+- Stock mode is PAPER-only exactly like crypto. No live stock orders.
+- Keep per-market settings (universe size, fee model, risk) separate and persisted.
+
+## Phase 6: Monitoring loop, sentiment re-check every 5 minutes
+
+Create a single server-side scheduler (`src/monitor/trade-monitor.js`) that runs **every 5 minutes** (configurable setting, default 5) and, for each open position in both manual and automated modes:
+
+1. Pulls fresh 5m/15m/4h candles and recomputes the same analysis as the scanner (EMA alignment, RSI, relative volume, BTC trend for crypto, plus the AI Market Intelligence and Adversarial Review agents if they are part of the pipeline).
+2. Computes a **sentiment state** per position: `SUPPORTIVE`, `WEAKENING`, or `REVERSED`, using explicit, documented, testable rules. Proposed default (make it editable and document it): `REVERSED` when the 4h and 15m EMA bias both flip against the position direction; `WEAKENING` when only 15m bias flips or RSI crosses against the trade past a configured threshold; otherwise `SUPPORTIVE`.
+3. Stores each check in SQLite (timestamp, position, state, reasons) and shows a "Last checked HH:MM, next check in mm:ss" indicator and a sentiment history on each position.
+4. **Manual positions:** never close or modify automatically. Raise a prominent notification (in-app via SSE, plus browser notification if permitted) when the state changes, with the reasons and a one-click Close button.
+5. **Automated positions:** apply the configured response (default: `WEAKENING` tightens stop to breakeven if in profit; `REVERSED` exits at market). The response per state is a visible setting, and every action is written to the journal with the reason.
+6. Never loosens a stop, never adds size, never overrides the risk engine.
+7. A check failure (feed down) must not close positions silently; mark "CHECK FAILED" and alert.
+
+Tests with fixture data: a state change from `SUPPORTIVE` to `REVERSED` triggers a notification in manual mode and an exit in auto mode; a feed failure triggers neither.
+
+## Phase 7: Automated trading mode (PAPER only)
+
+Add an **Automated Trading** control panel (sidebar) with a clear ON/OFF switch, default OFF after every restart (never auto-resume without confirmation).
+
+Settings (all persisted, all validated server-side):
+
+- `maxTradesPerDay` (integer, required; bot stops entering when reached; counter resets at a defined daily boundary, UTC by default, shown in the UI)
+- `maxConcurrentPositions` (from Phase 4)
+- Allowed market (Crypto / Stocks) and optional symbol allow-list
+- Minimum scanner score and minimum net R:R (cannot go below the 1.5 policy floor)
+- Entry allocation (existing 1% to 100% setting, equity-risk cap still applies)
+
+Behavior:
+
+- Each cycle: rescan, take the top eligible setups that pass the full pipeline (scanner, AI agent, adversarial review, deterministic risk engine), enter via the paper engine, and manage exits with the existing partial-TP, breakeven, trailing and stop logic.
+- The bot can only open a trade if the risk engine approves it. Any rejection is logged to the rejected-setups archive with the rule code.
+- **Manual stop controls:** a prominent **Stop Bot** button (stops new entries, keeps managing open positions), a **Stop Bot and Close All** button, and the global **Kill Switch** (halts everything immediately). Each requires one confirmation click.
+- The bot also pauses automatically on: daily-loss limit hit, 3 consecutive losses, feed offline, or monitor failure. It shows why in the status bar.
+- Starting automated mode shows a confirmation dialog stating: PAPER ONLY, the trade-per-day limit, max concurrent positions, risk per trade and the daily loss limit.
+- Activity log panel: every decision (entered, skipped, rejected, exited) with timestamp and reason; all trades land in the Trade Journal tagged `AUTO` or `MANUAL`.
+- Hard guarantee: if the environment is not PAPER, automated mode refuses to start (HTTP 403, tested).
+
+## Phase 8: Full validation and report
+
+1. `npm test` with the real count and any failures.
+2. Confirm `/api/market/status` is ONLINE and prices agree across scanner, chart, overview (state the BTC price in each).
+3. Confirm Rescan changes `lastScanAt` and results.
+4. Demonstrate: open 2 manual paper trades concurrently; run the 5-minute monitor once on demand (add a "Check now" button); run auto mode with `maxTradesPerDay = 2` and show it stops after 2; Stop Bot; Kill Switch.
+5. Confirm mainnet and live-order routes still return 403 and automated mode refuses to start outside PAPER.
+6. Confirm Crypto/Stocks switch works end to end in PAPER, or state precisely what is blocked on my data-source decision.
+7. List every file changed, every setting added and its default, and anything not completed. Do not summarize unfinished work as finished.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-10T13:51:42+01:00.
+</ADDITIONAL_METADATA>

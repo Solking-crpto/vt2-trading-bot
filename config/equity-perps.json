@@ -1,0 +1,242 @@
+[
+  {
+    "symbol": "SPYUSDT",
+    "underlyingTicker": "SPY",
+    "name": "SPDR S&P 500 ETF Trust",
+    "assetClass": "EQUITY",
+    "isBenchmark": true,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 50
+  },
+  {
+    "symbol": "QQQUSDT",
+    "underlyingTicker": "QQQ",
+    "name": "Invesco QQQ Trust (Nasdaq-100)",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "NVDAUSDT",
+    "underlyingTicker": "NVDA",
+    "name": "NVIDIA Corporation",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 100
+  },
+  {
+    "symbol": "TSLAUSDT",
+    "underlyingTicker": "TSLA",
+    "name": "Tesla, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 100
+  },
+  {
+    "symbol": "AAPLUSDT",
+    "underlyingTicker": "AAPL",
+    "name": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 100
+  },
+  {
+    "symbol": "MSFTUSDT",
+    "underlyingTicker": "MSFT",
+    "name": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 100
+  },
+  {
+    "symbol": "AMZNUSDT",
+    "underlyingTicker": "AMZN",
+    "name": "Amazon.com, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 100
+  },
+  {
+    "symbol": "MSTRUSDT",
+    "underlyingTicker": "MSTR",
+    "name": "MicroStrategy Incorporated",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 25
+  },
+  {
+    "symbol": "PLTRUSDT",
+    "underlyingTicker": "PLTR",
+    "name": "Palantir Technologies Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "SOXLUSDT",
+    "underlyingTicker": "SOXL",
+    "name": "Direxion Daily Semiconductor Bull 3X",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "SOXSUSDT",
+    "underlyingTicker": "SOXS",
+    "name": "Direxion Daily Semiconductor Bear 3X",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "TQQQUSDT",
+    "underlyingTicker": "TQQQ",
+    "name": "ProShares UltraPro QQQ (3X Long)",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "SQQQUSDT",
+    "underlyingTicker": "SQQQ",
+    "name": "ProShares UltraPro Short QQQ (3X Short)",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "MUUSDT",
+    "underlyingTicker": "MU",
+    "name": "Micron Technology, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 50
+  },
+  {
+    "symbol": "AMDUSDT",
+    "underlyingTicker": "AMD",
+    "name": "Advanced Micro Devices, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "SNDKUSDT",
+    "underlyingTicker": "SNDK",
+    "name": "SanDisk Memory / Flash Storage",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.001,
+    "defaultMaxLeverage": 75
+  },
+  {
+    "symbol": "SMCIUSDT",
+    "underlyingTicker": "SMCI",
+    "name": "Super Micro Computer, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "AVGOUSDT",
+    "underlyingTicker": "AVGO",
+    "name": "Broadcom Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "QCOMUSDT",
+    "underlyingTicker": "QCOM",
+    "name": "Qualcomm Incorporated",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "BAUSDT",
+    "underlyingTicker": "BA",
+    "name": "The Boeing Company",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "WMTUSDT",
+    "underlyingTicker": "WMT",
+    "name": "Walmart Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 50
+  },
+  {
+    "symbol": "COSTUSDT",
+    "underlyingTicker": "COST",
+    "name": "Costco Wholesale Corporation",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 25
+  },
+  {
+    "symbol": "RKLBUSDT",
+    "underlyingTicker": "RKLB",
+    "name": "Rocket Lab USA, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  },
+  {
+    "symbol": "AMATUSDT",
+    "underlyingTicker": "AMAT",
+    "name": "Applied Materials, Inc.",
+    "assetClass": "EQUITY",
+    "isBenchmark": false,
+    "defaultTickSize": 0.01,
+    "defaultMinSize": 0.01,
+    "defaultMaxLeverage": 20
+  }
+]

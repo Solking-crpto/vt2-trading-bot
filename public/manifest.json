@@ -1,0 +1,16 @@
+{
+  "name": "VT2 — Verifiable Trading Technology",
+  "short_name": "VT2 Trading",
+  "description": "Think. Verify. Trade. Verifiable paper trading terminal with deterministic risk controls and multi-agent AI deliberation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e17",
+  "theme_color": "#0d1322",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

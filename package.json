@@ -1,0 +1,27 @@
+{
+  "name": "vt2-trading-bot",
+  "version": "0.1.0",
+  "description": "VT2 — Verifiable Trading Technology. Think. Verify. Trade.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node --test --test-force-exit --test-timeout=60000"
+  },
+  "keywords": [
+    "trading-bot",
+    "paper-trading",
+    "bitget",
+    "quantitative-trading",
+    "ai-trading",
+    "risk-engine"
+  ],
+  "author": "VT2 Engineering Team",
+  "license": "ISC",
+  "type": "module",
+  "private": true
+}
