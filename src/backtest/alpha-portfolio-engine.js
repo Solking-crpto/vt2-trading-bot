@@ -244,9 +244,11 @@ export class AlphaPortfolioEngine {
             entryTime: currentTs,
             entryDate: currentDate.toISOString(),
             realizedPnl: 0,
-            feesPaid: entryFee,
-            slippagePaid: slippageCost,
+            entryFee: entryFee,
+            partialFee: 0,
+            exitFee: 0,
             fundingPaid: 0,
+            slippagePaid: slippageCost,
             isOos: currentTs >= oosStartTs,
           };
         }
@@ -290,12 +292,16 @@ export class AlphaPortfolioEngine {
               // Partial TP (+1.1% ROI)
               const partialQty = Number((quantity * rules.lifecycleExits.partialExitRatio).toFixed(4));
               const partialExitPrice = Number((partialTpPrice * (1 - slippageRate)).toFixed(4));
+              const partialSlippage = Math.abs(partialExitPrice - partialTpPrice) * partialQty;
               const partialFee = partialQty * partialExitPrice * takerFeeRate;
               const partialPnl = (partialExitPrice - entryPrice) * partialQty - partialFee;
 
               equity += partialPnl;
               totalFeesPaid += partialFee;
+              totalSlippagePaid += partialSlippage;
               currentPosition.realizedPnl += partialPnl;
+              currentPosition.partialFee = partialFee;
+              currentPosition.slippagePaid += partialSlippage;
               currentPosition.quantity -= partialQty;
               currentPosition.isPartialClosed = true;
               // Move stop to breakeven + offset
@@ -313,12 +319,16 @@ export class AlphaPortfolioEngine {
             } else if (!isPartialClosed && bar.low <= partialTpPrice) {
               const partialQty = Number((quantity * rules.lifecycleExits.partialExitRatio).toFixed(4));
               const partialExitPrice = Number((partialTpPrice * (1 + slippageRate)).toFixed(4));
+              const partialSlippage = Math.abs(partialExitPrice - partialTpPrice) * partialQty;
               const partialFee = partialQty * partialExitPrice * takerFeeRate;
               const partialPnl = (entryPrice - partialExitPrice) * partialQty - partialFee;
 
               equity += partialPnl;
               totalFeesPaid += partialFee;
+              totalSlippagePaid += partialSlippage;
               currentPosition.realizedPnl += partialPnl;
+              currentPosition.partialFee = partialFee;
+              currentPosition.slippagePaid += partialSlippage;
               currentPosition.quantity -= partialQty;
               currentPosition.isPartialClosed = true;
               currentPosition.stopLoss = Number((entryPrice * (1 - rules.lifecycleExits.breakevenOffset)).toFixed(4));
@@ -326,13 +336,17 @@ export class AlphaPortfolioEngine {
           }
 
           if (isClosed) {
+            const rawExitPrice = exitReason.includes('STOP_LOSS') ? stopLoss : takeProfit;
             const exitFee = currentPosition.quantity * exitPrice * takerFeeRate;
-            const exitSlippage = Math.abs(exitPrice - (side === 'LONG' ? stopLoss : takeProfit)) * currentPosition.quantity;
+            const exitSlippage = Math.abs(exitPrice - rawExitPrice) * currentPosition.quantity;
             totalFeesPaid += exitFee;
             totalSlippagePaid += exitSlippage;
 
+            currentPosition.exitFee = exitFee;
+            currentPosition.slippagePaid += exitSlippage;
+
             const remainingPnl = (side === 'LONG' ? exitPrice - entryPrice : entryPrice - exitPrice) * currentPosition.quantity - exitFee;
-            const netTradePnl = currentPosition.realizedPnl + remainingPnl;
+            const netTradePnl = currentPosition.realizedPnl + remainingPnl - currentPosition.entryFee - currentPosition.fundingPaid;
 
             equity += remainingPnl;
             lastTradeClosedAt = currentTs;
@@ -637,8 +651,9 @@ export class AlphaPortfolioEngine {
     // OOS Sharpe Decay
     const isSharpe = isMetrics.annualizedSharpe;
     const oosSharpe = oosMetrics.annualizedSharpe;
-    const sharpeDecayRatio = isSharpe > 0 ? (oosSharpe / isSharpe) : 1.0;
-    const sharpeDecayFlag = sharpeDecayRatio < 0.5;
+    const sharpeDecayRatio = isSharpe !== 0 ? Number((oosSharpe / isSharpe).toFixed(3)) : 0;
+    const isSharpeMeaningful = isSharpe > 0;
+    const sharpeDecayFlag = isSharpeMeaningful ? (sharpeDecayRatio < 0.5) : false;
 
     // Per-symbol breakdown
     const perSymbol = {};
@@ -667,8 +682,12 @@ export class AlphaPortfolioEngine {
         sharpeDecay: {
           isSharpe: isMetrics.annualizedSharpe,
           oosSharpe: oosMetrics.annualizedSharpe,
-          decayRatio: Number(sharpeDecayRatio.toFixed(3)),
+          decayRatio: sharpeDecayRatio,
+          isMeaningful: isSharpeMeaningful,
           decayAlertFlag: sharpeDecayFlag,
+          interpretation: isSharpeMeaningful
+            ? (sharpeDecayFlag ? 'Decay Alert: OOS Sharpe retained < 50% of IS Sharpe' : 'Pass: OOS Sharpe retained >= 50% of IS Sharpe')
+            : 'Standard Sharpe decay ratio is not economically meaningful when In-Sample Sharpe is zero or negative (dividing negative by negative yields positive, not retention).',
         },
       },
       costs: {

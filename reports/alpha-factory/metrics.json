@@ -2,63 +2,65 @@
   "summary": {
     "total": {
       "label": "TOTAL",
-      "tradeCount": 288,
-      "winRate": 40.97,
-      "totalPnl": -1439.9,
-      "totalReturnPct": -28.71,
-      "annualizedSharpe": -4.52,
-      "annualizedSortino": -5.43,
-      "maxDrawdownDollars": 3207.11,
-      "maxDrawdownPct": 31.41,
-      "avgWinDollars": 60.51,
-      "avgLossDollars": 50.47,
-      "profitFactor": 0.83,
-      "turnover": 259.43
+      "tradeCount": 287,
+      "winRate": 41.11,
+      "totalPnl": -2818.83,
+      "totalReturnPct": -28.25,
+      "annualizedSharpe": -4.46,
+      "annualizedSortino": -5.39,
+      "maxDrawdownDollars": 3162.53,
+      "maxDrawdownPct": 30.98,
+      "avgWinDollars": 55.93,
+      "avgLossDollars": 55.73,
+      "profitFactor": 0.7,
+      "turnover": 258.47
     },
     "inSample": {
       "label": "IN_SAMPLE",
-      "tradeCount": 247,
-      "winRate": 41.3,
-      "totalPnl": -1178.89,
-      "totalReturnPct": -23.62,
-      "annualizedSharpe": -4.22,
-      "annualizedSortino": -5.15,
-      "maxDrawdownDollars": 2669.18,
-      "maxDrawdownPct": 26.14,
-      "avgWinDollars": 62.12,
-      "avgLossDollars": 51.83,
-      "profitFactor": 0.84,
-      "turnover": 220.48
+      "tradeCount": 246,
+      "winRate": 41.46,
+      "totalPnl": -2360.18,
+      "totalReturnPct": -23.13,
+      "annualizedSharpe": -4.15,
+      "annualizedSortino": -5.09,
+      "maxDrawdownDollars": 2620.87,
+      "maxDrawdownPct": 25.67,
+      "avgWinDollars": 57.54,
+      "avgLossDollars": 57.15,
+      "profitFactor": 0.71,
+      "turnover": 219.4
     },
     "outOfSample": {
       "label": "OUT_OF_SAMPLE",
       "tradeCount": 41,
       "winRate": 39.02,
-      "totalPnl": -261.01,
+      "totalPnl": -458.65,
       "totalReturnPct": -6.66,
-      "annualizedSharpe": -6.5,
+      "annualizedSharpe": -6.51,
       "annualizedSortino": -7.18,
-      "maxDrawdownDollars": 635.24,
+      "maxDrawdownDollars": 639.58,
       "maxDrawdownPct": 8.32,
-      "avgWinDollars": 50.2,
-      "avgLossDollars": 42.57,
-      "profitFactor": 0.75,
+      "avgWinDollars": 45.64,
+      "avgLossDollars": 47.55,
+      "profitFactor": 0.61,
       "turnover": 37.59
     },
     "sharpeDecay": {
-      "isSharpe": -4.22,
-      "oosSharpe": -6.5,
-      "decayRatio": 1,
-      "decayAlertFlag": false
+      "isSharpe": -4.15,
+      "oosSharpe": -6.51,
+      "decayRatio": 1.569,
+      "isMeaningful": false,
+      "decayAlertFlag": false,
+      "interpretation": "Standard Sharpe decay ratio is not economically meaningful when In-Sample Sharpe is zero or negative (dividing negative by negative yields positive, not retention)."
     }
   },
   "costs": {
-    "totalFeesPaid": 2226.11,
-    "totalSlippagePaid": 17433.51,
-    "totalFundingPaid": 316.18,
-    "totalTradingCosts": 19975.8
+    "totalFeesPaid": 2223.72,
+    "totalSlippagePaid": 889.52,
+    "totalFundingPaid": 317.42,
+    "totalTradingCosts": 3430.65
   },
-  "exposureTimePct": 88.56,
+  "exposureTimePct": 88.54,
   "benchmarks": {
     "spyBuyAndHold": {
       "initialPrice": 743.04,
@@ -76,115 +78,115 @@
       "symbol": "NVDAUSDT",
       "trades": 30,
       "winRate": 53.3,
-      "pnl": 305.27
-    },
-    {
-      "symbol": "SOXLUSDT",
-      "trades": 23,
-      "winRate": 47.8,
-      "pnl": 49.91
-    },
-    {
-      "symbol": "MSFTUSDT",
-      "trades": 24,
-      "winRate": 45.8,
-      "pnl": 40.49
+      "pnl": 178.08
     },
     {
       "symbol": "QCOMUSDT",
       "trades": 4,
       "winRate": 50,
-      "pnl": 36.17
-    },
-    {
-      "symbol": "SNDKUSDT",
-      "trades": 6,
-      "winRate": 50,
-      "pnl": 30.83
+      "pnl": 22.77
     },
     {
       "symbol": "AVGOUSDT",
       "trades": 4,
       "winRate": 50,
-      "pnl": 20.01
+      "pnl": 7.69
+    },
+    {
+      "symbol": "SNDKUSDT",
+      "trades": 6,
+      "winRate": 50,
+      "pnl": 4.63
     },
     {
       "symbol": "AMDUSDT",
       "trades": 4,
       "winRate": 50,
-      "pnl": 11.56
+      "pnl": -5.32
+    },
+    {
+      "symbol": "SOXLUSDT",
+      "trades": 23,
+      "winRate": 47.8,
+      "pnl": -19.17
     },
     {
       "symbol": "WMTUSDT",
       "trades": 4,
       "winRate": 50,
-      "pnl": -4.54
-    },
-    {
-      "symbol": "MUUSDT",
-      "trades": 12,
-      "winRate": 41.7,
-      "pnl": -10.24
+      "pnl": -24.35
     },
     {
       "symbol": "SMCIUSDT",
       "trades": 3,
       "winRate": 33.3,
-      "pnl": -27.25
+      "pnl": -35.9
+    },
+    {
+      "symbol": "MUUSDT",
+      "trades": 12,
+      "winRate": 41.7,
+      "pnl": -48.41
     },
     {
       "symbol": "SQQQUSDT",
       "trades": 5,
       "winRate": 40,
-      "pnl": -46.47
+      "pnl": -61.74
+    },
+    {
+      "symbol": "MSFTUSDT",
+      "trades": 24,
+      "winRate": 45.8,
+      "pnl": -77.29
     },
     {
       "symbol": "COSTUSDT",
       "trades": 10,
       "winRate": 40,
-      "pnl": -52.11
-    },
-    {
-      "symbol": "PLTRUSDT",
-      "trades": 14,
-      "winRate": 42.9,
-      "pnl": -57.3
-    },
-    {
-      "symbol": "QQQUSDT",
-      "trades": 21,
-      "winRate": 42.9,
-      "pnl": -102.12
+      "pnl": -106.76
     },
     {
       "symbol": "RKLBUSDT",
       "trades": 2,
       "winRate": 0,
-      "pnl": -103.86
+      "pnl": -109.69
+    },
+    {
+      "symbol": "PLTRUSDT",
+      "trades": 14,
+      "winRate": 42.9,
+      "pnl": -111.97
+    },
+    {
+      "symbol": "QQQUSDT",
+      "trades": 20,
+      "winRate": 45,
+      "pnl": -148.81
     },
     {
       "symbol": "AMZNUSDT",
       "trades": 20,
       "winRate": 40,
-      "pnl": -131.14
-    },
-    {
-      "symbol": "TSLAUSDT",
-      "trades": 23,
-      "winRate": 39.1,
-      "pnl": -150.02
+      "pnl": -235.29
     },
     {
       "symbol": "AAPLUSDT",
       "trades": 20,
       "winRate": 40,
-      "pnl": -153.81
+      "pnl": -247.53
+    },
+    {
+      "symbol": "TSLAUSDT",
+      "trades": 23,
+      "winRate": 39.1,
+      "pnl": -250.72
     },
     {
       "symbol": "SPYUSDT",
       "trades": 59,
       "winRate": 28.8,
-      "pnl": -1095.28
+      "pnl": -1549.05
     }
   ]
 }

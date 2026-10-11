@@ -44,45 +44,76 @@ VT2 treats risk management as an immutable mathematical gate with absolute veto 
 
 ## 3. Validation Data and Key Metrics
 
-The quantitative backtest was conducted over **150 days** (May 11, 2026 – October 10, 2026) across **19 verified Bitget tokenized equity perpetuals** (\`isRwa === "YES"\` with continuous 15m and 4h data) using chronological portfolio walk-forward replay on a single shared paper equity account ($10,000 initial balance).
+The quantitative backtest was conducted over **151.7 days** (May 11, 2026 – October 10, 2026) across **19 verified Bitget tokenized equity perpetuals** (`isRwa === "YES"` with continuous 15m and 4h data) using chronological portfolio walk-forward replay on a single shared paper equity account ($10,000 initial balance).
 
-All figures below are extracted directly from \`reports/alpha-factory/metrics.json\`:
+All figures below are extracted directly from `reports/alpha-factory/metrics.json`:
 
 | Metric | In-Sample (IS) [observed] | Out-of-Sample (OOS, Final 30d) [observed] | Full Replay [observed] |
 | :--- | :--- | :--- | :--- |
 | **Data Period** | May 11, 2026 – Sep 10, 2026 (~120d) | Sep 10, 2026 – Oct 10, 2026 (30d) | May 11, 2026 – Oct 10, 2026 (150d) |
-| **Trade Count** | 247 | 41 | 288 |
-| **Win Rate** | 41.30% | 39.02% | 40.97% |
-| **Net P&L** | -$1,178.89 | -$261.01 | -$1,439.90 |
-| **Total Return** | -23.62% | -6.66% | -28.71% |
-| **Annualized Sharpe (365d)** | -4.22 | -6.50 | -4.52 |
-| **Annualized Sortino (365d)** | -5.15 | -7.18 | -5.43 |
-| **Max Drawdown** | $2,669.18 (26.14%) | $635.24 (8.32%) | $3,207.11 (31.41%) |
-| **Average Win / Loss** | $62.12 / $51.83 | $50.20 / $42.57 | $60.51 / $50.47 |
-| **Profit Factor** | 0.84 | 0.75 | 0.83 |
-| **Portfolio Turnover** | 220.48x | 37.59x | 259.43x |
+| **Trade Count** | 246 | 41 | 287 |
+| **Win Rate** | 41.46% | 39.02% | 41.11% |
+| **Net P&L** | -$2,360.18 | -$458.65 | -$2,818.83 |
+| **Total Return** | -23.13% | -6.66% | -28.25% |
+| **Annualized Sharpe (365d)** | -4.15 | -6.51 | -4.46 |
+| **Annualized Sortino (365d)** | -5.09 | -7.18 | -5.39 |
+| **Max Drawdown** | $2,620.87 (25.67%) | $639.58 (8.32%) | $3,162.53 (30.98%) |
+| **Average Win / Loss** | $57.54 / $57.15 | $45.64 / $47.55 | $55.93 / $55.73 |
+| **Profit Factor** | 0.71 | 0.61 | 0.70 |
+| **Portfolio Turnover** | 219.40x | 37.59x | 258.47x |
 
 ### Execution Friction & Cost Breakdown
-- **Taker Fees Paid:** $2,226.11 [observed: 0.05% institutional taker rate per fill]
-- **Execution Slippage Paid:** $17,433.51 [observed: 0.02% adverse slippage on entries and exits]
-- **8-Hour Funding Paid:** $316.18 [modeled/estimated: 0.01% / 8h standard carry]
-- **Total Trading Costs:** **$19,975.80** [observed: ~200% of initial account equity consumed by friction across 288 high-turnover trades]
-- **Market Exposure Time:** 88.56% of total timeline [observed]
+- **Taker Fees Paid:** $2,223.72 [observed: 0.05% institutional taker rate per fill across entries, partial TP, and exits]
+- **Execution Slippage Paid:** $889.52 [observed: 0.02% adverse slippage on entries and exits across ~$4.4M gross notional]
+- **8-Hour Funding Paid:** $317.42 [modeled/estimated: 0.01% / 8h standard carry]
+- **Total Trading Friction:** **$3,430.65** [observed: 34.3% of initial account equity consumed by friction across 287 high-turnover trades]
+- **Market Exposure Time:** 88.54% of total timeline [observed]
+
+### Slippage Accounting & Double-Counting Analysis
+- **Formula:** Entry slippage is `|fillPrice - rawOpen| * quantity`, partial TP slippage is `|partialExitPrice - partialTpPrice| * partialQty`, and final exit slippage is `|exitPrice - rawExitPrice| * quantity`.
+- **Slippage Inclusion:** Because orders fill at slippage-adjusted prices (`rawOpen * (1 + 0.0002)` for Longs, `rawExit * (1 - 0.0002)` for exits), **slippage is already inside Gross and Net P&L**. It is NOT deducted a second time from account equity; `totalSlippagePaid` ($889.52) is reported strictly as an analytical tracking metric.
+
+#### Worked Trade Accounting Example (Long NVDAUSDT, 50 units)
+1. **Entry Fill:** Raw open $200.00 -> Fill price with 0.02% slippage = $200.04. Notional: $10,002.00. Entry Slippage: **$2.00**. Entry Taker Fee (0.05%): **$5.001**. Cash equity debited: -$5.001.
+2. **Holding Carry:** 16-hour hold (2 funding cycles at 0.01%): Funding Paid: **$2.00**. Cash equity debited: -$2.00.
+3. **Exit Fill (Stop Loss hit):** Raw stop $198.50 -> Fill price with 0.02% slippage = $198.4603. Exit Notional: $9,923.015. Exit Slippage: **$1.985**. Exit Taker Fee (0.05%): **$4.9615**. Cash equity credited: -$83.9465.
+4. **P&L Reconciliation:**
+   - **Gross Price P&L:** `($198.4603 - $200.04) * 50 = -$78.985` (already embeds $3.985 total slippage).
+   - **Net Trade P&L:** `-$78.985 - $5.001 (entry fee) - $4.9615 (exit fee) - $2.00 (funding) = -$90.9475`.
+   - **Account Equity Change:** `-$5.001 - $2.00 - $83.9465 = -$90.9475` (exact match).
+
+### Out-of-Sample Decay Analysis
+- **In-Sample Annualized Sharpe:** -4.15
+- **Out-of-Sample Annualized Sharpe:** -6.51
+- **OOS Sharpe Decay Ratio:** **1.569** [observed mathematical ratio: `-6.51 / -4.15`]
+- **Statistical Interpretation:** The standard Sharpe decay ratio is **not economically meaningful** when In-Sample Sharpe is zero or negative. Dividing two negative numbers yields a positive ratio (+1.569) that does not reflect alpha retention; both periods experienced systematic negative risk-adjusted returns under taker friction.
 
 ### Benchmark Performance (Same Timeframe)
 - **SPYUSDT Buy-and-Hold:** **+4.97%** return, 5.21% max drawdown [observed]
 - **Equal-Weight 19-Stock Basket:** **+4.94%** return [observed]
 
-### Out-of-Sample Decay
-- **OOS Sharpe Decay Ratio:** 1.00 [observed]
-- **Decay Alert Flag:** Passed (No catastrophic regime divergence beyond expected friction drag).
+### Historical Data Coverage Audit & Disclosures
+Direct audit of all 50 candle JSON files in `data/history/` (`scripts/audit-history-coverage.js`):
+- **Failed Downloads (0 bars from Bitget REST):** 3 files failed to download and contain 0 bars:
+  - `TQQQUSDT_15m.json` (0 bars)
+  - `SOXSUSDT_4h.json` (0 bars)
+  - `BAUSDT_4h.json` (0 bars)
+- **Short History (<90 days):** 4 files:
+  - `AMATUSDT_15m.json` (62.5 days)
+  - `BAUSDT_15m.json` (18.7 days)
+  - `MSTRUSDT_15m.json` (33.3 days)
+  - `SOXSUSDT_15m.json` (39.6 days)
+- **Headline Replay Universe (>=90 days continuous data):** Exactly 19 Tokenized US Equity Perpetuals (plus BTCUSDT comparison):
+  `SPYUSDT`, `QQQUSDT`, `NVDAUSDT`, `TSLAUSDT`, `AAPLUSDT`, `MSFTUSDT`, `AMZNUSDT`, `PLTRUSDT`, `SOXLUSDT`, `SQQQUSDT`, `MUUSDT`, `AMDUSDT`, `SNDKUSDT`, `SMCIUSDT`, `AVGOUSDT`, `QCOMUSDT`, `WMTUSDT`, `COSTUSDT`, `RKLBUSDT`.
+- **Integrity Validation:** 0 gaps and 0 duplicate timestamps across all 19 headline contracts (14,400 to 14,600 15m bars and 866 to 1,000 4h bars per symbol). Full audit table is recorded in `reports/alpha-factory/coverage_audit.md`.
 
 ### Individual Symbol Highlights
 Top performing individual contracts demonstrated positive gross momentum edge prior to friction:
-- **NVDAUSDT:** 30 trades, 53.3% win rate, **+$305.27** Net P&L [observed]
-- **SOXLUSDT:** 23 trades, 47.8% win rate, **+$49.91** Net P&L [observed]
-- **MSFTUSDT:** 24 trades, 45.8% win rate, **+$40.49** Net P&L [observed]
-- **SPYUSDT:** 59 trades, 28.8% win rate, **-$1,095.28** Net P&L [observed: chopped near benchmark EMA]
+- **NVDAUSDT:** 30 trades, 53.3% win rate, **+$178.08** Net P&L [observed]
+- **QCOMUSDT:** 4 trades, 50.0% win rate, **+$22.77** Net P&L [observed]
+- **AVGOUSDT:** 4 trades, 50.0% win rate, **+$7.69** Net P&L [observed]
+- **SNDKUSDT:** 6 trades, 50.0% win rate, **+$4.63** Net P&L [observed]
+- **SPYUSDT:** 59 trades, 28.8% win rate, **-$1,549.05** Net P&L [observed: chopped near benchmark EMA]
 
 ---
 
@@ -136,5 +167,5 @@ Top performing individual contracts demonstrated positive gross momentum edge pr
 | **0:25 – 0:50** | **Interactive Analysis & Risk Verdict** | "Selecting TSLAUSDT reveals the 15-minute candlestick chart with EMA20/50/200, RSI, and Volume. Clicking 'Deliberate Setup' shows our multi-agent architecture: the Market Intelligence Agent analyzes trend structure using SPY as benchmark, the Adversarial Review Agent stress-tests taker fees, and the Deterministic Risk Engine enforces position sizing." |
 | **0:50 – 1:15** | **Paper Trade Lifecycle & Step Sizing** | "When we submit a paper trade, the engine enters at exact contract step sizes—for TSLA, 2.63 units, not whole shares. Open positions display live unrealized P&L, with automatic partial take-profit triggers at +1.1% ROI and breakeven stop loss adjustments." |
 | **1:15 – 1:35** | **Hardened Mainnet Security Block** | "Safety is paramount. Attempting to switch environment to MAINNET or posting to \`/api/orders/live\` triggers immediate HTTP 403 interception: \`MAINNET_EXECUTION_BLOCKED\`. The bot operates with zero live capital risk." |
-| **1:35 – 2:05** | **Alpha Factory Backtest Report** | "Running \`npm run backtest:alpha\` executes a zero-look-ahead portfolio replay across 19 tokenized equity perpetuals over 150 days. We report unadulterated numbers: while NVDA (+53% win rate) generated strong gross alpha, the high 259x turnover resulted in $19.9k of taker fee and slippage friction, proving the critical need for execution-aware risk controls." |
+| **1:35 – 2:05** | **Alpha Factory Backtest Report** | "Running \`npm run backtest:alpha\` executes a zero-look-ahead portfolio replay across 19 tokenized equity perpetuals over 150 days. We report unadulterated numbers: while NVDA (+53% win rate) generated positive net alpha, the high 258x turnover resulted in $3,430 of taker fee, slippage, and funding friction, demonstrating the critical need for execution-aware risk budgeting." |
 | **2:05 – 2:30** | **Verification Suite & Persistence** | "Finally, running \`npm test\` validates all 92 automated tests in under 4 seconds with zero memory leaks. All positions and journal logs are durably preserved across process restarts in SQLite. Think. Verify. Trade." |

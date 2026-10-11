@@ -92,7 +92,7 @@ npm test
 ```bash
 npm run backtest:alpha
 ```
-*Executes chronological portfolio replay across 19 verified tokenized equity contracts over 150 days (~288 trades), computing In-Sample (IS), Out-of-Sample (OOS), Sharpe decay, benchmark comparisons, and saving reports in `reports/alpha-factory/`.*
+*Executes chronological portfolio replay across 19 verified tokenized equity contracts over 150 days (287 trades), computing In-Sample (IS), Out-of-Sample (OOS), Sharpe decay, benchmark comparisons, and saving reports in `reports/alpha-factory/`.*
 
 ### 4. Launch Live Paper Trading Terminal
 ```bash
@@ -119,7 +119,7 @@ VT2 guarantees **zero live capital risk**:
 
 The Alpha Factory portfolio backtest was conducted under strict, non-negotiable quantitative honesty:
 
-1. **Transaction Cost Drag:** Over the 150-day backtest, the strategy generated 288 trades (259x portfolio turnover). Due to institutional taker fees (0.05% per fill), realistic slippage (0.02% per fill), and funding costs ($19,975.80 in cumulative friction on a $10,000 account), the net portfolio return was **-28.71%** (In-Sample: -23.62%, Out-of-Sample: -6.66%). This proves that high-frequency breakout strategies on tokenized perps require maker order execution or aggressive trade throttling to survive friction.
+1. **Transaction Cost Drag:** Over the 151.7-day backtest, the strategy executed 287 trades (258.47x portfolio turnover). Due to institutional taker fees (0.05% per fill: $2,223.72), realistic slippage (0.02% per fill: $889.52), and funding carry ($317.42), total trading friction reached **$3,430.65** on a $10,000 account. This resulted in a net portfolio return of **-28.25%** (-$2,818.83 Net P&L; In-Sample: -23.13%, Out-of-Sample: -6.66%), demonstrating that automated breakout strategies on tokenized perps require maker order execution (to earn maker rebates) or volatility throttling to survive execution friction.
 2. **Net R:R is a Design Filter, Not Edge:** All qualified setups require net R:R >= 1.5. Targets are constructed using ATR multipliers bounded by this floor. A net R:R of 1.5 is a design requirement, not proof of market alpha.
 3. **Dual-Market Liquidity Mismatch:** While Bitget tokenized equity perps trade 24/7 continuously, underlying NYSE/NASDAQ exchanges trade only 09:30–16:00 ET Monday–Friday. Weekend and overnight trading carries wider spreads and basis divergence against underlying spot shares.
 4. **No LLM Decision-Making:** VT2 does not use external generative AI models to generate live orders. All deliberation agents operate on deterministic mathematical rules.

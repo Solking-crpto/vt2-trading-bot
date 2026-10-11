@@ -111,8 +111,8 @@ async function main() {
 ### Out-of-Sample Decay Analysis
 - **In-Sample Annualized Sharpe:** ${s.sharpeDecay.isSharpe}
 - **Out-of-Sample Annualized Sharpe:** ${s.sharpeDecay.oosSharpe}
-- **OOS Sharpe Decay Ratio:** ${s.sharpeDecay.decayRatio} [observed]
-- **Sharpe Decay Flag (< 0.5):** ${s.sharpeDecay.decayAlertFlag ? '⚠️ DECAY ALERT (< 0.5x IS)' : '✅ PASS (>= 0.5x IS)'}
+- **OOS Sharpe Decay Ratio:** ${s.sharpeDecay.decayRatio} [observed mathematical ratio: ${s.sharpeDecay.oosSharpe} / ${s.sharpeDecay.isSharpe}]
+- **Sharpe Decay Interpretation:** ${s.sharpeDecay.interpretation}
 
 ---
 
@@ -126,14 +126,42 @@ async function main() {
 
 ---
 
-## 3. Real Execution Cost Modeling
+## 3. Real Execution Cost Modeling & Worked Trade Example
 
 All returns are net of institutional taker fees, realistic execution slippage, and continuous funding:
-- **Total Taker Fees Paid:** $${m.costs.totalFeesPaid} [observed: 0.05% taker rate per fill]
-- **Total Execution Slippage Paid:** $${m.costs.totalSlippagePaid} [observed: 0.02% slippage rate]
-- **Total 8h Funding Rate Paid:** $${m.costs.totalFundingPaid} [observed / modeled: 0.01% / 8h]
+- **Total Taker Fees Paid:** $${m.costs.totalFeesPaid} [observed: 0.05% taker rate per fill across entries, partial TP, and exits]
+- **Total Execution Slippage Paid:** $${m.costs.totalSlippagePaid} [observed: 0.02% slippage rate per fill across ~$4.4M gross notional]
+- **Total 8h Funding Rate Paid:** $${m.costs.totalFundingPaid} [observed / modeled: 0.01% / 8h adverse carry]
 - **Total Cumulative Friction:** $${m.costs.totalTradingCosts} [observed]
 - **Market Exposure Time:** ${m.exposureTimePct}% of total timeline [observed]
+
+### Slippage Accounting & Double-Counting Verdict
+- **Execution Mechanism:** Fills are executed at slippage-adjusted prices (\`fillPrice = rawOpen * (1 + 0.0002)\` for Longs, \`rawOpen * (1 - 0.0002)\` for Shorts; exits at \`rawExit * (1 - 0.0002)\` for Longs, \`rawExit * (1 + 0.0002)\` for Shorts).
+- **Inclusion in Net P&L:** Because execution prices directly embed slippage, **slippage is already inside Gross and Net P&L**. It is NOT deducted a second time from cash equity. The reported metric \`totalSlippagePaid\` ($${m.costs.totalSlippagePaid}) is an analytical tracking metric documenting friction.
+
+### Worked Trade Example (Fees, Slippage, and Carry)
+Consider a representative Long trade in **NVDAUSDT** (50 contracts):
+1. **Signal Generation (Bar $t$):** Breakout confluence detected. Stop loss: $198.50, Initial target: $203.00.
+2. **Next-Bar Entry (Bar $t+1$):** Raw open = $200.00.
+   - Fill Price (Long +0.02% slippage): \`$200.00 * 1.0002 = $200.04\`.
+   - Entry Notional: \`50 * $200.04 = $10,002.00\`.
+   - Entry Slippage Paid: \`|200.04 - 200.00| * 50 = $2.00\`.
+   - Entry Taker Fee (0.05%): \`$10,002.00 * 0.0005 = $5.001\`.
+   - Cash equity debited for entry fee: \`-$5.001\`.
+3. **Holding Period Carry:** Position held 16 hours (2 funding settlement cycles at 0.01%):
+   - Funding Paid: \`50 * $200.00 * 0.0001 * 2 = $2.00\`.
+   - Cash equity debited for funding carry: \`-$2.00\`.
+4. **Exit at Stop Loss:** Stop triggered at $198.50.
+   - Fill Price (Long -0.02% slippage): \`$198.50 * 0.9998 = $198.4603\`.
+   - Exit Notional: \`50 * $198.4603 = $9,923.015\`.
+   - Exit Slippage Paid: \`|198.4603 - 198.50| * 50 = $1.985\`.
+   - Exit Taker Fee (0.05%): \`$9,923.015 * 0.0005 = $4.9615\`.
+   - Cash equity credited with net remaining proceeds: \`($198.4603 - $200.04) * 50 - $4.9615 = -$83.9465\`.
+5. **Trade Accounting Reconciliation:**
+   - **Gross Price P&L:** \`($198.4603 - $200.04) * 50 = -$78.985\` (already embeds $3.985 total slippage).
+   - **Net Trade P&L:** \`-$78.985 - $5.001 (entry fee) - $4.9615 (exit fee) - $2.00 (funding) = -$90.9475\`.
+   - **Total Account Equity Impact:** \`-$5.001 + (-$2.00) + (-$83.9465) = -$90.9475\`.
+   - Net Trade P&L equals exact Account Equity change.
 
 ---
 
@@ -143,12 +171,32 @@ ${m.perSymbol.map(s => `- **${s.symbol}:** ${s.trades} trades, ${s.winRate}% win
 
 ---
 
-## 5. Honest Methodological Disclosures
+## 5. Historical Data Coverage & Integrity Audit
+
+Direct programmatic audit of all 50 candle files in \`data/history/\`:
+- **Universe Inspected:** 25 symbols x 2 granularities (15m and 4h) = 50 total files.
+- **Failed Downloads (0 bars from Bitget REST):** 3 files failed to download and contain 0 bars:
+  - \`TQQQUSDT_15m.json\` (0 bars)
+  - \`SOXSUSDT_4h.json\` (0 bars)
+  - \`BAUSDT_4h.json\` (0 bars)
+- **Short History (<90 days):** 4 files:
+  - \`AMATUSDT_15m.json\` (62.5 days)
+  - \`BAUSDT_15m.json\` (18.7 days)
+  - \`MSTRUSDT_15m.json\` (33.3 days)
+  - \`SOXSUSDT_15m.json\` (39.6 days)
+- **Headline Replay Universe (>=90 days continuous data):** Exactly 19 Tokenized US Equity Perpetuals (plus BTCUSDT comparison):
+  \`SPYUSDT\`, \`QQQUSDT\`, \`NVDAUSDT\`, \`TSLAUSDT\`, \`AAPLUSDT\`, \`MSFTUSDT\`, \`AMZNUSDT\`, \`PLTRUSDT\`, \`SOXLUSDT\`, \`SQQQUSDT\`, \`MUUSDT\`, \`AMDUSDT\`, \`SNDKUSDT\`, \`SMCIUSDT\`, \`AVGOUSDT\`, \`QCOMUSDT\`, \`WMTUSDT\`, \`COSTUSDT\`, \`RKLBUSDT\`.
+- **Integrity Validation:** 0 gaps and 0 duplicate timestamps across all 19 headline contracts (14,400 to 14,600 15m bars and 866 to 1,000 4h bars per symbol). Full audit table is recorded in \`reports/alpha-factory/coverage_audit.md\`.
+
+---
+
+## 6. Honest Methodological Disclosures
 
 1. **Net Reward-to-Risk Design Filter:** Scans and proposals require net R:R >= 1.5. Target prices are calculated from ATR multiples subject to this minimum floor. The 1.5 ratio is a **strict design filter**, not evidence of market edge.
 2. **Ambiguous Bar Resolution:** Ambiguous bars (where both SL and TP price levels are within the high-low bar range) are resolved with conservative **stop-loss first** execution.
 3. **Zero Look-Ahead Bias:** Indicators at bar \`i\` evaluate exclusively bars \`0..i\`. 4h trend calculations strictly use closed 4h candles. Orders fill at the open of bar \`i+1\` plus slippage.
 4. **Funding Rates:** Bitget's \`history-fund-rate\` for equity perpetuals shows zero rates in current history; a standard 0.01% per 8h funding cost was applied to model adverse carry.
+5. **Sharpe Decay Interpretation:** When In-Sample Sharpe is negative, dividing two negative numbers produces a positive decay ratio (\`${s.sharpeDecay.decayRatio}\`). The standard decay ratio is not economically meaningful when the in-sample strategy did not generate positive excess return.
 `;
 
   fs.writeFileSync(path.join(REPORTS_DIR, 'report.md'), reportMd);
