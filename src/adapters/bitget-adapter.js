@@ -91,10 +91,11 @@ export class BitgetAdapter {
     this.lastContractsAudit = null;
 
     // Real-Time Public WebSocket Client
+    this.disableWs = Boolean(options.disableWs) || process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL);
     this.wsClient = new BitgetWebSocketClient({
       wsUrl: options.wsUrl || 'wss://ws.bitget.com/v2/ws/public',
     });
-    if (!this.forceFixtureMode && process.env.NODE_ENV !== 'test') {
+    if (!this.forceFixtureMode && process.env.NODE_ENV !== 'test' && !this.disableWs) {
       try {
         this.wsClient.start();
       } catch (err) {
@@ -432,9 +433,11 @@ export class BitgetAdapter {
       if (options.marketMode) marketMode = options.marketMode;
     }
 
+    const isDemo = process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL);
     const cacheKey = `${marketMode}_${limit}`;
     const cached = this.scannerCache.get(cacheKey);
-    if (!forceFresh && cached && (Date.now() - cached.time < 15000)) {
+    const cacheTtl = isDemo ? 30000 : 15000;
+    if (!forceFresh && cached && (Date.now() - cached.time < cacheTtl)) {
       return cached.markets;
     }
 
@@ -526,13 +529,23 @@ export class BitgetAdapter {
         : ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT'];
     }
 
-    // Subscribe scanned universe to real-time WebSocket stream
-    this.wsClient.subscribeSymbols(targetSymbols);
+    // Subscribe scanned universe to real-time WebSocket stream if active
+    if (!this.disableWs) {
+      this.wsClient.subscribeSymbols(targetSymbols);
+    }
 
     const markets = {};
+    const startTime = Date.now();
+    let hasTimedOut = false;
 
     // High-performance parallel fetch with concurrency limit of 12
     const fetchTasks = targetSymbols.map(sym => async () => {
+      // 22-second time budget per scan to prevent function execution timeout
+      if (Date.now() - startTime > 22000) {
+        hasTimedOut = true;
+        return;
+      }
+
       try {
         const [c4h, c15m, c5m] = await Promise.all([
           this.getCandles(sym, '4h', 60, forceFresh),
@@ -570,7 +583,14 @@ export class BitgetAdapter {
 
     await runConcurrent(fetchTasks, 12);
 
-    if (Object.keys(markets).length > 0) {
+    const validKeys = Object.keys(markets).filter(k => k !== '_meta');
+    if (validKeys.length > 0) {
+      markets._meta = {
+        isPartial: hasTimedOut || validKeys.length < targetSymbols.length,
+        scannedCount: validKeys.length,
+        targetCount: targetSymbols.length,
+        durationMs: Date.now() - startTime,
+      };
       this.scannerCache.set(cacheKey, { markets, time: Date.now() });
       return markets;
     }

@@ -342,12 +342,15 @@ export class VerificationEngine {
           rejected_setups: this.db.db.prepare('SELECT count(*) as c FROM rejected_setups').get().c,
         };
 
+        const isMemory = this.db?.dbPath === ':memory:' || process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL);
+
         return {
           driver: 'node:sqlite (Native Node.js built-in)',
-          databaseFile: 'data/vt2.db',
-          restartDurable: true,
+          databaseFile: isMemory ? ':memory: (in-memory in demo mode)' : 'data/vt2.db',
+          restartDurable: isMemory ? 'In-memory in demo mode (passes via in-memory SQLite; persistent database active in local app)' : true,
           roundtripVerification: 'PASSED',
           tableRecordCounts: tables,
+          demoNotice: isMemory ? 'In-memory in demo mode (passes via in-memory SQLite; persistent database active in local app)' : undefined,
         };
       }
 

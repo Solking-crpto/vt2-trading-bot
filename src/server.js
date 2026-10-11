@@ -59,9 +59,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
 export class VT2Server {
   constructor(options = {}) {
+    this.isDemoReadOnly = process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL) || Boolean(options.demoReadOnly);
     this.port = options.port !== undefined ? options.port : (process.env.PORT || 3000);
-    this.db = new Database(options.dbPath || 'data/vt2.db').init();
-    this.bitget = new BitgetAdapter({ forceFixtureMode: options.forceFixtureMode });
+    const dbPath = options.dbPath || (this.isDemoReadOnly ? ':memory:' : 'data/vt2.db');
+    this.db = new Database(dbPath).init();
+    this.bitget = new BitgetAdapter({
+      forceFixtureMode: options.forceFixtureMode,
+      disableWs: this.isDemoReadOnly || options.disableWs,
+    });
     this.bitgetAuth = new BitgetAuthenticatedClient();
     this.strategy = new StrategyEngine();
     this.coordinator = new MultiAgentCoordinator();
@@ -79,18 +84,21 @@ export class VT2Server {
     // Market Providers (Crypto & Stocks)
     this.cryptoProvider = new BitgetCryptoProvider({ bitgetAdapter: this.bitget });
     this.stockProvider = new StockMarketProvider({ bitgetAdapter: this.bitget });
-    this.activeMarketMode = options.activeMarketMode || this.db.getSetting('activeMarketMode', 'crypto');
+    this.activeMarketMode = options.activeMarketMode || this.db.getSetting('activeMarketMode', 'stocks');
 
     // Restore persisted state and open positions across server restarts
-    const savedState = this.db.getAccountState();
-    const activePositions = this.db.getActivePositions();
-    if (savedState || (activePositions && activePositions.length > 0)) {
-      this.paperEngine.restoreState(savedState, activePositions);
+    if (!this.isDemoReadOnly) {
+      const savedState = this.db.getAccountState();
+      const activePositions = this.db.getActivePositions();
+      if (savedState || (activePositions && activePositions.length > 0)) {
+        this.paperEngine.restoreState(savedState, activePositions);
+      }
     }
 
     this.server = null;
     this.sseClients = new Set();
     this.tickInterval = null;
+    this.ipRateLimits = new Map();
 
     // Trade Monitor & Automated Trader
     this.tradeMonitor = new TradeMonitor({
@@ -113,12 +121,12 @@ export class VT2Server {
     });
 
     this.tradeMonitor.autoTrader = this.autoTrader;
-    if (!options.disableMonitor) {
+    if (!this.isDemoReadOnly && !options.disableMonitor) {
       this.tradeMonitor.start();
     }
 
     // Wire live WebSocket tickers to SSE stream and position P&L updater
-    if (this.bitget.wsClient) {
+    if (!this.isDemoReadOnly && this.bitget.wsClient && !this.bitget.disableWs) {
       this.bitget.wsClient.on('ticker', (ticker) => {
         const openPos = this.paperEngine.positions.find(p => p.symbol === ticker.symbol && p.status === 'OPEN');
         if (openPos) {
@@ -151,15 +159,40 @@ export class VT2Server {
     }
   }
 
+  sendDemoReadOnlyError(res) {
+    return this.sendJson(res, 501, {
+      error: 'DEMO_READONLY',
+      message: 'Persistent paper trading and the automated bot run in the local app. See the README and demo video.',
+    });
+  }
+
+  checkRateLimit(ip) {
+    if (!this.ipRateLimits) this.ipRateLimits = new Map();
+    const now = Date.now();
+    const entry = this.ipRateLimits.get(ip) || { count: 0, resetAt: now + 60000 };
+    if (now > entry.resetAt) {
+      entry.count = 0;
+      entry.resetAt = now + 60000;
+    }
+    entry.count++;
+    this.ipRateLimits.set(ip, entry);
+    return entry.count <= 180;
+  }
+
   start() {
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
     this.server.listen(this.port, () => {
       console.log(`[VT2 Core] Verifiable Trading Technology listening on http://localhost:${this.port}`);
       console.log(`[VT2 Core] Operating Environment: ${CURRENT_ENVIRONMENT} (Mainnet Strictly Blocked)`);
+      if (this.isDemoReadOnly) {
+        console.log(`[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)`);
+      }
     });
 
-    // Start background market tick simulation for open paper positions
-    this.startBackgroundMarketTicker();
+    // Start background market tick simulation for open paper positions only in local full mode
+    if (!this.isDemoReadOnly) {
+      this.startBackgroundMarketTicker();
+    }
 
     return this;
   }
@@ -264,8 +297,22 @@ export class VT2Server {
   }
 
   async handleRequest(req, res) {
-    // Add CORS headers for web & local dev
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // 1. Per-IP Rate Limiting (180 req/min per IP)
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+    if (!this.checkRateLimit(clientIp)) {
+      return this.sendJson(res, 429, {
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Please wait a moment before trying again.',
+      });
+    }
+
+    // 2. CORS Headers
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -275,12 +322,25 @@ export class VT2Server {
       return;
     }
 
-    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const pathname = parsedUrl.pathname;
+    const incomingUrl = req.url || '/';
+    const parsedUrl = new URL(incomingUrl, `http://${req.headers.host || 'localhost'}`);
+    let pathname = parsedUrl.pathname;
+    if (pathname === '/api/index.js' || pathname === '/api/index') {
+      if (req.headers['x-matched-path']) {
+        pathname = req.headers['x-matched-path'];
+      }
+    }
 
     try {
       // 1. SSE Stream
       if (pathname === '/api/stream') {
+        if (this.isDemoReadOnly) {
+          return this.sendJson(res, 200, {
+            status: 'DISABLED_IN_DEMO',
+            mode: 'POLLING',
+            message: 'Real-time SSE is replaced by periodic polling in hosted demo mode.',
+          });
+        }
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -299,6 +359,8 @@ export class VT2Server {
           service: 'VT2-Trading-Bot',
           tagline: 'Think. Verify. Trade.',
           environment: CURRENT_ENVIRONMENT,
+          deployMode: this.isDemoReadOnly ? 'DEMO_READONLY' : 'LOCAL_FULL',
+          database: this.isDemoReadOnly ? 'IN_MEMORY_SQLITE' : 'FILE_SQLITE',
           mainnetExecutionAllowed: isMainnetExecutionAllowed(),
           mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
           timestamp: Date.now(),
@@ -308,12 +370,17 @@ export class VT2Server {
 
       // 3. Market Connectivity Status
       if (pathname === '/api/market/status') {
+        res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=20');
         const health = await this.bitget.checkHealth();
-        return this.sendJson(res, 200, health);
+        return this.sendJson(res, 200, {
+          ...health,
+          deployMode: this.isDemoReadOnly ? 'DEMO_READONLY' : 'LOCAL_FULL',
+        });
       }
 
       // 4. Market Tickers
       if (pathname === '/api/market/tickers') {
+        res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=40');
         const tickers = await this.bitget.getTickers();
         return this.sendJson(res, 200, tickers);
       }
@@ -378,24 +445,28 @@ export class VT2Server {
           }
         }
 
+        res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=40');
         return this.sendJson(res, 200, {
           ...scan,
           dataSource: isLive ? 'BITGET_V2_LIVE' : 'SYNTHETIC',
           isLive,
           durationMs,
           marketMode,
+          partial: Boolean(liveMarkets._meta?.isPartial),
+          meta: liveMarkets._meta || null,
           counts: {
-            total: Object.keys(liveMarkets).length,
+            total: Object.keys(liveMarkets).filter(k => k !== '_meta').length,
             equity: equityCount,
             crypto: cryptoCount,
           },
-          scannedCount: Object.keys(liveMarkets).length,
+          scannedCount: Object.keys(liveMarkets).filter(k => k !== '_meta').length,
           timestamp: Date.now(),
         });
       }
 
       // 6b. Market Scanner - GET (Cached / Quick Polling)
       if (pathname === '/api/market/scanner') {
+        res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=40');
         const limit = Number(parsedUrl.searchParams.get('limit')) || Number(this.db.getSetting('scanUniverseSize', 30));
         const minLiquidity = Number(parsedUrl.searchParams.get('minLiquidity')) || Number(this.db.getSetting('minLiquidityUsdt', 10000000));
         const marketMode = parsedUrl.searchParams.get('mode') || this.activeMarketMode || 'stocks';
@@ -409,12 +480,14 @@ export class VT2Server {
           dataSource: isLive ? 'BITGET_V2_LIVE' : 'SYNTHETIC',
           isLive,
           marketMode,
+          partial: Boolean(liveMarkets._meta?.isPartial),
+          meta: liveMarkets._meta || null,
           counts: {
-            total: Object.keys(liveMarkets).length,
+            total: Object.keys(liveMarkets).filter(k => k !== '_meta').length,
             equity: equityCount,
             crypto: cryptoCount,
           },
-          scannedCount: Object.keys(liveMarkets).length,
+          scannedCount: Object.keys(liveMarkets).filter(k => k !== '_meta').length,
           timestamp: Date.now(),
         });
       }
@@ -423,7 +496,16 @@ export class VT2Server {
       if (pathname === '/api/agents/deliberate' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
         const accountSummary = this.paperEngine.getAccountSummary();
-        const accountState = {
+        const accountState = this.isDemoReadOnly ? {
+          equity: 10000,
+          startOfDayEquity: 10000,
+          currentEquity: 10000,
+          consecutiveLosses: 0,
+          openPositionsCount: 0,
+          lastTradeClosedAt: null,
+          existingOrders: [],
+          existingPositions: [],
+        } : {
           equity: accountSummary.equity,
           startOfDayEquity: accountSummary.startOfDayEquity,
           currentEquity: accountSummary.currentEquity,
@@ -431,6 +513,7 @@ export class VT2Server {
           openPositionsCount: accountSummary.openPositionsCount,
           lastTradeClosedAt: accountSummary.lastTradeClosedAt,
           existingOrders: this.paperEngine.orders,
+          existingPositions: this.paperEngine.positions,
         };
 
         const savedSettings = { ...DEFAULT_SETTINGS, ...this.db.getAllSettings() };
@@ -451,14 +534,16 @@ export class VT2Server {
 
         // Save rejected candidates
         if (!result.isApproved && body.proposal) {
-          this.db.saveRejectedSetup({
-            symbol: body.proposal.symbol,
-            rejectionReason: result.coordinatorVerdict,
-            explanation: result.coordinatorReason,
-            netRR: body.proposal.rewardRisk?.netRR,
-            score: body.proposal.score,
-            details: { thesis: result.thesis, review: result.review, risk: result.riskResult },
-          });
+          try {
+            this.db.saveRejectedSetup({
+              symbol: body.proposal.symbol,
+              rejectionReason: result.coordinatorVerdict,
+              explanation: result.coordinatorReason,
+              netRR: body.proposal.rewardRisk?.netRR,
+              score: body.proposal.score,
+              details: { thesis: result.thesis, review: result.review, risk: result.riskResult },
+            });
+          } catch {}
         }
 
         return this.sendJson(res, 200, result);
@@ -466,6 +551,31 @@ export class VT2Server {
 
       // 8. Account Summary
       if (pathname === '/api/account') {
+        if (this.isDemoReadOnly) {
+          return this.sendJson(res, 200, {
+            balance: 10000,
+            equity: 10000,
+            freeMargin: 10000,
+            usedMargin: 0,
+            startOfDayEquity: 10000,
+            currentEquity: 10000,
+            unrealizedPnl: 0,
+            dailyPnl: 0,
+            dailyLoss: 0,
+            dailyLossLimit: 200,
+            dailyLossRemaining: 200,
+            dailyTradesCount: 0,
+            consecutiveLosses: 0,
+            openPositionsCount: 0,
+            totalExposureNotional: 0,
+            lastTradeClosedAt: null,
+            cooldownActive: false,
+            cooldownRemainingMs: 0,
+            environment: 'PAPER',
+            demoMode: true,
+            deployMode: 'DEMO_READONLY',
+          });
+        }
         const summary = this.paperEngine.getAccountSummary();
         return this.sendJson(res, 200, summary);
       }
@@ -475,11 +585,13 @@ export class VT2Server {
         return this.sendJson(res, 200, {
           positions: this.paperEngine.positions,
           environment: 'PAPER',
+          deployMode: this.isDemoReadOnly ? 'DEMO_READONLY' : 'LOCAL_FULL',
         });
       }
 
       // 10. Close Single Position
       if (pathname.startsWith('/api/positions/') && pathname.endsWith('/close') && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const posId = pathname.split('/')[3];
         const posIndex = this.paperEngine.positions.findIndex(p => p.id === posId);
         if (posIndex === -1) {
@@ -515,6 +627,7 @@ export class VT2Server {
 
       // 10a. Close All Open Positions
       if (pathname === '/api/positions/close-all' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const closed = this.paperEngine.closeAllPositions(body.exitReason || 'MANUAL_CLOSE_ALL');
         for (const c of closed) {
@@ -548,6 +661,7 @@ export class VT2Server {
 
       // 10b. Simulate Market Tick on Open Paper Positions (Triggers Partial TP, Breakeven Stop, Trailing Stop, or SL)
       if (pathname === '/api/positions/simulate-tick' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req);
         const changePct = Number(body.priceChangePct || 1.2);
         const events = [];
@@ -588,6 +702,7 @@ export class VT2Server {
 
       // 10c. Place Instant Test Paper Position for Live Interactive Verification
       if (pathname === '/api/orders/paper-test' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const savedSettings = { ...DEFAULT_SETTINGS, ...this.db.getAllSettings() };
         const maxConcurrent = Number(savedSettings.maxConcurrentPositions || 1);
         const openPositions = this.paperEngine.positions;
@@ -646,6 +761,7 @@ export class VT2Server {
 
       // 11. Submit Paper Order
       if (pathname === '/api/orders/paper' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req);
         validateExecutionMode({ environment: 'PAPER' });
 
@@ -673,6 +789,7 @@ export class VT2Server {
           });
         }
         if (req.method === 'POST') {
+          if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
           const body = await this.parseJsonBody(req);
           if (body.entryAllocationPercent !== undefined) {
             const alloc = Number(body.entryAllocationPercent);
@@ -861,6 +978,7 @@ export class VT2Server {
 
       // 19. Backtesting Runner
       if (pathname === '/api/backtest' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req);
         const symbol = body.symbol || 'BTCUSDT';
         const timeframe = body.timeframe || '15m';
@@ -1089,11 +1207,15 @@ export class VT2Server {
       }
 
       // 20e. Verification Capabilities Suite
+      if (pathname === '/api/verify' && req.method === 'GET') {
+        const results = await this.verification.runAllChecks();
+        return this.sendJson(res, 200, results);
+      }
       if (pathname === '/api/verification/status' && req.method === 'GET') {
         const status = await this.verification.getStatus();
         return this.sendJson(res, 200, status);
       }
-      if (pathname === '/api/verification/run-all' && req.method === 'POST') {
+      if ((pathname === '/api/verify' || pathname === '/api/verification/run-all') && req.method === 'POST') {
         const results = await this.verification.runAllChecks();
         return this.sendJson(res, 200, results);
       }
@@ -1108,6 +1230,7 @@ export class VT2Server {
         return this.sendJson(res, 200, this.tradeMonitor.getStatus());
       }
       if (pathname === '/api/monitor/check-now' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const results = await this.tradeMonitor.checkPositions();
         return this.sendJson(res, 200, {
           success: true,
@@ -1121,21 +1244,25 @@ export class VT2Server {
         return this.sendJson(res, 200, this.autoTrader.getStatus());
       }
       if (pathname === '/api/autotrading/start' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const status = this.autoTrader.start(body);
         return this.sendJson(res, 200, status);
       }
       if (pathname === '/api/autotrading/stop' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const status = this.autoTrader.stop(body.reason || 'MANUAL_STOP');
         return this.sendJson(res, 200, status);
       }
       if (pathname === '/api/autotrading/stop-and-close-all' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const result = this.autoTrader.stopAndCloseAll(body.reason || 'MANUAL_STOP_CLOSE_ALL');
         return this.sendJson(res, 200, result);
       }
       if (pathname === '/api/autotrading/kill-switch' && req.method === 'POST') {
+        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const result = this.autoTrader.killSwitch();
         return this.sendJson(res, 200, result);
       }
@@ -1170,6 +1297,25 @@ export class VT2Server {
         }
       }
 
+      // 20i. Alpha Factory Report Data
+      if (pathname === '/api/report/alpha-factory' && req.method === 'GET') {
+        try {
+          const metricsPath = path.join(PROJECT_ROOT, 'reports/alpha-factory/metrics.json');
+          const reportPath = path.join(PROJECT_ROOT, 'reports/alpha-factory/report.md');
+          const metrics = fs.existsSync(metricsPath) ? JSON.parse(fs.readFileSync(metricsPath, 'utf8')) : null;
+          const reportMd = fs.existsSync(reportPath) ? fs.readFileSync(reportPath, 'utf8') : '';
+          return this.sendJson(res, 200, {
+            status: 'SUCCESS',
+            track: 'Track 1 Alpha Factory (Open Theme)',
+            universe: 'Tokenized US Equity Perpetuals (Bitget RWA)',
+            metrics,
+            reportMd,
+          });
+        } catch (err) {
+          return this.sendJson(res, 500, { error: err.message });
+        }
+      }
+
       // 21. Static File Serving (Frontend)
       return this.serveStatic(req, res, pathname);
 
@@ -1179,6 +1325,12 @@ export class VT2Server {
           error: err.code,
           message: err.message,
           securityAlert: true,
+        });
+      }
+      if (err.statusCode === 413 || err.message === 'Payload too large') {
+        return this.sendJson(res, 413, {
+          error: 'PAYLOAD_TOO_LARGE',
+          message: 'Request payload exceeds 100KB limit.',
         });
       }
       console.error('[API Error]', err);
@@ -1225,8 +1377,10 @@ export class VT2Server {
       let body = '';
       req.on('data', chunk => {
         body += chunk;
-        if (body.length > 1e6) { // 1MB limit
-          reject(new Error('Payload too large'));
+        if (body.length > 100 * 1024) { // 100KB limit
+          const err = new Error('Payload too large');
+          err.statusCode = 413;
+          reject(err);
         }
       });
       req.on('end', () => {
@@ -1246,3 +1400,15 @@ export class VT2Server {
     res.end(JSON.stringify(data));
   }
 }
+
+let defaultServerInstance = null;
+
+export async function handleRequest(req, res) {
+  if (!defaultServerInstance) {
+    defaultServerInstance = new VT2Server({
+      demoReadOnly: process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL),
+    });
+  }
+  return defaultServerInstance.handleRequest(req, res);
+}
+

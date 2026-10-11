@@ -79,6 +79,11 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/></svg>
           <span class="nav-label">Backtesting</span>
         </button>
+        <button class="nav-item nav-highlight" data-tab="report" id="navReportTab">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="nav-label">Alpha Factory Report</span>
+          <span class="nav-pill" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">Track 1</span>
+        </button>
         <button class="nav-item" data-tab="environment">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
           <span class="nav-label">System Health</span>
@@ -200,6 +205,17 @@
             </div>
           </div>
           <div id="connectionLatency" class="mono-num">Latency: --ms</div>
+        </div>
+
+        <!-- Hosted Demo Banner (shown when deployMode === 'DEMO_READONLY') -->
+        <div class="alert-banner" id="demoBanner" style="display: none; background: rgba(59, 130, 246, 0.12); border-left: 4px solid #3b82f6; margin-bottom: 12px;">
+          <div class="alert-banner-content">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <div>
+              <strong style="color: #60a5fa;">Hosted Demo (Read-Only Mode):</strong> Live Bitget public market data, in-memory SQLite, no persistent orders or background timers. To run the full autonomous trading engine and paper broker, run locally with <code>npm start</code>. See <a href="https://github.com/Solking-crpto/vt2-trading-bot" target="_blank" style="color: #93c5fd; text-decoration: underline;">GitHub README</a> and demo video.
+            </div>
+          </div>
+          <span class="badge" style="background: #1e3a8a; color: #bfdbfe; font-size: 11px;">VERCEL HOBBY</span>
         </div>
 
         <!-- 1. OVERVIEW TAB -->
@@ -1297,6 +1313,133 @@
                 <input type="checkbox" id="contractDOGE" checked>
                 <span><strong>DOGEUSDT</strong> (Step 10.0)</span>
               </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10. ALPHA FACTORY REPORT TAB -->
+        <section id="tab-report" class="tab-content">
+          <div class="card" style="margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin:0 0 4px 0; font-size:22px;">Alpha Factory Backtest Report (Track 1)</h2>
+                <div style="font-size:13px; color:var(--text-secondary);">
+                  Tokenized US Equity Perpetuals (Bitget RWA) &bull; 15-Minute Candles &bull; 2026 In-Sample &amp; Out-of-Sample
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <a href="/report.html" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">
+                  Open Standalone Report ↗
+                </a>
+                <a href="https://github.com/Solking-crpto/vt2-trading-bot/blob/main/reports/alpha-factory/report.md" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">
+                  View on GitHub ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-4" style="margin-bottom: 20px;">
+            <div class="card">
+              <div class="card-title">In-Sample Sharpe</div>
+              <div class="card-metric text-danger mono-num">-4.15</div>
+              <div class="card-subtext">246 trades (Jan-Jul 2026)</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Out-of-Sample Sharpe</div>
+              <div class="card-metric text-danger mono-num">-6.51</div>
+              <div class="card-subtext">41 trades (Aug-Oct 2026)</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Total Net P&amp;L</div>
+              <div class="card-metric text-danger mono-num">-$2,818.83</div>
+              <div class="card-subtext">-28.25% Total Return</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Total Friction Paid</div>
+              <div class="card-metric text-warning mono-num">$3,430.65</div>
+              <div class="card-subtext">Fees: $2,223.72 | Slip: $889.52</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 20px;">
+            <h3 style="margin-top:0; margin-bottom:12px;">Backtest Equity Curve vs SPY Benchmark</h3>
+            <div style="text-align:center; padding:12px 0;">
+              <img src="/reports/alpha-factory/equity_curve.svg" onerror="this.src='/icon.svg'; this.style.maxHeight='100px';" alt="Equity Curve" style="max-width:100%; height:auto; border-radius:8px; border:1px solid var(--border-color); background:#0f172a;">
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0; margin-bottom:12px;">Audited Performance Summary</h3>
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>In-Sample</th>
+                    <th>Out-of-Sample</th>
+                    <th>Combined</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Trades</strong></td>
+                    <td class="mono-num">246</td>
+                    <td class="mono-num">41</td>
+                    <td class="mono-num">287</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Win Rate</strong></td>
+                    <td class="mono-num">41.46%</td>
+                    <td class="mono-num">39.02%</td>
+                    <td class="mono-num">41.11%</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Net P&amp;L</strong></td>
+                    <td class="mono-num text-danger">-$2,360.18</td>
+                    <td class="mono-num text-danger">-$458.65</td>
+                    <td class="mono-num text-danger">-$2,818.83</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Return %</strong></td>
+                    <td class="mono-num text-danger">-23.13%</td>
+                    <td class="mono-num text-danger">-6.66%</td>
+                    <td class="mono-num text-danger">-28.25%</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sharpe</strong></td>
+                    <td class="mono-num text-danger">-4.15</td>
+                    <td class="mono-num text-danger">-6.51</td>
+                    <td class="mono-num text-danger">-4.46</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Max Drawdown</strong></td>
+                    <td class="mono-num text-danger">25.67%</td>
+                    <td class="mono-num text-danger">8.32%</td>
+                    <td class="mono-num text-danger">30.98%</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Profit Factor</strong></td>
+                    <td class="mono-num">0.71</td>
+                    <td class="mono-num">0.61</td>
+                    <td class="mono-num">0.70</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Turnover</strong></td>
+                    <td class="mono-num">219.40x</td>
+                    <td class="mono-num">37.59x</td>
+                    <td class="mono-num">258.47x</td>
+                    <td><span class="badge badge-neutral">Observed</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </section>

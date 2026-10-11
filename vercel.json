@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "regions": ["sin1"],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "reports/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    }
+  ]
+}

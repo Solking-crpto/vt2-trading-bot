@@ -3,9 +3,19 @@
 **Project Name:** VT2 — Verifiable Trading Technology  
 **Track:** Track 1: Alpha Factory  
 **Theme:** Open Theme (Execution-Aware, Risk-Budgeted Alpha on Tokenized US Equity Perpetuals)  
-**Strategy Hash:** \`541c10ab1dcae7bbaaebe5d8c465730bd118747b\`  
-**Operating Mode:** Strictly \`PAPER\` (Mainnet and Live Execution Architecturally Blocked)  
-**Verified Test Suite:** **92 Tests Passing (0 Failures)**  
+**Strategy Hash:** `541c10ab1dcae7bbaaebe5d8c465730bd118747b`  
+**Operating Mode:** Strictly `PAPER` (Mainnet and Live Execution Architecturally Blocked)  
+**Verified Test Suite:** **94 Tests Passing (0 Failures)**  
+
+---
+
+## Hosted Demo (Zero Installation for Judges)
+
+- **Live URL:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app) *(or your deployed Vercel domain)*
+- **Alpha Factory Standalone Report:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)
+- **Deployment Mode:** `DEPLOY_MODE=DEMO_READONLY` on Vercel Hobby Serverless (Region: `sin1` Singapore, Bitget-accessible edge).
+- **Active Features on Demo:** Live Bitget V2 public market scanner, multi-timeframe interactive chart (SPY, QQQ, NVDA, TSLA, etc.), 3-agent deliberation pipeline (Market Intelligence, Adversarial Review, Deterministic Risk Engine), verification suite, and pre-computed Alpha Factory backtest report.
+- **Local Application Features:** Background `AutoTrader` autonomous loops, `TradeMonitor` sentiment alerts, and disk-persisted SQLite trading journal (`npm start`).
 
 ---
 

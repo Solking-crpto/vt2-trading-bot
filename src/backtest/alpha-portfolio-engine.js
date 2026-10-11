@@ -121,7 +121,7 @@ export class AlphaPortfolioEngine {
   /**
    * Runs the complete chronological portfolio simulation.
    */
-  runPortfolioReplay(symbols) {
+  runPortfolioReplay(symbols, options = {}) {
     const universe = this.loadUniverseData(symbols);
     const availableSymbols = Object.keys(universe);
     if (availableSymbols.length === 0) {
@@ -138,7 +138,10 @@ export class AlphaPortfolioEngine {
         allTimestampsSet.add(c.timestamp);
       }
     }
-    const timeline = Array.from(allTimestampsSet).sort((a, b) => a - b);
+    let timeline = Array.from(allTimestampsSet).sort((a, b) => a - b);
+    if (options.maxBars && options.maxBars < timeline.length) {
+      timeline = timeline.slice(0, options.maxBars);
+    }
 
     // Warmup: need at least 50 4h candles (~8.3 days) and 35 15m candles
     const warmupMs = 40 * 15 * 60 * 1000;

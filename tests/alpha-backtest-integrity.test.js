@@ -82,8 +82,8 @@ test('deterministic replay: two portfolio backtest runs produce identical metric
   const engine2 = new AlphaPortfolioEngine();
 
   const testSymbols = ['SPYUSDT', 'NVDAUSDT'];
-  const res1 = engine1.runPortfolioReplay(testSymbols);
-  const res2 = engine2.runPortfolioReplay(testSymbols);
+  const res1 = engine1.runPortfolioReplay(testSymbols, { maxBars: 300 });
+  const res2 = engine2.runPortfolioReplay(testSymbols, { maxBars: 300 });
 
   assert.equal(res1.trades.length, res2.trades.length, 'Trade count must be identical');
   assert.equal(res1.metrics.summary.total.totalPnl, res2.metrics.summary.total.totalPnl, 'Net P&L must be identical');

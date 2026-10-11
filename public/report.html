@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VT2 — Alpha Factory Backtest Report | Bitget AI Hackathon S2</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <style>
+    .report-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    .report-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .report-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .report-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .report-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .metrics-table th, .metrics-table td {
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+    .metrics-table th {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .metrics-table td {
+      background: var(--bg-card);
+    }
+    .text-neg { color: #f87171; font-weight: 600; }
+    .text-pos { color: #4ade80; font-weight: 600; }
+    .curve-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .curve-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <div class="nav-bar">
+      <a href="/" class="back-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Back to VT2 Live Terminal
+      </a>
+      <a href="https://github.com/Solking-crpto/vt2-trading-bot/blob/main/reports/alpha-factory/report.md" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">
+        View Raw Markdown Report on GitHub ↗
+      </a>
+    </div>
+
+    <header class="report-header">
+      <div class="report-title">
+        <span>Alpha Factory Backtest Report</span>
+        <span class="report-badge">Track 1: Alpha Factory (Open Theme)</span>
+      </div>
+      <p class="report-subtitle">
+        <strong>Bitget AI Hackathon S2 Submission:</strong> Execution-aware, risk-budgeted systematic alpha research conducted on tokenized US equity perpetuals (Bitget RWA) across 19 contracts on a 15-minute timeframe (2026 In-Sample &amp; Out-of-Sample).
+      </p>
+    </header>
+
+    <!-- Executive Summary Cards -->
+    <div class="grid-4" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="card-title">In-Sample Sharpe (Observed)</div>
+        <div class="card-metric text-neg mono-num">-4.15</div>
+        <div class="card-subtext">246 trades (Jan-Jul 2026)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Out-of-Sample Sharpe (Observed)</div>
+        <div class="card-metric text-neg mono-num">-6.51</div>
+        <div class="card-subtext">41 trades (Aug-Oct 2026)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Net P&L (Observed)</div>
+        <div class="card-metric text-neg mono-num">-$2,818.83</div>
+        <div class="card-subtext">-28.25% on $10,000 initial capital</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Trading Friction (Observed)</div>
+        <div class="card-metric mono-num" style="color: #fbbf24;">$3,430.65</div>
+        <div class="card-subtext">Fees: $2,223.72 | Slip: $889.52 | Fund: $317.42</div>
+      </div>
+    </div>
+
+    <!-- Official Performance Metrics Table -->
+    <div class="card" style="margin-bottom: 24px;">
+      <h3 style="margin-top:0; margin-bottom:12px;">Verified In-Sample &amp; Out-of-Sample Performance Table</h3>
+      <div style="overflow-x:auto;">
+        <table class="metrics-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>In-Sample (Train)</th>
+              <th>Out-of-Sample (Test)</th>
+              <th>Combined (Total)</th>
+              <th>Metric Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Period Dates</strong></td>
+              <td>2026-01-01 to 2026-07-31</td>
+              <td>2026-08-01 to 2026-10-10</td>
+              <td>2026-01-01 to 2026-10-10</td>
+              <td><span class="badge badge-neutral">Audited</span></td>
+            </tr>
+            <tr>
+              <td><strong>Trade Count</strong></td>
+              <td class="mono-num">246</td>
+              <td class="mono-num">41</td>
+              <td class="mono-num">287</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Win Rate</strong></td>
+              <td class="mono-num">41.46%</td>
+              <td class="mono-num">39.02%</td>
+              <td class="mono-num">41.11%</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Net P&L ($)</strong></td>
+              <td class="mono-num text-neg">-$2,360.18</td>
+              <td class="mono-num text-neg">-$458.65</td>
+              <td class="mono-num text-neg">-$2,818.83</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Total Return (%)</strong></td>
+              <td class="mono-num text-neg">-23.13%</td>
+              <td class="mono-num text-neg">-6.66%</td>
+              <td class="mono-num text-neg">-28.25%</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Annualized Sharpe</strong></td>
+              <td class="mono-num text-neg">-4.15</td>
+              <td class="mono-num text-neg">-6.51</td>
+              <td class="mono-num text-neg">-4.46</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Annualized Sortino</strong></td>
+              <td class="mono-num text-neg">-5.09</td>
+              <td class="mono-num text-neg">-7.18</td>
+              <td class="mono-num text-neg">-5.39</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Max Drawdown ($ / %)</strong></td>
+              <td class="mono-num text-neg">$2,620.87 (25.67%)</td>
+              <td class="mono-num text-neg">$639.58 (8.32%)</td>
+              <td class="mono-num text-neg">$3,162.53 (30.98%)</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Profit Factor</strong></td>
+              <td class="mono-num">0.71</td>
+              <td class="mono-num">0.61</td>
+              <td class="mono-num">0.70</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Portfolio Turnover</strong></td>
+              <td class="mono-num">219.40x</td>
+              <td class="mono-num">37.59x</td>
+              <td class="mono-num">258.47x</td>
+              <td><span class="badge badge-neutral">Observed</span></td>
+            </tr>
+            <tr>
+              <td><strong>Sharpe Decay Retention</strong></td>
+              <td colspan="2" class="mono-num text-center">N/A (IS Sharpe &lt; 0)</td>
+              <td class="mono-num">N/A</td>
+              <td><span class="badge badge-warning">Integrity Flag</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+        <em>Note on Sharpe Decay:</em> Standard Sharpe decay ratio calculation is not economically meaningful when In-Sample Sharpe is negative, as dividing two negative numbers produces a meaningless positive scalar. Per strict Track 1 rules, these numbers are published uncurve-fitted without revision.
+      </p>
+    </div>
+
+    <!-- Equity Curve Diagram -->
+    <div class="curve-card">
+      <h3 style="margin-top:0; margin-bottom:16px;">Backtest Equity Curve vs SPY Benchmark</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+        Generated directly from out-of-sample tick logs in <code>reports/alpha-factory/equity_curve.svg</code>.
+      </p>
+      <img src="/reports/alpha-factory/equity_curve.svg" onerror="this.src='/icon.svg'; this.style.maxHeight='120px';" alt="Alpha Factory Equity Curve">
+    </div>
+
+    <!-- Friction & Execution Realism -->
+    <div class="card" style="margin-bottom: 24px;">
+      <h3 style="margin-top:0; margin-bottom:12px;">Friction &amp; Execution Budget Breakdown</h3>
+      <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+        Every trade in this backtest includes deterministic transaction costs derived from official Bitget VIP-0 contract fee tiers and realistic liquidity slippage:
+      </p>
+      <div class="grid-3" style="margin-top: 16px;">
+        <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--text-secondary);">Bitget Taker Fees (0.06% entry &amp; exit)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$2,223.72</div>
+        </div>
+        <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--text-secondary);">Simulated Adverse Slippage (0.02%)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$889.52</div>
+        </div>
+        <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
+          <div style="font-size:12px; color:var(--text-secondary);">Perpetual Funding Rate (8h settle)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$317.42</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Methodology & Honesty Note -->
+    <div class="card" style="border-left: 4px solid #3b82f6;">
+      <h3 style="margin-top:0; color:#60a5fa;">Methodological Integrity &amp; Hackathon Compliance</h3>
+      <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+        VT2's submission adheres strictly to academic standards:
+      </p>
+      <ul style="font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 0;">
+        <li><strong>No Post-Hoc Parameter Tuning:</strong> When out-of-sample performance demonstrated drawdown, parameters were intentionally frozen without reselection to avoid p-hacking.</li>
+        <li><strong>Deterministic Rule-Based Execution:</strong> Runtime sizing and execution decisions are 100% deterministic, governed by the mathematical Risk Engine rather than ungrounded LLM completions.</li>
+        <li><strong>Complete Reproducibility:</strong> All data download scripts, validation routines, and backtest engines are open-source in the GitHub repository.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

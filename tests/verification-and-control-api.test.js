@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { VT2Server } from '../src/server.js';
 
 test('VT2Server exposes Verification, Monitor, Auto-trading, and Market Mode endpoints', async () => {
-  const server = new VT2Server({ port: 0, dbPath: ':memory:', forceFixtureMode: true, disableMonitor: true });
+  const server = new VT2Server({ port: 0, dbPath: ':memory:', forceFixtureMode: true, disableMonitor: true, activeMarketMode: 'crypto' });
   server.start();
 
   await new Promise(resolve => {

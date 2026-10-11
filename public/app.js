@@ -42,6 +42,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   registerServiceWorker();
   startCooldownTicker();
 
+  await checkDeployMode();
   await checkFeedStatus();
   await refreshAccount();
   await refreshOrders();
@@ -777,8 +778,64 @@ function setupEventListeners() {
   document.getElementById('checkSentimentBtn')?.addEventListener('click', () => checkPositionSentiment());
 }
 
-// Connect to Server-Sent Events (SSE)
+// Check Deployment Mode (Hosted Demo vs Full Local)
+async function checkDeployMode() {
+  try {
+    const res = await fetch('/api/market/status');
+    const data = await res.json();
+    if (data.deployMode === 'DEMO_READONLY') {
+      state.isDemoReadOnly = true;
+      const demoBanner = document.getElementById('demoBanner');
+      if (demoBanner) demoBanner.style.display = 'flex';
+
+      // Disable write action buttons with descriptive tooltip
+      const writeButtonIds = [
+        'quickTestTradeBtn',
+        'executePaperOrderBtn',
+        'simTickProfitBtn',
+        'simTickStopBtn',
+        'autoStopCloseBtn',
+        'saveSettingsBtn',
+        'startAutoBtn',
+        'stopAutoBtn',
+        'killAutoBtn',
+        'saveRiskBtn',
+        'runBacktestBtn',
+        'topRescanBtn',
+      ];
+      writeButtonIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.disabled = true;
+          btn.title = 'Persistent paper trading and bot execution run in the local app. (Hosted Demo Read-Only)';
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+        }
+      });
+
+      // Close all buttons
+      document.querySelectorAll('[id*="CloseAll"], [id*="closeAll"]').forEach(btn => {
+        btn.disabled = true;
+        btn.title = 'Persistent paper trading and bot execution run in the local app. (Hosted Demo Read-Only)';
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      });
+    }
+  } catch (err) {
+    console.warn('Could not determine deploy mode:', err);
+  }
+}
+
+// Connect to Server-Sent Events (SSE) or Poll in Demo Mode
 function connectSseStream() {
+  if (state.isDemoReadOnly) {
+    console.log('[VT2 Demo] In hosted demo mode; active polling enabled (12s interval).');
+    setInterval(() => {
+      refreshAccount();
+      checkFeedStatus();
+    }, 12000);
+    return;
+  }
   try {
     const sse = new EventSource('/api/stream');
     sse.onmessage = (event) => {

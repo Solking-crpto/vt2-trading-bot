@@ -4,8 +4,40 @@
 **Hackathon Submission:** Bitget AI Hackathon S2 — **Track 1: Alpha Factory**  
 **Sub-Theme:** **Open Theme** (Execution-Aware, Risk-Budgeted Alpha on Tokenized US Equity Perpetuals)  
 **Strategy Hash:** `541c10ab1dcae7bbaaebe5d8c465730bd118747b`  
-**Test Suite:** **92 Tests Passing (0 Failures)**  
+**Test Suite:** **94 Tests Passing (0 Failures)**  
 **Operating Environment:** Strictly `PAPER` (Mainnet Blocked)  
+
+---
+
+## 🌐 Try the Live Hosted Demo
+
+Judges can open and explore VT2 immediately without installing anything:
+
+👉 **Hosted Demo:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app) *(or your deployed Vercel domain)*  
+👉 **Alpha Factory Report Standalone:** [/report.html](https://vt2-trading-bot.vercel.app/report.html)  
+
+### What Works in the Hosted Demo:
+- **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints in Singapore (`sin1`).
+- **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across tokenized US equities (`isRwa === "YES"`) and continuous crypto contracts.
+- **Interactive Multi-Timeframe Chart:** Interactive candlestick chart rendering live Bitget candles with technical indicators (EMA20, EMA50, EMA200, ATR, RSI).
+- **Multi-Agent Deliberation (3 Agents):** Full deliberation pipeline running Market Intelligence Agent, Adversarial Review Agent, and Deterministic Risk Engine evaluation against live market data.
+- **Alpha Factory Backtest Report:** Audited In-Sample vs. Out-of-Sample metrics table, transaction cost breakdowns, and high-resolution SVG equity curve.
+- **Verification Suite & System Health:** Cryptographic signature verifiers, live latency diagnostics, and environment safety guards.
+
+### What Requires Running Locally:
+To run the persistent autonomous bot (`AutoTrader`), background position tick monitor (`TradeMonitor`), or persistent paper trade execution (`data/vt2.db`), run the application locally on Node.js:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Solking-crpto/vt2-trading-bot.git
+cd vt2-trading-bot
+
+# 2. Start the local terminal (zero configuration required, defaults to PAPER mode)
+npm start
+
+# 3. Open in your browser
+http://localhost:3000
+```
 
 ---
 
