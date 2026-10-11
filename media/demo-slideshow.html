@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>VT2: Verifiable Trading Technology - Hackathon Demo Slideshow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #010409; color: #f0f6fc; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    .viewport { width: 1280px; height: 720px; max-width: 95vw; max-height: 80vh; aspect-ratio: 16/9; background: #0a0e17; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+    .viewport img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .controls { margin-top: 20px; display: flex; gap: 16px; align-items: center; }
+    button { background: #21262d; color: #f0f6fc; border: 1px solid #30363d; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 15px; transition: 0.2s; }
+    button:hover { background: #30363d; border-color: #8b949e; }
+    button.active { background: #238636; border-color: #2ea043; }
+    .progress-info { font-size: 16px; color: #8b949e; font-weight: 500; min-width: 140px; text-align: center; }
+    .transcript-box { margin-top: 15px; width: 1280px; max-width: 95vw; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-size: 15px; color: #c9d1d9; line-height: 1.5; min-height: 60px; }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <img id="slideImg" src="slides/slide1.png" alt="Slide">
+  </div>
+  <div class="controls">
+    <button id="prevBtn">&larr; Previous</button>
+    <button id="playBtn" class="active">Pause</button>
+    <button id="nextBtn">Next &rarr;</button>
+    <span class="progress-info" id="progressText">Slide 1 of 8</span>
+  </div>
+  <div class="transcript-box" id="transcriptText">
+    Loading narration...
+  </div>
+  <audio id="slideAudio" src="audio/slide1.wav"></audio>
+
+  <script>
+    const slides = [
+  {
+    "id": 1,
+    "type": "title",
+    "title": "VT2: Verifiable Trading Technology",
+    "subtitle": "Bitget AI Hackathon S2 — Track 1 Alpha Factory (Open Theme)",
+    "caption": "VT2: Verifiable Trading Technology for Tokenized US Equity Perpetuals",
+    "narration": "Welcome to VT2: Verifiable Trading Technology, built for the Bitget AI Hackathon S2 Alpha Factory track. VT2 is a deterministic, risk-budgeted trading system for tokenized US equity perpetuals in paper-only mode."
+  },
+  {
+    "id": 2,
+    "type": "screenshot",
+    "rawImage": "slide2_raw.png",
+    "headerBadge": "OVERVIEW & TERMINAL // REAL-TIME BITGET PUBLIC FEED",
+    "envBadge": "PAPER ENVIRONMENT // MAINNET BLOCKED (403)",
+    "caption": "Live Bitget WebSocket feed with sub-second latency, real-time risk gauges, and Kill Switch",
+    "narration": "The VT2 terminal connects directly to Bitget public WebSocket feeds, showing live ticker data with 519 millisecond latency. The header displays simulated equity of 9,999 dollars, daily loss tracking under our 200 dollar budget, single-position cap, and an immediate Kill Switch."
+  },
+  {
+    "id": 3,
+    "type": "screenshot",
+    "rawImage": "slide3_raw.png",
+    "headerBadge": "MARKET SCANNER // 24 TOKENIZED US EQUITIES",
+    "envBadge": "PAPER ENVIRONMENT // MAINNET BLOCKED (403)",
+    "caption": "Multi-factor filtering across 24 tokenized stocks: ATR, volume, spread, and R:R threshold",
+    "narration": "The Market Scanner evaluates 24 tokenized equity perpetuals using deterministic technical filters. Four contracts currently qualify with net reward-to-risk above 1.5, while disqualified symbols like SanDisk and Rocket Lab are rejected with explicit reasons like RSI overbought."
+  },
+  {
+    "id": 4,
+    "type": "screenshot",
+    "rawImage": "slide4_raw.png",
+    "headerBadge": "AUTOMATED TRADING // 30S EXECUTION LOOP",
+    "envBadge": "PAPER ENVIRONMENT // MAINNET BLOCKED (403)",
+    "caption": "Autonomous execution loop with strict daily trade quota, position caps, and instant vetoes",
+    "narration": "The automated trader runs an autonomous 30-second evaluation loop. Here the bot is running, tracking 1 of 3 allowed daily trades. The activity feed documents a simulated market long fill on Tesla, verified stop loss, and continuous safety checks."
+  },
+  {
+    "id": 5,
+    "type": "screenshot",
+    "rawImage": "slide5_raw.png",
+    "headerBadge": "POSITIONS & ORDERS // REAL-TIME MARK & PROTECTIVE CONTROLS",
+    "envBadge": "PAPER ENVIRONMENT // MAINNET BLOCKED (403)",
+    "caption": "Active simulated position tracking with live mark price, bracket orders, and scenario injection",
+    "narration": "The Positions tab tracks the active paper position on Tesla with real-time mark pricing, unrealised P and L, and bracket orders. Protective simulation controls allow testing sudden market spikes or drops, alongside live sentiment monitoring."
+  },
+  {
+    "id": 6,
+    "type": "screenshot",
+    "rawImage": "slide6_raw.png",
+    "headerBadge": "SETTINGS & RISK ENGINE // DETERMINISTIC RISK BUDGET",
+    "envBadge": "PAPER ENVIRONMENT // MAINNET BLOCKED (403)",
+    "caption": "Strict risk budgeting: 0.5% risk per trade, 2% daily loss limit, 3-loss pause, 30m cooldown",
+    "narration": "The Risk Engine enforces hard mathematical limits: half a percent risk per trade, a 2 percent daily loss cap, single position concurrency, and a 30-minute cooldown after 3 consecutive losses. Parameters are deterministic and cannot be bypassed."
+  },
+  {
+    "id": 7,
+    "type": "alpha_result",
+    "caption": "Honest Alpha Factory Backtest: -28.25% return due to $3,430 friction drag across 287 trades",
+    "narration": "Here is our honest Alpha Factory backtest across 287 trades. The strategy recorded a negative 28.25 percent return and Sharpe of minus 4.46, underperforming the S and P 500 benchmark. Traded friction was the dominant driver: over 3,400 dollars in fees and slippage from 258 times turnover erased gross edge. This rigorous, unfabricated reporting proves why real execution costs matter."
+  },
+  {
+    "id": 8,
+    "type": "close",
+    "caption": "No language model makes trading decisions. Rules do. AI coding assistants helped build it.",
+    "narration": "VT2 proves verifiable, execution-aware systems with zero fabricated claims. Explore the full open-source codebase on GitHub and test the hosted read-only demo. Remember: No language model makes trading decisions. Rules do. AI coding assistants helped build it."
+  }
+];
+    let currentIdx = 0;
+    let isPlaying = true;
+    const imgEl = document.getElementById('slideImg');
+    const audioEl = document.getElementById('slideAudio');
+    const progressEl = document.getElementById('progressText');
+    const transcriptEl = document.getElementById('transcriptText');
+    const playBtn = document.getElementById('playBtn');
+
+    function showSlide(idx) {
+      if (idx < 0) idx = 0;
+      if (idx >= slides.length) idx = 0;
+      currentIdx = idx;
+      const s = slides[currentIdx];
+      imgEl.src = 'slides/slide' + s.id + '.png';
+      audioEl.src = 'audio/slide' + s.id + '.wav';
+      progressEl.textContent = 'Slide ' + (currentIdx + 1) + ' of ' + slides.length;
+      transcriptEl.innerHTML = '<strong>Narration:</strong> ' + s.narration;
+      if (isPlaying) {
+        audioEl.play().catch(() => {});
+      }
+    }
+
+    audioEl.addEventListener('ended', () => {
+      if (isPlaying) {
+        setTimeout(() => {
+          if (isPlaying) {
+            showSlide(currentIdx + 1);
+          }
+        }, 1000);
+      }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      showSlide(currentIdx - 1);
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      showSlide(currentIdx + 1);
+    });
+
+    playBtn.addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        playBtn.textContent = 'Pause';
+        playBtn.className = 'active';
+        audioEl.play().catch(() => {});
+      } else {
+        playBtn.textContent = 'Play';
+        playBtn.className = '';
+        audioEl.pause();
+      }
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body { width: 1920px; height: 1080px; background: #0a0e17; color: #f0f6fc; overflow: hidden; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+  .header { padding: 30px 60px; display: flex; justify-content: space-between; align-items: center; }
+  .hackathon-badge { font-size: 20px; font-weight: 700; color: #58a6ff; background: rgba(56, 139, 253, 0.15); padding: 8px 20px; border-radius: 8px; border: 1px solid rgba(56, 139, 253, 0.4); letter-spacing: 1px; }
+  .hero { text-align: center; margin-top: 20px; }
+  .hero-tag { font-size: 24px; font-weight: 700; color: #39d353; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; }
+  .hero-title { font-size: 72px; font-weight: 900; color: #ffffff; letter-spacing: -1px; text-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+  .hero-subtitle { font-size: 32px; font-weight: 400; color: #8b949e; margin-top: 10px; letter-spacing: 1px; }
+  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding: 0 60px; margin-top: 30px; }
+  .pillar-card { background: rgba(22, 27, 34, 0.85); border: 1px solid #30363d; border-radius: 12px; padding: 26px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-top: 3px solid #58a6ff; }
+  .pillar-title { font-size: 20px; font-weight: 700; color: #58a6ff; margin-bottom: 10px; }
+  .pillar-desc { font-size: 16px; color: #c9d1d9; line-height: 1.5; }
+  .caption-bar { height: 110px; background: rgba(13, 17, 23, 0.96); border-top: 2px solid #58a6ff; display: flex; align-items: center; justify-content: center; padding: 0 50px; }
+  .caption-text { font-size: 36px; font-weight: 600; color: #ffffff; text-align: center; }
+  .footer { height: 35px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #8b949e; letter-spacing: 1px; font-weight: 500; background: #010409; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="hackathon-badge">BITGET AI HACKATHON S2 // TRACK 1 ALPHA FACTORY (OPEN THEME)</div>
+    <div style="font-size: 18px; color: #f85149; font-weight: 600; background: rgba(248,81,73,0.15); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(248,81,73,0.3);">PAPER MODE // REAL-TIME AUDIT</div>
+  </div>
+  <div class="hero">
+    <div class="hero-tag">THINK. VERIFY. TRADE.</div>
+    <h1 class="hero-title">VT2: Verifiable Trading Technology</h1>
+    <div class="hero-subtitle">Execution-Aware Alpha on Tokenized US Equity Perpetuals</div>
+  </div>
+  <div class="pillars">
+    <div class="pillar-card">
+      <div class="pillar-title">1. Deterministic Engine</div>
+      <div class="pillar-desc">Multi-factor scanner & rule-based execution. Zero probabilistic LLM latency or hallucination in the live trade loop.</div>
+    </div>
+    <div class="pillar-card" style="border-top-color: #39d353;">
+      <div class="pillar-title" style="color: #39d353;">2. 24 Tokenized Stocks</div>
+      <div class="pillar-desc">Public Bitget WebSocket stream with 500ms latency. High-volume US equities (TSLA, NVDA, AAPL, QQQ, SPY).</div>
+    </div>
+    <div class="pillar-card" style="border-top-color: #d29922;">
+      <div class="pillar-title" style="color: #d29922;">3. Hard Risk Budget</div>
+      <div class="pillar-desc">Strict 0.5% risk per trade, 2% daily loss limit, 3-loss circuit pause, 30m cooldown, and immediate Kill Switch.</div>
+    </div>
+    <div class="pillar-card" style="border-top-color: #a371f7;">
+      <div class="pillar-title" style="color: #a371f7;">4. Verifiable Ledger</div>
+      <div class="pillar-desc">Durable SQLite audit journal logging every order, fill, fee, and risk evaluation for post-trade proof.</div>
+    </div>
+  </div>
+  <div>
+    <div class="caption-bar">
+      <div class="caption-text">VT2: Verifiable Trading Technology for Tokenized US Equity Perpetuals</div>
+    </div>
+    <div class="footer">Paper trading only. No real orders. Mainnet blocked.</div>
+  </div>
+</body>
+</html>

@@ -41,6 +41,38 @@ http://localhost:3000
 
 ---
 
+## 📸 Screenshots & System Interface
+
+The interface operates in strictly verified **PAPER** mode connected directly to Bitget's live public market data feeds:
+
+### 1. Overview & Terminal
+![Overview & Terminal](media/overview%20%26%20terminal.png)
+*Live sub-second Bitget WebSocket ticker feed (519ms latency), simulated equity tracking ($9,999.85), daily loss budget gauge ($0.15 of $200.00 limit), position cap (1/1 Max), and instantaneous emergency Kill Switch.*
+
+### 2. Market Scanner
+![Market Scanner](media/Market%20scanner.png)
+*Real-time scanner across 24 tokenized US equity perpetuals (`isRwa === "YES"`), ranking qualified opportunities with Net R:R >= 1.5 (COST, AMAT, QCOM, QQQ) and displaying disqualified contracts with deterministic rejection reasons (`RSI_OVERBOUGHT`).*
+
+### 3. Automated Trading Loop
+![Automated Trading](media/automated%20trading.png)
+*Autonomous 30-second paper execution loop (`BOT: RUNNING`), enforcing a 3-trade daily quota (1/3 used), position cap (1/2), and logging TSLA market order execution with automated bracket stops.*
+
+### 4. Positions & Orders
+![Positions & Orders](media/positions%20%26%20order.png)
+*Active simulated position tracking (`paper-pos-8fe9e8bd` TSLAUSDT LONG at $383.7367), mark pricing, unrealised P&L, protective scenario controls (+1.2% spike, -0.8% drop), and sentiment monitoring.*
+
+### 5. Settings & Deterministic Risk Engine
+![Settings & Risk](media/settings%20%26%20risk.png)
+*Hard-coded mathematical risk guardrails: 0.5% risk per trade, 2% daily loss limit, max 1 concurrent position, 3 consecutive loss circuit pause, and 30-minute cooldown.*
+
+### 🎬 Hackathon Demo Video & Interactive Slideshow
+- **Full Narrated Demo Video (1080p MP4):** `media/vt2-demo.mp4` (Duration: 2m 26s, TTS narrated, high-contrast captions).
+- **Captions-Only Demo Video:** `media/vt2-demo-captions-only.mp4`.
+- **Interactive Slideshow Fallback:** Open [`media/demo-slideshow.html`](media/demo-slideshow.html) in any browser for an interactive self-playing presentation.
+- **Narration Script:** Complete slide breakdown in [`docs/demo-script.md`](docs/demo-script.md).
+
+---
+
 ## 📖 What is VT2?
 
 **VT2** is an institutional-grade quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.

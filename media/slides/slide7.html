@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body { width: 1920px; height: 1080px; background: #0a0e17; color: #f0f6fc; overflow: hidden; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+  .header { padding: 25px 60px; display: flex; justify-content: space-between; align-items: center; }
+  .badge { font-size: 20px; font-weight: 700; color: #58a6ff; background: rgba(56, 139, 253, 0.15); padding: 8px 18px; border-radius: 8px; border: 1px solid rgba(56, 139, 253, 0.4); }
+  .meta-tag { font-size: 18px; font-weight: 600; color: #d29922; background: rgba(210, 153, 34, 0.15); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(210, 153, 34, 0.3); }
+  
+  .content { padding: 0 60px; display: flex; flex-direction: column; gap: 24px; }
+  
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .metric-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; text-align: left; }
+  .metric-label { font-size: 14px; font-weight: 600; color: #8b949e; letter-spacing: 0.5px; text-transform: uppercase; }
+  .metric-value { font-size: 32px; font-weight: 800; margin-top: 6px; }
+  .metric-sub { font-size: 14px; color: #8b949e; margin-top: 4px; }
+  
+  .val-danger { color: #f85149; }
+  .val-warning { color: #d29922; }
+  .val-success { color: #39d353; }
+  .val-info { color: #58a6ff; }
+  
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; }
+  .detail-panel { background: rgba(22, 27, 34, 0.9); border: 1px solid #30363d; border-radius: 10px; padding: 22px; }
+  .panel-title { font-size: 18px; font-weight: 700; color: #c9d1d9; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; }
+  .panel-row { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 10px; }
+  .row-label { color: #8b949e; }
+  .row-val { font-weight: 600; color: #f0f6fc; }
+  
+  .analysis-text { font-size: 15px; color: #c9d1d9; line-height: 1.6; }
+  .highlight-box { background: rgba(248, 81, 73, 0.1); border-left: 4px solid #f85149; padding: 10px 14px; margin-top: 12px; font-size: 14px; color: #ff7b72; }
+
+  .caption-bar { height: 110px; background: rgba(13, 17, 23, 0.96); border-top: 2px solid #58a6ff; display: flex; align-items: center; justify-content: center; padding: 0 50px; }
+  .caption-text { font-size: 36px; font-weight: 600; color: #ffffff; text-align: center; }
+  .footer { height: 35px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #8b949e; letter-spacing: 1px; font-weight: 500; background: #010409; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="badge">ALPHA FACTORY BACKTEST // RIGOROUS OUT-OF-SAMPLE VERIFICATION</div>
+    <div class="meta-tag">FROZEN CONFIG // 287 TRADES ACROSS 19 SYMBOLS</div>
+  </div>
+
+  <div class="content">
+    <div class="metrics-grid">
+      <div class="metric-card" style="border-top: 3px solid #f85149;">
+        <div class="metric-label">Total Net Return</div>
+        <div class="metric-value val-danger">-28.25%</div>
+        <div class="metric-sub">Net P&L: -$2,818.83 on $10k equity</div>
+      </div>
+      <div class="metric-card" style="border-top: 3px solid #d29922;">
+        <div class="metric-label">Risk-Adjusted Ratios</div>
+        <div class="metric-value val-warning">Sharpe: -4.46</div>
+        <div class="metric-sub">Sortino: -5.39 | Win Rate: 41.11%</div>
+      </div>
+      <div class="metric-card" style="border-top: 3px solid #f85149;">
+        <div class="metric-label">Total Friction Paid</div>
+        <div class="metric-value val-danger">-$3,430.65</div>
+        <div class="metric-sub">Fees: $2,223.72 | Slip: $889.52 | Fund: $317.42</div>
+      </div>
+      <div class="metric-card" style="border-top: 3px solid #39d353;">
+        <div class="metric-label">SPY Benchmark (Buy & Hold)</div>
+        <div class="metric-value val-success">+4.97%</div>
+        <div class="metric-sub">Max Drawdown: 5.21% (Bot: 30.98%)</div>
+      </div>
+    </div>
+
+    <div class="details-grid">
+      <div class="detail-panel">
+        <div class="panel-title">In-Sample Performance (IS)</div>
+        <div class="panel-row"><span class="row-label">Trade Count:</span><span class="row-val">246 trades</span></div>
+        <div class="panel-row"><span class="row-label">Win Rate:</span><span class="row-val">41.46%</span></div>
+        <div class="panel-row"><span class="row-label">Net P&L:</span><span class="row-val val-danger">-$2,360.18 (-23.13%)</span></div>
+        <div class="panel-row"><span class="row-label">Annualized Sharpe:</span><span class="row-val">-4.15</span></div>
+        <div class="panel-row"><span class="row-label">Turnover:</span><span class="row-val">219.40x</span></div>
+      </div>
+
+      <div class="detail-panel">
+        <div class="panel-title">Out-of-Sample Validation (OOS)</div>
+        <div class="panel-row"><span class="row-label">Trade Count:</span><span class="row-val">41 trades</span></div>
+        <div class="panel-row"><span class="row-label">Win Rate:</span><span class="row-val">39.02%</span></div>
+        <div class="panel-row"><span class="row-label">Net P&L:</span><span class="row-val val-danger">-$458.65 (-6.66%)</span></div>
+        <div class="panel-row"><span class="row-label">Annualized Sharpe:</span><span class="row-val">-6.51</span></div>
+        <div class="panel-row"><span class="row-label">Turnover:</span><span class="row-val">37.59x</span></div>
+      </div>
+
+      <div class="detail-panel">
+        <div class="panel-title">Execution-Aware Root Cause Analysis</div>
+        <div class="analysis-text">
+          <strong>Cost Drag Dominated Edge:</strong> High trading frequency (258.47x total turnover) incurred <strong>$3,430.65</strong> in taker fees, bid-ask slippage, and funding.
+        </div>
+        <div class="highlight-box">
+          <strong>Honest Reporting:</strong> Unfavorable out-of-sample results are reported exactly as computed. No post-hoc curve-fitting or synthetic alpha claims.
+        </div>
+        <div style="font-size: 13px; color: #8b949e; margin-top: 10px;">
+          Next iteration: Higher-timeframe (4h) regime filter + wider profit targets to overcome taker friction.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="caption-bar">
+      <div class="caption-text">Honest Alpha Factory Backtest: -28.25% return due to $3,430 friction drag across 287 trades</div>
+    </div>
+    <div class="footer">Paper trading only. No real orders. Mainnet blocked.</div>
+  </div>
+</body>
+</html>

@@ -13,3 +13,8 @@ data/archive/
 data/history/
 reports/alpha-factory/trades.csv
 reports/alpha-factory/equity_curve.csv
+# Media and video artifacts
+media/*.mp4
+media/slides/*.mp4
+media/audio/
+
