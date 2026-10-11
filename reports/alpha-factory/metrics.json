@@ -1,0 +1,190 @@
+{
+  "summary": {
+    "total": {
+      "label": "TOTAL",
+      "tradeCount": 288,
+      "winRate": 40.97,
+      "totalPnl": -1439.9,
+      "totalReturnPct": -28.71,
+      "annualizedSharpe": -4.52,
+      "annualizedSortino": -5.43,
+      "maxDrawdownDollars": 3207.11,
+      "maxDrawdownPct": 31.41,
+      "avgWinDollars": 60.51,
+      "avgLossDollars": 50.47,
+      "profitFactor": 0.83,
+      "turnover": 259.43
+    },
+    "inSample": {
+      "label": "IN_SAMPLE",
+      "tradeCount": 247,
+      "winRate": 41.3,
+      "totalPnl": -1178.89,
+      "totalReturnPct": -23.62,
+      "annualizedSharpe": -4.22,
+      "annualizedSortino": -5.15,
+      "maxDrawdownDollars": 2669.18,
+      "maxDrawdownPct": 26.14,
+      "avgWinDollars": 62.12,
+      "avgLossDollars": 51.83,
+      "profitFactor": 0.84,
+      "turnover": 220.48
+    },
+    "outOfSample": {
+      "label": "OUT_OF_SAMPLE",
+      "tradeCount": 41,
+      "winRate": 39.02,
+      "totalPnl": -261.01,
+      "totalReturnPct": -6.66,
+      "annualizedSharpe": -6.5,
+      "annualizedSortino": -7.18,
+      "maxDrawdownDollars": 635.24,
+      "maxDrawdownPct": 8.32,
+      "avgWinDollars": 50.2,
+      "avgLossDollars": 42.57,
+      "profitFactor": 0.75,
+      "turnover": 37.59
+    },
+    "sharpeDecay": {
+      "isSharpe": -4.22,
+      "oosSharpe": -6.5,
+      "decayRatio": 1,
+      "decayAlertFlag": false
+    }
+  },
+  "costs": {
+    "totalFeesPaid": 2226.11,
+    "totalSlippagePaid": 17433.51,
+    "totalFundingPaid": 316.18,
+    "totalTradingCosts": 19975.8
+  },
+  "exposureTimePct": 88.56,
+  "benchmarks": {
+    "spyBuyAndHold": {
+      "initialPrice": 743.04,
+      "finalPrice": 779.98,
+      "totalReturnPct": 4.97,
+      "maxDrawdownPct": 5.21
+    },
+    "equalWeightBasket": {
+      "symbolCount": 19,
+      "totalReturnPct": 4.94
+    }
+  },
+  "perSymbol": [
+    {
+      "symbol": "NVDAUSDT",
+      "trades": 30,
+      "winRate": 53.3,
+      "pnl": 305.27
+    },
+    {
+      "symbol": "SOXLUSDT",
+      "trades": 23,
+      "winRate": 47.8,
+      "pnl": 49.91
+    },
+    {
+      "symbol": "MSFTUSDT",
+      "trades": 24,
+      "winRate": 45.8,
+      "pnl": 40.49
+    },
+    {
+      "symbol": "QCOMUSDT",
+      "trades": 4,
+      "winRate": 50,
+      "pnl": 36.17
+    },
+    {
+      "symbol": "SNDKUSDT",
+      "trades": 6,
+      "winRate": 50,
+      "pnl": 30.83
+    },
+    {
+      "symbol": "AVGOUSDT",
+      "trades": 4,
+      "winRate": 50,
+      "pnl": 20.01
+    },
+    {
+      "symbol": "AMDUSDT",
+      "trades": 4,
+      "winRate": 50,
+      "pnl": 11.56
+    },
+    {
+      "symbol": "WMTUSDT",
+      "trades": 4,
+      "winRate": 50,
+      "pnl": -4.54
+    },
+    {
+      "symbol": "MUUSDT",
+      "trades": 12,
+      "winRate": 41.7,
+      "pnl": -10.24
+    },
+    {
+      "symbol": "SMCIUSDT",
+      "trades": 3,
+      "winRate": 33.3,
+      "pnl": -27.25
+    },
+    {
+      "symbol": "SQQQUSDT",
+      "trades": 5,
+      "winRate": 40,
+      "pnl": -46.47
+    },
+    {
+      "symbol": "COSTUSDT",
+      "trades": 10,
+      "winRate": 40,
+      "pnl": -52.11
+    },
+    {
+      "symbol": "PLTRUSDT",
+      "trades": 14,
+      "winRate": 42.9,
+      "pnl": -57.3
+    },
+    {
+      "symbol": "QQQUSDT",
+      "trades": 21,
+      "winRate": 42.9,
+      "pnl": -102.12
+    },
+    {
+      "symbol": "RKLBUSDT",
+      "trades": 2,
+      "winRate": 0,
+      "pnl": -103.86
+    },
+    {
+      "symbol": "AMZNUSDT",
+      "trades": 20,
+      "winRate": 40,
+      "pnl": -131.14
+    },
+    {
+      "symbol": "TSLAUSDT",
+      "trades": 23,
+      "winRate": 39.1,
+      "pnl": -150.02
+    },
+    {
+      "symbol": "AAPLUSDT",
+      "trades": 20,
+      "winRate": 40,
+      "pnl": -153.81
+    },
+    {
+      "symbol": "SPYUSDT",
+      "trades": 59,
+      "winRate": 28.8,
+      "pnl": -1095.28
+    }
+  ]
+}

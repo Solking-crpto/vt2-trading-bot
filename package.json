@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "node --test --test-force-exit --test-timeout=60000"
+    "test": "node --test --test-force-exit --test-timeout=60000",
+    "backtest:alpha": "node scripts/run-alpha-backtest.js"
   },
   "keywords": [
     "trading-bot",

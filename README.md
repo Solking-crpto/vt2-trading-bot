@@ -1,49 +1,100 @@
 # VT2 — Verifiable Trading Technology
 
-**Tagline:** *Think. Verify. Trade.*
-
-VT2 is a quantitative trading terminal and research platform built for Bitget USDT perpetual markets. It combines multi-timeframe algorithmic market scanning, multi-agent AI deliberation (Market Intelligence & Adversarial Review), and deterministic risk engine enforcement with zero live-capital risk.
-
----
-
-## ⚡ Key Highlights
-
-- **Strict Paper Trading Only:** Live mainnet order execution is architecturally blocked on both client and server (`MAINNET_EXECUTION_BLOCKED`).
-- **Official Bitget Architecture:** Evaluated against official Bitget Agent Hub, `@bitget-ai/bitget-agent-sdk`, and UTA v2/v3 REST endpoints.
-- **Deterministic Risk Engine:** Pure code with absolute veto authority over all AI agent recommendations (enforces 0.5% risk/trade, 2% daily loss stop, 3-loss pause, 30m cooldown, min 1.5 net R:R).
-- **Multi-Agent Deliberation:** Separates Market Intelligence (thesis generation) from Adversarial Review (thesis destruction) and Deterministic Risk Controls.
-- **High-DPI Canvas Charting:** Native responsive candlestick chart with EMA (20/50/200), RSI (14), and Volume overlays.
-- **Chronological Walk-Forward Backtester:** Eliminates look-ahead bias and conservatively assumes stop-loss first on ambiguous candles.
-- **Durable Persistence:** Uses Node.js v26 native `node:sqlite` (`data/vt2.db`) for durable paper positions, orders, settings, and journal records.
-- **Zero Heavy Dependencies:** Starts in milliseconds, runs natively on Node.js 20+ / 22+ / 26+.
+**Tagline:** *Think. Verify. Trade.*  
+**Hackathon Submission:** Bitget AI Hackathon S2 — **Track 1: Alpha Factory**  
+**Sub-Theme:** **Open Theme** (Execution-Aware, Risk-Budgeted Alpha on Tokenized US Equity Perpetuals)  
+**Strategy Hash:** `541c10ab1dcae7bbaaebe5d8c465730bd118747b`  
+**Test Suite:** **92 Tests Passing (0 Failures)**  
+**Operating Environment:** Strictly `PAPER` (Mainnet Blocked)  
 
 ---
 
-## 🏗️ Architecture
+## 📖 What is VT2?
+
+**VT2** is an institutional-grade quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.
+
+VT2 was engineered specifically to solve the execution and risk realities of trading tokenized equities 24/7: accounting for underlying TradFi exchange hours, adverse funding carry, taker fee drag, and order quantity step-size quantization without endangering real capital.
+
+---
+
+## 🏗️ Architecture & Components
 
 ```mermaid
-flowchart LR
-    UI["Terminal UI (Web & PWA)"] -->|HTTP / SSE| Server["Node.js HTTP Server"]
-    Server --> Guard["Security & Environment Guard"]
-    Guard --> Strategy["Strategy & Scanner (4h/15m/5m)"]
-    Guard --> AI["Multi-Agent AI Coordinator"]
-    Guard --> Risk["Deterministic Risk Engine"]
-    Guard --> Paper["Paper Execution Engine"]
-    Guard --> BT["Backtesting Engine"]
-    Paper --> DB[("Native SQLite Database")]
+flowchart TD
+    subgraph MarketData ["1. Ingestion & Connectivity"]
+        BG_REST["Bitget V2 REST API (Public)"]
+        BG_WS["Bitget V2 WebSocket (Ticker Heartbeat)"]
+        RWA["Dynamic RWA Classifier (isRwa === YES)"]
+    end
+
+    subgraph Strategy ["2. Quantitative Strategy Engine"]
+        MTF["Multi-Timeframe Analysis (4h / 15m / 5m)"]
+        SPY_BENCH["S&P 500 (SPY) Macro Alignment"]
+        ATR_STOP["Bounded ATR Risk Brackets (0.5% - 0.8%)"]
+    end
+
+    subgraph Agents ["3. Multi-Agent Deliberation"]
+        MIA["Market Intelligence Agent (Quantitative Thesis)"]
+        ARA["Adversarial Review Agent (Counter-Hypothesis & Stress Test)"]
+        EC["Execution Coordinator (Deterministic Gateway)"]
+    end
+
+    subgraph Risk ["4. Deterministic Risk Engine"]
+        SIZING["0.5% Risk-per-Trade Sizing"]
+        CAPS["Max Daily Loss (2%) & Consecutive Loss Pause (3)"]
+        COOLDOWN["30-Minute Cooldown & Correlation Guard"]
+    end
+
+    subgraph Execution ["5. Execution & Persistence"]
+        PAPER["Paper Engine (Partial TP +1.1%, Trailing, Breakeven)"]
+        SQLITE[("Node.js Native SQLite (data/vt2.db)")]
+    end
+
+    BG_REST --> MTF
+    BG_WS --> MTF
+    RWA --> MTF
+    MTF --> SPY_BENCH --> ATR_STOP --> MIA
+    MIA --> ARA --> EC
+    EC --> SIZING --> CAPS --> COOLDOWN
+    COOLDOWN --> PAPER --> SQLITE
 ```
+
+### Component Details (One Paragraph per Component)
+
+1. **Market Data & Ingestion Adapter (`src/adapters/bitget-adapter.js`, `src/adapters/bitget-ws.js`):** Interacts exclusively with Bitget's public V2 REST and WebSocket endpoints. Dynamically discovers tokenized US equities at startup via `isRwa === "YES"`, validates strict ascending chronological candle order with `assertCandleIntegrity`, and streams sub-second ticker updates with automated heartbeat latency tracking.
+2. **Quantitative Strategy Engine (`src/strategy/engine.js`):** Performs multi-timeframe trend alignment using 4h, 15m, and 5m exponential moving averages (EMA20/50/200), RSI momentum filters, and volume expansion confirmation. Equity setups are strictly benchmarked against closed 4h candles of the S&P 500 ETF (`SPYUSDT`) to eliminate cross-asset hallucination.
+3. **Multi-Agent Deliberation Pipeline (`src/agents/index.js`):** Employs three deterministic, rule-based algorithmic agents. The *Market Intelligence Agent* formulates mathematical directional theses; the *Adversarial Review Agent* stress-tests candidate setups against benchmark divergence, slippage, and taker fees; and the *Execution Coordinator* enforces risk approvals without neural network black boxes.
+4. **Deterministic Risk Engine (`src/risk-engine.js`):** Enforces non-negotiable risk boundaries with absolute veto authority. It sizes positions to exactly 0.5% equity risk, enforces a 2% daily loss hard stop, locks entries after 3 consecutive losses, requires a 30-minute cooldown, and prevents opposite exposure in correlation groups (e.g. Long QQQ vs Long SQQQ).
+5. **Paper Execution Engine (`src/execution/paper-engine.js`):** Simulates real exchange order execution using contract specifications (`minTradeNum`, `sizeMultiplier`). Manages position lifecycles including partial take-profit at +1.1% ROI (closing 50% and moving stop to breakeven + 0.05%), trailing stops following 5m EMA20 after 10% ROI, and durable state persistence via Node.js native `node:sqlite`.
+6. **Alpha Factory Backtesting Engine (`src/backtest/alpha-portfolio-engine.js`):** Replays chronological walk-forward portfolio simulations across all verified RWA contracts using a shared equity account. Eliminates look-ahead bias by evaluating only closed 4h bars and current 15m bars, fills orders at the *next bar open* plus slippage, and resolves ambiguous candles with conservative *stop-loss first* execution.
+7. **Verification & Security Guard (`src/environment.js`, `src/server.js`):** A hardened security perimeter that enforces an immutable environment allow-list. Any request to activate `MAINNET` or route live exchange orders is intercepted and rejected with HTTP 403 `MAINNET_EXECUTION_BLOCKED`.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 How to Run
 
-### 1. Run Automated Test Suite
+### Prerequisites
+- Node.js v20.x, v22.x, or v26.x
+- npm v10+
+
+### 1. Installation
+```bash
+npm install
+```
+
+### 2. Run Comprehensive Automated Test Suite
 ```bash
 npm test
 ```
-All **53 automated tests** run and pass across unit, risk, paper execution, backtest, state restore, and Bitget auth signature suites.
+*Executes all **92 unit, risk, paper execution, backtest integrity, and security tests**. Exits automatically in under 4 seconds with 0 failures.*
 
-### 2. Start VT2 Platform
+### 3. Run Alpha Factory Portfolio Backtest
+```bash
+npm run backtest:alpha
+```
+*Executes chronological portfolio replay across 19 verified tokenized equity contracts over 150 days (~288 trades), computing In-Sample (IS), Out-of-Sample (OOS), Sharpe decay, benchmark comparisons, and saving reports in `reports/alpha-factory/`.*
+
+### 4. Launch Live Paper Trading Terminal
 ```bash
 npm start
 ```
@@ -54,103 +105,21 @@ http://localhost:3000
 
 ---
 
-## 🛡️ Deterministic Risk Engine Policy
+## 🛡️ Safety Design & Environment Allow-List
 
-The deterministic risk engine (`src/risk-engine.js`) enforces:
-
-| Constraint | Limit |
-|---|---|
-| Initial Paper Capital | $10,000 USDT |
-| Paper Risk per Trade | 0.5% ($50 max risk) |
-| Daily Loss Limit | 2.0% ($200 hard stop of start-of-day equity) |
-| Consecutive Losses | 3 losses maximum -> Trading Pause |
-| Max Open Positions | 1 position concurrent |
-| Post-Trade Cooldown | 30 minutes |
-| Minimum Net Reward:Risk | 1.5:1 after modeled fees & slippage |
-| Research Stop Distance | 0.5% min to 0.8% max distance |
-| Signal Freshness | Max 10 minutes |
+VT2 guarantees **zero live capital risk**:
+- **Environment Allow-List:** Only the literal string `'PAPER'` is permitted by the runtime. Any payload containing `MAINNET`, `LIVE`, `PROD`, `REAL`, whitespace variants, or nested evasion shapes returns HTTP 403 `MAINNET_EXECUTION_BLOCKED`.
+- **API Guard:** Endpoints `/api/orders/live` and `/api/orders/mainnet` unconditionally return HTTP 403 with a security alert log.
+- **Zero Withdrawal Permissions:** No withdrawal logic or private key signing infrastructure exists in the codebase.
+- **Durable Audit Trail:** All vetoes and risk engine rejections are permanently recorded in SQLite (`data/vt2.db`).
 
 ---
 
-## 🤖 Deterministic Multi-Agent Deliberation System
+## ⚖️ Honest Quantitative Limitations & Backtest Findings
 
-VT2 uses a transparent, deterministic multi-agent rule architecture (no external LLM required):
+The Alpha Factory portfolio backtest was conducted under strict, non-negotiable quantitative honesty:
 
-1. **Market Intelligence Agent:** Algorithmic rules agent that synthesizes multi-timeframe trend alignment (4h/15m EMA), RSI momentum, and benchmark market regime (SPY for stocks, BTC for crypto) into a directional conviction score.
-2. **Adversarial Review Agent:** Quantitative stress-testing agent that evaluates contra-trend volatility, ATR extensions, resistance proximity, and session conditions to formulate explicit counter-theses and apply score penalties.
-3. **Multi-Agent Coordinator:** Deterministic rule arbiter that resolves thesis and antithesis, verifies account risk gates (cooldowns, daily loss locks), and issues final approval or veto decisions.
-4. **Deterministic Risk Engine:** Mathematical veto authority that enforces hard boundary constraints (0.5% risk/trade, 2% daily loss cap, 3-loss pause, 30m cooldown) before any paper trade can execute.
-
----
-
-## 🖥️ 12 Functional Areas of the Trading Terminal
-
-1. **Overview & Account Dashboard:** Real-time simulated equity, daily loss tracking, exposure gauge, BTC macro trend filter, and top-ranked opportunity.
-2. **Live Market Scanner:** Qualified and rejected setup lists with multi-timeframe indicator metrics and score ranking.
-3. **Interactive Analysis:** High-DPI candlestick chart with EMA overlays (20/50/200), RSI (14), and zero look-ahead bias.
-4. **AI Market Intelligence Agent:** Detailed thesis generation, supporting evidence, confidence score, and invalidation triggers.
-5. **Adversarial Review Agent:** Independent challenge of thesis assumptions, counter-evidence, and survivability verdicts.
-6. **Deterministic Risk Engine:** Mathematical veto checks and interactive sandbox rule evaluator.
-7. **Order Management & Execution History:** Full order lifecycle audit trail (Requested, Fill Price, Quantity, Fee, Status).
-8. **Open Positions & Protective Controls:** Unrealized P&L, 50% partial TP (+1.1%), breakeven move (+0.14%), trailing stops, and early RSI exits.
-9. **Backtesting & Strategy Performance:** Chronological walk-forward simulator with stop-first ambiguity resolution.
-10. **Trade Journal & Rejected Archive:** Durable trade records and historical archive of disqualified setups.
-11. **Exchange Connectivity, Environment Isolation & System Health:** Node diagnostics, memory vitals, and 10 independent safeguards status.
-12. **System & Strategy Settings:** Configurable risk limits, indicator parameters, and eligible perpetual contracts universe.
-
----
-
-## 🎚️ Entry Size Allocation Control (1% - 100%)
-
-VT2 provides an adjustable **Entry Size Allocation (%)** control accessible in both the Settings tab and the AI Deliberation panel:
-- **Range:** 1% to 100% via linked interactive slider and numeric input.
-- **Allocation Base vs. Equity Risk:** This percentage determines what fraction of the configured trading allocation base is used to size the proposed entry ($Q = \text{rawQuantity} \times \frac{\text{allocation}}{100}$). **It is strictly distinct from account equity at risk.**
-- **Deterministic Risk Engine Authority:** Even at 100% allocation, maximum loss at the stop-loss is hard-capped at 0.50% of account equity ($50 max risk on $10,000 equity). Daily loss limit (2.00% SOD) and single open position rules remain inviolable.
-- **Mandatory Confirmation Safeguards:**
-  - Selecting any allocation **> 10%** requires an affirmative confirmation dialog explaining exposure concentration and fee impact.
-  - Selecting **100%** displays an explicit 5-point critical safeguard warning covering allocation base exhaustion, drawdown magnification, leverage/funding/liquidation compounding, active risk engine budgeting, and a clear zero-warranty disclaimer.
-  - *Cancel* restores the previous value immediately; *Confirm* validates against risk limits and persists the setting.
-
----
-
-## 🎨 Clean Plain White Light Mode & Terminal Dark Mode
-
-VT2 features a dual-theme design system engineered for prolonged quantitative research and trading:
-- **Plain White Light Mode:** Clean, pure white backgrounds (`#ffffff`), dark readable text (`#0f172a`), subtle neutral borders (`#e2e8f0`), restrained accents, and high-visibility canvas candlestick palette.
-- **Terminal Dark Mode:** Professional, high-contrast dark trading aesthetic.
-- **Instant Switching:** Header theme toggle button (`#themeToggleBtn`) and Settings Appearance radio controls.
-- **Anti-Flash Theme Loading:** Synchronous pre-render script ensures zero unstyled flash on initial page load.
-- **Full Persistence:** Theme preferences are stored in `localStorage` and persisted to SQLite via `/api/settings`.
-
----
-
-## 📂 Documentation Links
-
-- [Architecture Guide](docs/architecture.md)
-- [Official Bitget Integration & Research](docs/bitget-integration.md)
-- [Quantitative Strategy Specification](docs/strategy-specification.md)
-- [Deterministic Risk Policy](docs/risk-policy.md)
-- [Environment Isolation & Mainnet Denial](docs/environment-isolation.md)
-- [Data Model & Schema](docs/data-model.md)
-- [REST & Streaming API Reference](docs/api-reference.md)
-- [Security Checklist](docs/security-checklist.md)
-- [Backtesting Methodology](docs/backtesting-methodology.md)
-- [Deployment Guide](docs/deployment.md)
-
----
-
-## 🧪 Verification & Test Results
-
-```
-✔ 59 tests passed (0 failures, 0 skipped)
-✔ Preserves all 8 baseline tests
-✔ 100% fail-closed risk enforcement
-✔ 100% mainnet execution denial verification
-✔ Entry size allocation (1% - 100%) and 0.5% risk cap verification
-✔ Mandatory high-allocation confirmation & explicit 100% warning verification
-✔ Plain white light mode & dark mode token and persistence verification
-✔ State restoration verified across simulated server restarts
-✔ Official HMAC-SHA256 signature verification verified
-```
-
-**Think. Verify. Trade.**
+1. **Transaction Cost Drag:** Over the 150-day backtest, the strategy generated 288 trades (259x portfolio turnover). Due to institutional taker fees (0.05% per fill), realistic slippage (0.02% per fill), and funding costs ($19,975.80 in cumulative friction on a $10,000 account), the net portfolio return was **-28.71%** (In-Sample: -23.62%, Out-of-Sample: -6.66%). This proves that high-frequency breakout strategies on tokenized perps require maker order execution or aggressive trade throttling to survive friction.
+2. **Net R:R is a Design Filter, Not Edge:** All qualified setups require net R:R >= 1.5. Targets are constructed using ATR multipliers bounded by this floor. A net R:R of 1.5 is a design requirement, not proof of market alpha.
+3. **Dual-Market Liquidity Mismatch:** While Bitget tokenized equity perps trade 24/7 continuously, underlying NYSE/NASDAQ exchanges trade only 09:30–16:00 ET Monday–Friday. Weekend and overnight trading carries wider spreads and basis divergence against underlying spot shares.
+4. **No LLM Decision-Making:** VT2 does not use external generative AI models to generate live orders. All deliberation agents operate on deterministic mathematical rules.
