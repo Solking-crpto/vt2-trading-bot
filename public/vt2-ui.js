@@ -294,7 +294,7 @@ function setupKillSwitch() {
         await refreshOrders();
         await refreshAutoTradingStatus();
       } catch (err) {
-        alert(`Error engaging kill switch: ${err.message}`);
+        alert(`Error engaging kill switch: ${friendlyError(err)}`);
       } finally {
         confirmBtn.disabled = false;
       }
@@ -870,24 +870,66 @@ function connectSseStream() {
   }
 }
 
+// Helper to format friendly error messages
+function friendlyError(err) {
+  if (!err) return 'Unknown error occurred.';
+  const msg = err.message || String(err);
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Load failed')) {
+    return 'Cannot reach server. Please check connection.';
+  }
+  return msg;
+}
+
 // API Calls & UI Updaters
 async function checkFeedStatus() {
+  const statusEl = document.getElementById('feedStatus');
+  const latencyEl = document.getElementById('connectionLatency');
+  const sidebarTextEl = document.getElementById('sidebarFeedText');
+  const sidebarDotEl = document.querySelector('.sidebar-footer .status-pulse-dot');
+
   try {
     const res = await fetch('/api/market/status');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const statusEl = document.getElementById('feedStatus');
-    const latencyEl = document.getElementById('connectionLatency');
 
     if (data.isLive) {
-      statusEl.textContent = 'ONLINE (Live)';
-      statusEl.className = 'stat-value text-success';
+      if (statusEl) {
+        statusEl.textContent = 'ONLINE (Live)';
+        statusEl.className = 'stat-value text-success';
+      }
+      if (sidebarTextEl) sidebarTextEl.textContent = 'Bitget V2 Live';
+      if (sidebarDotEl) {
+        sidebarDotEl.style.background = 'var(--color-success, #00e599)';
+        sidebarDotEl.style.boxShadow = '0 0 8px rgba(0, 229, 153, 0.4)';
+      }
     } else {
-      statusEl.textContent = 'SIMULATED (Offline Feed)';
-      statusEl.className = 'stat-value text-warning';
+      if (statusEl) {
+        statusEl.textContent = 'SIMULATED (Offline Feed)';
+        statusEl.className = 'stat-value text-warning';
+      }
+      if (sidebarTextEl) sidebarTextEl.textContent = 'Bitget Simulated';
+      if (sidebarDotEl) {
+        sidebarDotEl.style.background = 'var(--color-warning, #ffaa00)';
+        sidebarDotEl.style.boxShadow = '0 0 8px rgba(255, 170, 0, 0.4)';
+      }
     }
-    latencyEl.textContent = `Latency: ${data.latencyMs}ms | ${data.note || 'Feed Active'}`;
+    if (latencyEl) {
+      const lat = typeof data.latencyMs === 'number' && data.latencyMs >= 0 ? `${data.latencyMs}ms` : '--';
+      latencyEl.textContent = `Latency: ${lat}`;
+    }
   } catch {
-    document.getElementById('feedStatus').textContent = 'DISCONNECTED';
+    if (statusEl) {
+      statusEl.textContent = 'DISCONNECTED';
+      statusEl.className = 'stat-value text-danger';
+    }
+    if (sidebarTextEl) sidebarTextEl.textContent = 'Feed Offline';
+    if (sidebarDotEl) {
+      sidebarDotEl.style.background = 'var(--color-danger, #ff3b5c)';
+      sidebarDotEl.style.boxShadow = 'none';
+    }
+    if (latencyEl) {
+      latencyEl.textContent = 'Latency: --';
+    }
   }
 }
 
@@ -1052,7 +1094,7 @@ window.closePosition = async function(posId) {
       await refreshJournal();
     }
   } catch (err) {
-    alert(`Error closing position: ${err.message}`);
+    alert(`Error closing position: ${friendlyError(err)}`);
   }
 };
 
@@ -1066,7 +1108,7 @@ window.closeAllPositions = async function() {
     await refreshOrders();
     await refreshJournal();
   } catch (err) {
-    alert(`Error closing all positions: ${err.message}`);
+    alert(`Error closing all positions: ${friendlyError(err)}`);
   }
 };
 
@@ -1084,7 +1126,7 @@ async function checkPositionSentiment() {
     }
     await refreshAccount();
   } catch (err) {
-    alert(`Error evaluating sentiment: ${err.message}`);
+    alert(`Error evaluating sentiment: ${friendlyError(err)}`);
   }
 }
 
@@ -1361,7 +1403,7 @@ async function runDeliberation(proposal) {
     state.deliberation = result;
     updateDeliberationView(result);
   } catch (err) {
-    alert(`Deliberation error: ${err.message}`);
+    alert(`Deliberation error: ${friendlyError(err)}`);
   }
 }
 
@@ -1397,7 +1439,7 @@ async function executePaperOrder() {
       alert(`Order rejected: ${data.message || data.error}`);
     }
   } catch (err) {
-    alert(`Order execution error: ${err.message}`);
+    alert(`Order execution error: ${friendlyError(err)}`);
   }
 }
 
@@ -2268,7 +2310,7 @@ window.runSingleVerificationCheck = async function(key) {
     const data = await res.json();
     await refreshVerificationStatus();
   } catch (err) {
-    alert(`Verification check error: ${err.message}`);
+    alert(`Verification check error: ${friendlyError(err)}`);
   } finally {
     if (card) {
       const btn = card.querySelector('button');
@@ -2289,7 +2331,7 @@ async function runAllVerificationChecks() {
     const data = await res.json();
     await refreshVerificationStatus();
   } catch (err) {
-    alert(`Error running all verification checks: ${err.message}`);
+    alert(`Error running all verification checks: ${friendlyError(err)}`);
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2453,7 +2495,7 @@ async function startAutoTrading() {
     }
     await refreshAutoTradingStatus();
   } catch (err) {
-    alert(`Error starting bot: ${err.message}`);
+    alert(`Error starting bot: ${friendlyError(err)}`);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2468,7 +2510,7 @@ async function stopAutoTrading() {
     const data = await res.json();
     await refreshAutoTradingStatus();
   } catch (err) {
-    alert(`Error stopping bot: ${err.message}`);
+    alert(`Error stopping bot: ${friendlyError(err)}`);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2488,7 +2530,7 @@ async function stopAndCloseAllAutoTrading() {
     await refreshOrders();
     await refreshJournal();
   } catch (err) {
-    alert(`Error stopping bot and closing positions: ${err.message}`);
+    alert(`Error stopping bot and closing positions: ${friendlyError(err)}`);
   } finally {
     if (btn) btn.disabled = false;
   }
