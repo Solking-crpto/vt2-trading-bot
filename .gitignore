@@ -18,3 +18,5 @@ media/*.mp4
 media/slides/*.mp4
 media/audio/
 
+
+.vercel

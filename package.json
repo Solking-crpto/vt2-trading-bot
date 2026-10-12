@@ -2,7 +2,6 @@
   "name": "vt2-trading-bot",
   "version": "0.1.0",
   "description": "VT2 — Verifiable Trading Technology. Think. Verify. Trade.",
-  "main": "start.js",
   "engines": {
     "node": "22.x"
   },

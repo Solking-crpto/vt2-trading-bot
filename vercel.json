@@ -1,31 +1,14 @@
 {
-  "version": 2,
-  "framework": null,
-  "buildCommand": "",
-  "installCommand": "",
-  "outputDirectory": "public",
-  "regions": ["sin1"],
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": [
-        "config/**",
-        "reports/**",
-        "public/**"
-      ]
-    },
-    "api/ping.js": {
-      "maxDuration": 10
+      "includeFiles": "{config,reports,public}/**"
     }
   },
   "rewrites": [
     {
-      "source": "/api/ping",
-      "destination": "/api/ping.js"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
+      "source": "/api/((?!ping).*)",
+      "destination": "/api/index"
     }
   ]
 }
