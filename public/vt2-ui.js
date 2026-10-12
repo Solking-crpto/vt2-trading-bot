@@ -641,6 +641,13 @@ function switchTab(tabId) {
   if (tabId === 'autotrading') {
     refreshAutoTradingStatus();
   }
+  if (tabId === 'journal') {
+    refreshJournal();
+  }
+  if (tabId === 'positions') {
+    refreshAccount();
+    refreshOrders();
+  }
 }
 
 // Interactive Chart Setup

@@ -35,6 +35,7 @@ const edgeProc = spawn(edgePath, [
   `--user-data-dir=${tempDir}`,
   '--no-first-run',
   '--no-default-browser-check',
+  '--disable-extensions',
   '--disable-gpu',
   'about:blank'
 ], { stdio: 'ignore' });
@@ -47,24 +48,25 @@ function cleanup() {
 process.on('exit', cleanup);
 process.on('SIGINT', () => { cleanup(); process.exit(1); });
 
-async function waitForHttp(url, timeoutMs = 12000) {
+async function waitForPageTarget(port, timeoutMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
-      const res = await fetch(url);
-      if (res.ok) return await res.json();
+      const res = await fetch(`http://127.0.0.1:${port}/json/list`);
+      if (res.ok) {
+        const list = await res.json();
+        const page = list.find(t => t.type === 'page');
+        if (page && page.webSocketDebuggerUrl) return page;
+      }
     } catch {}
     await new Promise(r => setTimeout(r, 200));
   }
-  throw new Error(`Timeout waiting for ${url}`);
+  throw new Error(`Timeout waiting for CDP page target on port ${port}`);
 }
 
 async function run() {
-  const list = await waitForHttp(`http://127.0.0.1:${DEBUG_PORT}/json/list`);
-  const pageTarget = list.find(t => t.type === 'page') || list[0];
-  if (!pageTarget || !pageTarget.webSocketDebuggerUrl) {
-    throw new Error('No valid CDP page target found in Edge.');
-  }
+  const pageTarget = await waitForPageTarget(DEBUG_PORT);
+  console.log(`[UI Smoke] Connected to CDP page target: ${pageTarget.title || 'about:blank'}`);
 
   const ws = new WebSocket(pageTarget.webSocketDebuggerUrl);
   let id = 1;
@@ -151,6 +153,10 @@ async function run() {
 
   // Wait for page scripts to load and initialize
   await new Promise(r => setTimeout(r, 3000));
+  await evalInPage(`(() => {
+    window.confirm = () => true;
+    window.alert = () => {};
+  })()`);
 
   console.log('\n--- UI Smoke Test Results ---');
   const results = [];
