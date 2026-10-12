@@ -11,9 +11,9 @@
 
 ## Hosted Demo (Zero Installation for Judges)
 
-- **Live URL:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app) *(or your deployed Vercel domain)*
+- **Live URL:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app)
 - **Alpha Factory Standalone Report:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)
-- **Deployment Mode:** `DEPLOY_MODE=DEMO_READONLY` on Vercel Hobby Serverless (Region: `sin1` Singapore, Bitget-accessible edge).
+- **Deployment Mode:** Read-only hosted demo (`DEPLOY_MODE=DEMO_READONLY`) on Vercel Hobby with live Bitget public market data (US tokenized equities + continuous crypto), in-memory SQLite, and zero secrets.
 - **Active Features on Demo:** Live Bitget V2 public market scanner, multi-timeframe interactive chart (SPY, QQQ, NVDA, TSLA, etc.), 3-agent deliberation pipeline (Market Intelligence, Adversarial Review, Deterministic Risk Engine), verification suite, and pre-computed Alpha Factory backtest report.
 - **Local Application Features:** Background `AutoTrader` autonomous loops, `TradeMonitor` sentiment alerts, and disk-persisted SQLite trading journal (`npm start`).
 

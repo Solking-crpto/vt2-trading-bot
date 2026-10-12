@@ -13,8 +13,8 @@
 
 Judges can open and explore VT2 immediately without installing anything:
 
-👉 **Hosted Demo:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app) *(or your deployed Vercel domain)*  
-👉 **Alpha Factory Report Standalone:** [/report.html](https://vt2-trading-bot.vercel.app/report.html)  
+👉 **Hosted Demo:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app)  
+👉 **Alpha Factory Report Standalone:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)  
 
 ### What Works in the Hosted Demo:
 - **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints in Singapore (`sin1`).
