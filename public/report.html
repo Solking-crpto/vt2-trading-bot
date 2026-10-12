@@ -121,29 +121,29 @@
     <div class="grid-4" style="margin-bottom: 24px;">
       <div class="card">
         <div class="card-title">In-Sample Sharpe (Observed)</div>
-        <div class="card-metric text-neg mono-num">-4.15</div>
-        <div class="card-subtext">246 trades (Jan-Jul 2026)</div>
+        <div class="card-metric text-neg mono-num" id="card-is-sharpe">-4.15</div>
+        <div class="card-subtext" id="card-is-sub">246 trades (May-Sep 2026)</div>
       </div>
       <div class="card">
         <div class="card-title">Out-of-Sample Sharpe (Observed)</div>
-        <div class="card-metric text-neg mono-num">-6.51</div>
-        <div class="card-subtext">41 trades (Aug-Oct 2026)</div>
+        <div class="card-metric text-neg mono-num" id="card-oos-sharpe">-6.51</div>
+        <div class="card-subtext" id="card-oos-sub">41 trades (Sep-Oct 2026)</div>
       </div>
       <div class="card">
-        <div class="card-title">Total Net P&L (Observed)</div>
-        <div class="card-metric text-neg mono-num">-$2,818.83</div>
-        <div class="card-subtext">-28.25% on $10,000 initial capital</div>
+        <div class="card-title">Total Net P&amp;L (Observed)</div>
+        <div class="card-metric text-neg mono-num" id="card-total-pnl">-$2,818.83</div>
+        <div class="card-subtext" id="card-total-ret">-28.25% on $10,000 initial capital</div>
       </div>
       <div class="card">
         <div class="card-title">Total Trading Friction (Observed)</div>
-        <div class="card-metric mono-num" style="color: #fbbf24;">$3,430.65</div>
-        <div class="card-subtext">Fees: $2,223.72 | Slip: $889.52 | Fund: $317.42</div>
+        <div class="card-metric mono-num" style="color: #fbbf24;" id="card-total-friction">$3,430.65</div>
+        <div class="card-subtext" id="card-friction-breakdown">Fees: $2,223.72 | Slip: $889.52 | Fund: $317.42</div>
       </div>
     </div>
 
     <!-- Official Performance Metrics Table -->
     <div class="card" style="margin-bottom: 24px;">
-      <h3 style="margin-top:0; margin-bottom:12px;">Verified In-Sample &amp; Out-of-Sample Performance Table</h3>
+      <h3 style="margin-top:0; margin-bottom:12px;">Observed In-Sample &amp; Out-of-Sample Performance Table (computed by the backtest script)</h3>
       <div style="overflow-x:auto;">
         <table class="metrics-table">
           <thead>
@@ -158,73 +158,73 @@
           <tbody>
             <tr>
               <td><strong>Period Dates</strong></td>
-              <td>2026-01-01 to 2026-07-31</td>
-              <td>2026-08-01 to 2026-10-10</td>
-              <td>2026-01-01 to 2026-10-10</td>
-              <td><span class="badge badge-neutral">Audited</span></td>
+              <td>2026-05-11 to 2026-09-10 (~122 days)</td>
+              <td>2026-09-10 to 2026-10-10 (30 days)</td>
+              <td>2026-05-11 to 2026-10-10 (~152 days)</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Trade Count</strong></td>
-              <td class="mono-num">246</td>
-              <td class="mono-num">41</td>
-              <td class="mono-num">287</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num" id="m-is-trades">246</td>
+              <td class="mono-num" id="m-oos-trades">41</td>
+              <td class="mono-num" id="m-tot-trades">287</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Win Rate</strong></td>
-              <td class="mono-num">41.46%</td>
-              <td class="mono-num">39.02%</td>
-              <td class="mono-num">41.11%</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num" id="m-is-winrate">41.46%</td>
+              <td class="mono-num" id="m-oos-winrate">39.02%</td>
+              <td class="mono-num" id="m-tot-winrate">41.11%</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
-              <td><strong>Net P&L ($)</strong></td>
-              <td class="mono-num text-neg">-$2,360.18</td>
-              <td class="mono-num text-neg">-$458.65</td>
-              <td class="mono-num text-neg">-$2,818.83</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td><strong>Net P&amp;L ($)</strong></td>
+              <td class="mono-num text-neg" id="m-is-pnl">-$2,360.18</td>
+              <td class="mono-num text-neg" id="m-oos-pnl">-$458.65</td>
+              <td class="mono-num text-neg" id="m-tot-pnl">-$2,818.83</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Total Return (%)</strong></td>
-              <td class="mono-num text-neg">-23.13%</td>
-              <td class="mono-num text-neg">-6.66%</td>
-              <td class="mono-num text-neg">-28.25%</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num text-neg" id="m-is-ret">-23.13%</td>
+              <td class="mono-num text-neg" id="m-oos-ret">-6.66%</td>
+              <td class="mono-num text-neg" id="m-tot-ret">-28.25%</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Annualized Sharpe</strong></td>
-              <td class="mono-num text-neg">-4.15</td>
-              <td class="mono-num text-neg">-6.51</td>
-              <td class="mono-num text-neg">-4.46</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num text-neg" id="m-is-sharpe">-4.15</td>
+              <td class="mono-num text-neg" id="m-oos-sharpe">-6.51</td>
+              <td class="mono-num text-neg" id="m-tot-sharpe">-4.46</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Annualized Sortino</strong></td>
-              <td class="mono-num text-neg">-5.09</td>
-              <td class="mono-num text-neg">-7.18</td>
-              <td class="mono-num text-neg">-5.39</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num text-neg" id="m-is-sortino">-5.09</td>
+              <td class="mono-num text-neg" id="m-oos-sortino">-7.18</td>
+              <td class="mono-num text-neg" id="m-tot-sortino">-5.39</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Max Drawdown ($ / %)</strong></td>
-              <td class="mono-num text-neg">$2,620.87 (25.67%)</td>
-              <td class="mono-num text-neg">$639.58 (8.32%)</td>
-              <td class="mono-num text-neg">$3,162.53 (30.98%)</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num text-neg" id="m-is-dd">$2,620.87 (25.67%)</td>
+              <td class="mono-num text-neg" id="m-oos-dd">$639.58 (8.32%)</td>
+              <td class="mono-num text-neg" id="m-tot-dd">$3,162.53 (30.98%)</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Profit Factor</strong></td>
-              <td class="mono-num">0.71</td>
-              <td class="mono-num">0.61</td>
-              <td class="mono-num">0.70</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num" id="m-is-pf">0.71</td>
+              <td class="mono-num" id="m-oos-pf">0.61</td>
+              <td class="mono-num" id="m-tot-pf">0.70</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Portfolio Turnover</strong></td>
-              <td class="mono-num">219.40x</td>
-              <td class="mono-num">37.59x</td>
-              <td class="mono-num">258.47x</td>
-              <td><span class="badge badge-neutral">Observed</span></td>
+              <td class="mono-num" id="m-is-turnover">219.40x</td>
+              <td class="mono-num" id="m-oos-turnover">37.59x</td>
+              <td class="mono-num" id="m-tot-turnover">258.47x</td>
+              <td><span class="badge badge-neutral">Observed (computed by the backtest script)</span></td>
             </tr>
             <tr>
               <td><strong>Sharpe Decay Retention</strong></td>
@@ -236,53 +236,158 @@
         </table>
       </div>
       <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
-        <em>Note on Sharpe Decay:</em> Standard Sharpe decay ratio calculation is not economically meaningful when In-Sample Sharpe is negative, as dividing two negative numbers produces a meaningless positive scalar. Per strict Track 1 rules, these numbers are published uncurve-fitted without revision.
+        <em>Note on Sharpe Decay:</em> Standard Sharpe decay ratio calculation is not economically meaningful when In-Sample Sharpe is negative, as dividing two negative numbers produces a meaningless positive scalar. Per strict Track 1 rules, these numbers are published as computed without parameter tuning.
       </p>
     </div>
 
-    <!-- Equity Curve Diagram -->
+    <!-- Equity Curve Diagram & Terminal Equity Reconciliation -->
     <div class="curve-card">
-      <h3 style="margin-top:0; margin-bottom:16px;">Backtest Equity Curve vs SPY Benchmark</h3>
+      <h3 style="margin-top:0; margin-bottom:12px;">Portfolio Equity Curve &amp; Terminal Equity Reconciliation</h3>
       <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
-        Generated directly from out-of-sample tick logs in <code>reports/alpha-factory/equity_curve.svg</code>.
+        Generated directly from chronological replay ticks in <code>reports/alpha-factory/equity_curve.svg</code>.
       </p>
       <img src="/reports/alpha-factory/equity_curve.svg" onerror="this.src='/icon.svg'; this.style.maxHeight='120px';" alt="Alpha Factory Equity Curve">
+      
+      <div style="text-align:left; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px; padding:18px; margin-top:20px; font-size:13px; line-height:1.6; color:var(--text-secondary);">
+        <div style="font-weight:600; color:var(--text-primary); margin-bottom:8px;">Equity Curve Description &amp; Terminal Equity Reconciliation:</div>
+        <p style="margin: 4px 0;">
+          <strong>What the plot shows:</strong> The SVG renders the portfolio equity curve as a single continuous polyline (cyan) over the 152-day replay timeline (2026-05-11 to 2026-10-10). It starts at an initial capital of $10,000.00 and finishes at a final curve equity of $7,175.45 (-28.25% total return). While the SVG title notes the benchmark reference return (SPY +4.97%), the SPY benchmark is not plotted as a secondary polyline in this chart.
+        </p>
+        <p style="margin: 4px 0;">
+          <strong>Final Equity vs. Closed-Trade P&amp;L:</strong> Starting capital was $10,000.00. The sum of closed trades yields a net P&amp;L of -$2,818.83 (implied closed-trade equity of $7,181.17), while final marked equity on the curve is $7,175.45. The small -$5.72 difference (-0.057% of capital) is due to open position mark-to-market valuations and terminal execution slippage at the replay boundary.
+        </p>
+      </div>
     </div>
 
     <!-- Friction & Execution Realism -->
     <div class="card" style="margin-bottom: 24px;">
       <h3 style="margin-top:0; margin-bottom:12px;">Friction &amp; Execution Budget Breakdown</h3>
       <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
-        Every trade in this backtest includes deterministic transaction costs derived from official Bitget VIP-0 contract fee tiers and realistic liquidity slippage:
+        Every trade in this backtest includes deterministic transaction costs specified in <code>config/alpha-strategy.json</code> (hash 541c10a) and deducted on every order fill:
       </p>
       <div class="grid-3" style="margin-top: 16px;">
         <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
-          <div style="font-size:12px; color:var(--text-secondary);">Bitget Taker Fees (0.06% entry &amp; exit)</div>
-          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$2,223.72</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Bitget Taker Fees (0.05% entry &amp; exit)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;" id="c-fees">$2,223.72</div>
         </div>
         <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
-          <div style="font-size:12px; color:var(--text-secondary);">Simulated Adverse Slippage (0.02%)</div>
-          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$889.52</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Simulated Adverse Slippage (0.02% per fill)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;" id="c-slippage">$889.52</div>
         </div>
         <div style="background:var(--bg-secondary); padding:16px; border-radius:8px;">
-          <div style="font-size:12px; color:var(--text-secondary);">Perpetual Funding Rate (8h settle)</div>
-          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;">$317.42</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Perpetual Funding Rate (8h intervals)</div>
+          <div class="mono-num text-neg" style="font-size:18px; font-weight:700; margin-top:4px;" id="c-funding">$317.42</div>
         </div>
       </div>
     </div>
 
     <!-- Methodology & Honesty Note -->
-    <div class="card" style="border-left: 4px solid #3b82f6;">
+    <div class="card" style="border-left: 4px solid #3b82f6; margin-bottom: 24px;">
       <h3 style="margin-top:0; color:#60a5fa;">Methodological Integrity &amp; Hackathon Compliance</h3>
-      <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
-        VT2's submission adheres strictly to academic standards:
+      <p style="font-size: 14px; color: var(--text-primary); line-height: 1.6; font-weight: 500;">
+        The strategy configuration was frozen and committed (hash 541c10a) before the first backtest run. After the first run, accounting errors in per-trade P&amp;L, return percentage and slippage were found and corrected; the figures shown come from the corrected run. No strategy parameter was changed after seeing any result.
       </p>
       <ul style="font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 0;">
-        <li><strong>No Post-Hoc Parameter Tuning:</strong> When out-of-sample performance demonstrated drawdown, parameters were intentionally frozen without reselection to avoid p-hacking.</li>
         <li><strong>Deterministic Rule-Based Execution:</strong> Runtime sizing and execution decisions are 100% deterministic, governed by the mathematical Risk Engine rather than ungrounded LLM completions.</li>
         <li><strong>Complete Reproducibility:</strong> All data download scripts, validation routines, and backtest engines are open-source in the GitHub repository.</li>
       </ul>
     </div>
   </div>
+
+  <script>
+    async function loadMetricsFromApi() {
+      try {
+        const res = await fetch('/api/report/alpha-factory');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (!data || !data.metrics) return;
+        const m = data.metrics;
+        const tot = m.summary?.total;
+        const is = m.summary?.inSample;
+        const oos = m.summary?.outOfSample;
+        const costs = m.costs;
+
+        const fmtMoney = (n) => (n < 0 ? '-$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        const fmtPct = (n) => n.toFixed(2) + '%';
+        const fmtNum = (n, d = 2) => n.toFixed(d);
+
+        // Populate Cards
+        if (is) {
+          const el = document.getElementById('card-is-sharpe');
+          if (el) el.textContent = fmtNum(is.annualizedSharpe);
+          const elSub = document.getElementById('card-is-sub');
+          if (elSub) elSub.textContent = `${is.tradeCount} trades (May-Sep 2026)`;
+        }
+        if (oos) {
+          const el = document.getElementById('card-oos-sharpe');
+          if (el) el.textContent = fmtNum(oos.annualizedSharpe);
+          const elSub = document.getElementById('card-oos-sub');
+          if (elSub) elSub.textContent = `${oos.tradeCount} trades (Sep-Oct 2026)`;
+        }
+        if (tot) {
+          const el = document.getElementById('card-total-pnl');
+          if (el) el.textContent = fmtMoney(tot.totalPnl);
+          const elSub = document.getElementById('card-total-ret');
+          if (elSub) elSub.textContent = `${fmtPct(tot.totalReturnPct)} on $10,000 initial capital`;
+        }
+        if (costs) {
+          const elFric = document.getElementById('card-total-friction');
+          if (elFric) elFric.textContent = fmtMoney(costs.totalTradingCosts);
+          const elBreak = document.getElementById('card-friction-breakdown');
+          if (elBreak) elBreak.textContent = `Fees: ${fmtMoney(costs.totalFeesPaid)} | Slip: ${fmtMoney(costs.totalSlippagePaid)} | Fund: ${fmtMoney(costs.totalFundingPaid)}`;
+          const elFees = document.getElementById('c-fees');
+          if (elFees) elFees.textContent = fmtMoney(costs.totalFeesPaid);
+          const elSlip = document.getElementById('c-slippage');
+          if (elSlip) elSlip.textContent = fmtMoney(costs.totalSlippagePaid);
+          const elFund = document.getElementById('c-funding');
+          if (elFund) elFund.textContent = fmtMoney(costs.totalFundingPaid);
+        }
+
+        // Populate Table
+        if (is && oos && tot) {
+          const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+          setT('m-is-trades', is.tradeCount);
+          setT('m-oos-trades', oos.tradeCount);
+          setT('m-tot-trades', tot.tradeCount);
+
+          setT('m-is-winrate', fmtPct(is.winRate));
+          setT('m-oos-winrate', fmtPct(oos.winRate));
+          setT('m-tot-winrate', fmtPct(tot.winRate));
+
+          setT('m-is-pnl', fmtMoney(is.totalPnl));
+          setT('m-oos-pnl', fmtMoney(oos.totalPnl));
+          setT('m-tot-pnl', fmtMoney(tot.totalPnl));
+
+          setT('m-is-ret', fmtPct(is.totalReturnPct));
+          setT('m-oos-ret', fmtPct(oos.totalReturnPct));
+          setT('m-tot-ret', fmtPct(tot.totalReturnPct));
+
+          setT('m-is-sharpe', fmtNum(is.annualizedSharpe));
+          setT('m-oos-sharpe', fmtNum(oos.annualizedSharpe));
+          setT('m-tot-sharpe', fmtNum(tot.annualizedSharpe));
+
+          setT('m-is-sortino', fmtNum(is.annualizedSortino));
+          setT('m-oos-sortino', fmtNum(oos.annualizedSortino));
+          setT('m-tot-sortino', fmtNum(tot.annualizedSortino));
+
+          setT('m-is-dd', `${fmtMoney(is.maxDrawdownDollars)} (${fmtPct(is.maxDrawdownPct)})`);
+          setT('m-oos-dd', `${fmtMoney(oos.maxDrawdownDollars)} (${fmtPct(oos.maxDrawdownPct)})`);
+          setT('m-tot-dd', `${fmtMoney(tot.maxDrawdownDollars)} (${fmtPct(tot.maxDrawdownPct)})`);
+
+          setT('m-is-pf', fmtNum(is.profitFactor));
+          setT('m-oos-pf', fmtNum(oos.profitFactor));
+          setT('m-tot-pf', fmtNum(tot.profitFactor));
+
+          setT('m-is-turnover', `${fmtNum(is.turnover)}x`);
+          setT('m-oos-turnover', `${fmtNum(oos.turnover)}x`);
+          setT('m-tot-turnover', `${fmtNum(tot.turnover)}x`);
+        }
+        console.log('[Alpha Factory Report] Loaded live metrics from /api/report/alpha-factory');
+      } catch (err) {
+        console.info('[Alpha Factory Report] Using baseline metrics:', err.message);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadMetricsFromApi);
+  </script>
 </body>
 </html>

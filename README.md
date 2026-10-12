@@ -21,7 +21,7 @@ Judges can open and explore VT2 immediately without installing anything:
 - **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across tokenized US equities (`isRwa === "YES"`) and continuous crypto contracts.
 - **Interactive Multi-Timeframe Chart:** Interactive candlestick chart rendering live Bitget candles with technical indicators (EMA20, EMA50, EMA200, ATR, RSI).
 - **Multi-Agent Deliberation (3 Agents):** Full deliberation pipeline running Market Intelligence Agent, Adversarial Review Agent, and Deterministic Risk Engine evaluation against live market data.
-- **Alpha Factory Backtest Report:** Audited In-Sample vs. Out-of-Sample metrics table, transaction cost breakdowns, and high-resolution SVG equity curve.
+- **Alpha Factory Backtest Report:** Observed (computed by the backtest script) In-Sample vs. Out-of-Sample metrics table, transaction cost breakdowns, and high-resolution SVG equity curve.
 - **Verification Suite & System Health:** Cryptographic signature verifiers, live latency diagnostics, and environment safety guards.
 
 ### What Requires Running Locally:
