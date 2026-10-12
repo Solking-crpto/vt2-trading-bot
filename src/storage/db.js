@@ -1,27 +1,80 @@
-import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
+
+// Attempt safe import of native node:sqlite (introduced in Node 22.5.0)
+let DatabaseSync = null;
+try {
+  const sqlite = await import('node:sqlite');
+  DatabaseSync = sqlite.DatabaseSync || null;
+} catch {
+  DatabaseSync = null;
+}
 
 export class Database {
   constructor(dbPath = 'data/vt2.db') {
     this.dbPath = dbPath;
     this.db = null;
+    this.isInMemoryFallback = false;
+    this.memSettings = new Map();
+    this.memOrders = [];
+    this.memPositions = new Map();
+    this.memJournal = [];
+    this.memRejected = [];
+    this.memBacktests = [];
   }
 
   init() {
     if (this.dbPath !== ':memory:') {
       const dir = path.dirname(this.dbPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+      } catch (err) {
+        console.warn(`[Database] Unable to create directory ${dir} (${err.message}). Falling back to :memory:`);
+        this.dbPath = ':memory:';
       }
     }
 
-    this.db = new DatabaseSync(this.dbPath);
-    this.createTables();
+    if (DatabaseSync) {
+      try {
+        this.db = new DatabaseSync(this.dbPath);
+        this.createTables();
+        return this;
+      } catch (err) {
+        console.warn(`[Database] DatabaseSync initialization failed (${err.message}). Using in-memory fallback.`);
+        this.db = null;
+      }
+    }
+
+    this.initInMemoryFallback();
     return this;
   }
 
+  initInMemoryFallback() {
+    this.isInMemoryFallback = true;
+    this.db = {
+      exec: () => {},
+      prepare: (sql) => ({
+        run: () => {},
+        get: () => {
+          const s = String(sql || '').toLowerCase();
+          let c = 0;
+          if (s.includes('settings')) c = this.memSettings.size;
+          else if (s.includes('orders')) c = this.memOrders.length;
+          else if (s.includes('positions')) c = this.memPositions.size;
+          else if (s.includes('trade_journal')) c = this.memJournal.length;
+          else if (s.includes('rejected_setups')) c = this.memRejected.length;
+          else if (s.includes('backtest_runs')) c = this.memBacktests.length;
+          return { c };
+        },
+        all: () => [],
+      }),
+    };
+  }
+
   createTables() {
+    if (this.isInMemoryFallback || !this.db) return;
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
@@ -129,6 +182,10 @@ export class Database {
   }
 
   saveSetting(key, value) {
+    if (this.isInMemoryFallback) {
+      this.memSettings.set(key, { value: JSON.stringify(value), updated_at: Date.now() });
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO settings (key, value, updated_at)
       VALUES (?, ?, ?)
@@ -138,6 +195,15 @@ export class Database {
   }
 
   getSetting(key, defaultValue = null) {
+    if (this.isInMemoryFallback) {
+      const item = this.memSettings.get(key);
+      if (!item) return defaultValue;
+      try {
+        return JSON.parse(item.value);
+      } catch {
+        return item.value;
+      }
+    }
     const stmt = this.db.prepare('SELECT value FROM settings WHERE key = ?');
     const row = stmt.get(key);
     if (!row) return defaultValue;
@@ -149,6 +215,17 @@ export class Database {
   }
 
   getAllSettings() {
+    if (this.isInMemoryFallback) {
+      const result = {};
+      for (const [k, v] of this.memSettings.entries()) {
+        try {
+          result[k] = JSON.parse(v.value);
+        } catch {
+          result[k] = v.value;
+        }
+      }
+      return result;
+    }
     const stmt = this.db.prepare('SELECT key, value FROM settings');
     const rows = stmt.all();
     const result = {};
@@ -171,6 +248,31 @@ export class Database {
   }
 
   saveOrder(order) {
+    if (this.isInMemoryFallback) {
+      const row = {
+        id: order.id,
+        position_id: order.positionId || null,
+        environment: order.environment || 'PAPER',
+        symbol: order.symbol,
+        side: order.side,
+        requested_price: order.requestedPrice,
+        fill_price: order.fillPrice || order.requestedPrice,
+        quantity: order.quantity,
+        notional: order.notional || (order.quantity * order.requestedPrice),
+        fee: order.fee || 0,
+        status: order.status,
+        submitted_at: order.submittedAt || Date.now(),
+        filled_at: order.filledAt || null,
+        is_simulated: order.isSimulated !== false ? 1 : 0,
+      };
+      const idx = this.memOrders.findIndex(o => o.id === order.id);
+      if (idx >= 0) {
+        this.memOrders[idx] = { ...this.memOrders[idx], ...row };
+      } else {
+        this.memOrders.push(row);
+      }
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO orders (
         id, position_id, environment, symbol, side,
@@ -192,11 +294,46 @@ export class Database {
   }
 
   getOrders(limit = 100) {
+    if (this.isInMemoryFallback) {
+      return [...this.memOrders].sort((a, b) => b.submitted_at - a.submitted_at).slice(0, limit);
+    }
     const stmt = this.db.prepare('SELECT * FROM orders ORDER BY submitted_at DESC LIMIT ?');
     return stmt.all(limit);
   }
 
   savePosition(pos) {
+    if (this.isInMemoryFallback) {
+      const row = {
+        id: pos.id,
+        order_id: pos.orderId || pos.order_id || null,
+        environment: pos.environment || 'PAPER',
+        symbol: pos.symbol,
+        side: pos.side,
+        entry_price: pos.entryPrice,
+        current_price: pos.currentPrice,
+        original_quantity: pos.originalQuantity,
+        current_quantity: pos.currentQuantity,
+        stop_loss: pos.stopLoss,
+        take_profit: pos.takeProfit,
+        partial_take_profit_price: pos.partialTakeProfitPrice ?? null,
+        is_partial_closed: pos.isPartialClosed ? 1 : 0,
+        is_breakeven_moved: pos.isBreakevenMoved ? 1 : 0,
+        is_trailing_active: pos.isTrailingActive ? 1 : 0,
+        trailing_stop: pos.trailingStop ?? null,
+        unrealized_pnl: pos.unrealizedPnl ?? 0,
+        realized_pnl: pos.realizedPnl ?? 0,
+        fees_paid: pos.feesPaid ?? 0,
+        status: pos.status || 'OPEN',
+        opened_at: pos.openedAt ?? Date.now(),
+        closed_at: pos.closedAt ?? null,
+        last_updated_at: pos.lastUpdatedAt ?? Date.now(),
+        exit_reason: pos.exitReason ?? null,
+        exit_price: pos.exitPrice ?? null,
+        is_simulated: 1,
+      };
+      this.memPositions.set(pos.id, row);
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO positions (
         id, order_id, environment, symbol, side, entry_price, current_price,
@@ -256,11 +393,41 @@ export class Database {
   }
 
   getActivePositions() {
+    if (this.isInMemoryFallback) {
+      return Array.from(this.memPositions.values())
+        .filter(p => p.status === 'OPEN')
+        .sort((a, b) => b.opened_at - a.opened_at);
+    }
     const stmt = this.db.prepare("SELECT * FROM positions WHERE status = 'OPEN' ORDER BY opened_at DESC");
     return stmt.all();
   }
 
   saveJournalEntry(entry) {
+    if (this.isInMemoryFallback) {
+      const row = {
+        id: entry.id,
+        position_id: entry.positionId,
+        timestamp: entry.timestamp,
+        environment: entry.environment || 'PAPER',
+        symbol: entry.symbol,
+        side: entry.side,
+        strategy_version: entry.strategyVersion || 'v1.0.0',
+        entry_price: entry.entryPrice,
+        exit_price: entry.exitPrice,
+        quantity: entry.quantity,
+        realized_pnl: entry.realizedPnl,
+        roi_percent: entry.roiPercent,
+        holding_time_ms: entry.holdingTimeMs || 0,
+        fees_paid: entry.feesPaid,
+        exit_reason: entry.exitReason,
+        thesis_json: JSON.stringify(entry.thesis || {}),
+        review_json: JSON.stringify(entry.review || {}),
+        risk_result_json: JSON.stringify(entry.riskResult || {}),
+        is_simulated: 1,
+      };
+      this.memJournal.push(row);
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO trade_journal (
         id, position_id, timestamp, environment, symbol, side,
@@ -281,6 +448,17 @@ export class Database {
   }
 
   getJournalEntries(limit = 100) {
+    if (this.isInMemoryFallback) {
+      return [...this.memJournal]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit)
+        .map(row => ({
+          ...row,
+          thesis: JSON.parse(row.thesis_json || '{}'),
+          review: JSON.parse(row.review_json || '{}'),
+          riskResult: JSON.parse(row.risk_result_json || '{}'),
+        }));
+    }
     const stmt = this.db.prepare('SELECT * FROM trade_journal ORDER BY timestamp DESC LIMIT ?');
     return stmt.all(limit).map(row => ({
       ...row,
@@ -291,6 +469,20 @@ export class Database {
   }
 
   saveRejectedSetup(setup) {
+    if (this.isInMemoryFallback) {
+      const row = {
+        id: setup.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        timestamp: setup.timestamp || Date.now(),
+        symbol: setup.symbol,
+        rejection_reason: setup.rejectionReason,
+        explanation: setup.explanation || '',
+        net_rr: setup.netRR || null,
+        score: setup.score || null,
+        details_json: JSON.stringify(setup.details || {}),
+      };
+      this.memRejected.push(row);
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO rejected_setups (
         id, timestamp, symbol, rejection_reason, explanation, net_rr, score, details_json
@@ -309,6 +501,15 @@ export class Database {
   }
 
   getRejectedSetups(limit = 100) {
+    if (this.isInMemoryFallback) {
+      return [...this.memRejected]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit)
+        .map(row => ({
+          ...row,
+          details: JSON.parse(row.details_json || '{}'),
+        }));
+    }
     const stmt = this.db.prepare('SELECT * FROM rejected_setups ORDER BY timestamp DESC LIMIT ?');
     return stmt.all(limit).map(row => ({
       ...row,
@@ -317,6 +518,27 @@ export class Database {
   }
 
   saveBacktestRun(bt) {
+    if (this.isInMemoryFallback) {
+      const row = {
+        id: bt.id,
+        timestamp: bt.timestamp,
+        symbol: bt.symbol,
+        timeframe: bt.timeframe,
+        start_time: bt.startTime,
+        end_time: bt.endTime,
+        total_trades: bt.totalTrades,
+        win_rate: bt.winRate,
+        net_pnl: bt.netPnl,
+        profit_factor: bt.profitFactor,
+        max_drawdown_percent: bt.maxDrawdownPercent,
+        expectancy: bt.expectancy,
+        avg_holding_time_ms: bt.avgHoldingTimeMs,
+        parameters_json: JSON.stringify(bt.parameters || {}),
+        trades_json: JSON.stringify(bt.trades || []),
+      };
+      this.memBacktests.push(row);
+      return;
+    }
     const stmt = this.db.prepare(`
       INSERT INTO backtest_runs (
         id, timestamp, symbol, timeframe, start_time, end_time,
@@ -335,6 +557,16 @@ export class Database {
   }
 
   getBacktestRuns(limit = 20) {
+    if (this.isInMemoryFallback) {
+      return [...this.memBacktests]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit)
+        .map(row => ({
+          ...row,
+          parameters: JSON.parse(row.parameters_json || '{}'),
+          trades: JSON.parse(row.trades_json || '[]'),
+        }));
+    }
     const stmt = this.db.prepare('SELECT * FROM backtest_runs ORDER BY timestamp DESC LIMIT ?');
     return stmt.all(limit).map(row => ({
       ...row,
@@ -344,8 +576,10 @@ export class Database {
   }
 
   close() {
-    if (this.db) {
-      this.db.close();
+    if (this.db && typeof this.db.close === 'function') {
+      try {
+        this.db.close();
+      } catch {}
       this.db = null;
     }
   }

@@ -1396,7 +1396,14 @@ export class VT2Server {
   }
 
   sendJson(res, statusCode, data) {
-    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    if (typeof res.writeHead === 'function') {
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    } else {
+      res.statusCode = statusCode;
+      if (typeof res.setHeader === 'function') {
+        res.setHeader('Content-Type', 'application/json');
+      }
+    }
     res.end(JSON.stringify(data));
   }
 }
