@@ -42,26 +42,33 @@ window.addEventListener('DOMContentLoaded', async () => {
   registerServiceWorker();
   startCooldownTicker();
 
-  await checkDeployMode();
-  await checkFeedStatus();
-  await refreshAccount();
-  await refreshOrders();
-  await refreshScanner();
-  await refreshEquityUniverse();
-  await loadChartData();
-  await refreshJournal();
-  await refreshRejectedArchive();
-  await refreshHealth();
-  await loadSettings();
-  await refreshVerificationStatus();
-  await refreshAutoTradingStatus();
+  try { await checkDeployMode(); } catch (e) { console.warn('checkDeployMode error:', e); }
+  try { await checkFeedStatus(); } catch (e) { console.warn('checkFeedStatus error:', e); }
+  try { await refreshAccount(); } catch (e) { console.warn('refreshAccount error:', e); }
+  try { await refreshOrders(); } catch (e) { console.warn('refreshOrders error:', e); }
+  try { await refreshScanner(); } catch (e) { console.warn('refreshScanner error:', e); }
+  try { await refreshEquityUniverse(); } catch (e) { console.warn('refreshEquityUniverse error:', e); }
+  try { await loadChartData(); } catch (e) { console.warn('loadChartData error:', e); }
+  try { await refreshJournal(); } catch (e) { console.warn('refreshJournal error:', e); }
+  try { await refreshRejectedArchive(); } catch (e) { console.warn('refreshRejectedArchive error:', e); }
+  try { await refreshHealth(); } catch (e) { console.warn('refreshHealth error:', e); }
+  try { await loadSettings(); } catch (e) { console.warn('loadSettings error:', e); }
+  try { await refreshVerificationStatus(); } catch (e) { console.warn('refreshVerificationStatus error:', e); }
+  try { await refreshAutoTradingStatus(); } catch (e) { console.warn('refreshAutoTradingStatus error:', e); }
 
-  connectSseStream();
+  try { connectSseStream(); } catch (e) { console.warn('connectSseStream error:', e); }
 });
 
 // PWA Service Worker Registration
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
+    if (window.location.hostname.includes('vercel.app')) {
+      // In hosted demo mode on Vercel, unregister any stale service workers to ensure fresh asset delivery
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
+      }).catch(() => {});
+      return;
+    }
     navigator.serviceWorker.register('/sw.js').catch(err => {
       console.warn('SW registration skipped:', err.message);
     });
@@ -794,20 +801,21 @@ async function checkDeployMode() {
         'executePaperOrderBtn',
         'simTickProfitBtn',
         'simTickStopBtn',
-        'autoStopCloseBtn',
-        'saveSettingsBtn',
+        'autoStartBtn',
         'startAutoBtn',
+        'autoStopBtn',
         'stopAutoBtn',
+        'autoStopCloseBtn',
         'killAutoBtn',
+        'saveSettingsBtn',
         'saveRiskBtn',
         'runBacktestBtn',
-        'topRescanBtn',
       ];
       writeButtonIds.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
           btn.disabled = true;
-          btn.title = 'Persistent paper trading and bot execution run in the local app. (Hosted Demo Read-Only)';
+          btn.title = 'Not available in hosted demo; runs in local app';
           btn.style.opacity = '0.5';
           btn.style.cursor = 'not-allowed';
         }
@@ -816,10 +824,36 @@ async function checkDeployMode() {
       // Close all buttons
       document.querySelectorAll('[id*="CloseAll"], [id*="closeAll"]').forEach(btn => {
         btn.disabled = true;
-        btn.title = 'Persistent paper trading and bot execution run in the local app. (Hosted Demo Read-Only)';
+        btn.title = 'Not available in hosted demo; runs in local app';
         btn.style.opacity = '0.5';
         btn.style.cursor = 'not-allowed';
       });
+
+      // Display clear notice on Automated Trading engine
+      const autoSubtext = document.getElementById('autoStatusSubtext');
+      if (autoSubtext) {
+        autoSubtext.textContent = 'Not available in hosted demo; runs in local app';
+        autoSubtext.style.color = 'var(--color-warning, #f59e0b)';
+      }
+      const autoStatusBadge = document.getElementById('autoStatusBadge');
+      if (autoStatusBadge) {
+        autoStatusBadge.textContent = 'HOSTED DEMO (LOCAL APP ONLY)';
+      }
+
+      // Add banner in tab-autotrading if not already present
+      const autoTab = document.getElementById('tab-autotrading');
+      if (autoTab && !document.getElementById('demoAutoTradingNotice')) {
+        const notice = document.createElement('div');
+        notice.id = 'demoAutoTradingNotice';
+        notice.style.cssText = 'margin-bottom: 16px; padding: 12px 16px; background: rgba(59, 130, 246, 0.12); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; color: var(--text-secondary);';
+        notice.innerHTML = '<strong style="color: var(--text-primary);">ℹ️ Server-Loop Notice:</strong> Autonomous background trading loops (AutoTrader interval, trade monitor, persistent paper fills) are <strong>not available in hosted demo; runs in local app</strong> via <code>npm start</code>. This hosted preview provides live Bitget public market feeds, interactive charting, AI deliberation, risk calculators, and historical research.';
+        const header = autoTab.querySelector('.section-header');
+        if (header && header.nextSibling) {
+          autoTab.insertBefore(notice, header.nextSibling);
+        } else {
+          autoTab.prepend(notice);
+        }
+      }
     }
   } catch (err) {
     console.warn('Could not determine deploy mode:', err);
@@ -2127,6 +2161,7 @@ async function loadSettings() {
     }
     if (s.minLiquidityUsdt !== undefined && document.getElementById('cfgMinLiquidity')) {
       document.getElementById('cfgMinLiquidity').value = s.minLiquidityUsdt;
+    }
     if (s.equityEntriesWhenUnderlyingClosed !== undefined && document.getElementById('cfgEquityEntriesClosed')) {
       document.getElementById('cfgEquityEntriesClosed').value = s.equityEntriesWhenUnderlyingClosed;
     }

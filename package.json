@@ -13,7 +13,8 @@
     "start": "node start.js",
     "dev": "node --watch start.js",
     "test": "node --test --test-force-exit --test-timeout=60000",
-    "backtest:alpha": "node scripts/run-alpha-backtest.js"
+    "backtest:alpha": "node scripts/run-alpha-backtest.js",
+    "ui-smoke": "node scripts/ui-smoke.js"
   },
   "keywords": [
     "trading-bot",

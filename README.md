@@ -17,8 +17,8 @@ Judges can open and explore VT2 immediately without installing anything:
 👉 **Alpha Factory Report Standalone:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)  
 
 ### What Works in the Hosted Demo:
-- **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints in Singapore (`sin1`).
-- **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across tokenized US equities (`isRwa === "YES"`) and continuous crypto contracts.
+- **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints from Vercel serverless execution (`iad1`, US East). Diagnostic `/api/ping` confirms Bitget public market feeds respond cleanly with 200 OK without geoblocking (retracting earlier assumptions of US server IP blocking).
+- **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across live Bitget tokenized US equities (dynamically discovers all 31 active `isRwa === "YES"` contracts from Bitget exchange, expanding from the 24-contract baseline snapshot in `config/equity-perps.json`) and continuous crypto contracts.
 - **Interactive Multi-Timeframe Chart:** Interactive candlestick chart rendering live Bitget candles with technical indicators (EMA20, EMA50, EMA200, ATR, RSI).
 - **Multi-Agent Deliberation (3 Agents):** Full deliberation pipeline running Market Intelligence Agent, Adversarial Review Agent, and Deterministic Risk Engine evaluation against live market data.
 - **Alpha Factory Backtest Report:** Observed (computed by the backtest script) In-Sample vs. Out-of-Sample metrics table, transaction cost breakdowns, and high-resolution SVG equity curve.
