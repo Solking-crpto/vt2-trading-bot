@@ -2885,7 +2885,16 @@ async function refreshAutoTradingStatus() {
       const botConfig = cur.botSettings || {};
       const openCount = (cur.positions || []).filter(p => p.status === 'OPEN').length;
       const todayStr = new Date().toISOString().slice(0, 10);
-      const tradesToday = (cur.orders || []).filter(o => o.status === 'FILLED' && new Date(o.submitted_at || o.timestamp).toISOString().slice(0, 10) === todayStr).length;
+      const tradesToday = (cur.orders || []).filter(o => {
+        if (o.status !== 'FILLED') return false;
+        const ts = Number(o.filled_at || o.timestamp || o.submitted_at);
+        if (!Number.isFinite(ts) || ts <= 0) return false;
+        try {
+          return new Date(ts).toISOString().slice(0, 10) === todayStr;
+        } catch {
+          return false;
+        }
+      }).length;
 
       const data = {
         running: Boolean(botConfig.running),
