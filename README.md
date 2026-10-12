@@ -16,16 +16,20 @@ Judges can open and explore VT2 immediately without installing anything:
 👉 **Hosted Demo:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app)  
 👉 **Alpha Factory Report Standalone:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)  
 
-### What Works in the Hosted Demo:
-- **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints from Vercel serverless execution (`iad1`, US East). Diagnostic `/api/ping` confirms Bitget public market feeds respond cleanly with 200 OK without geoblocking (retracting earlier assumptions of US server IP blocking).
-- **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across live Bitget tokenized US equities (dynamically discovers all 31 active `isRwa === "YES"` contracts from Bitget exchange, expanding from the 24-contract baseline snapshot in `config/equity-perps.json`) and continuous crypto contracts.
+### What Works in the Hosted Demo (Browser Paper Mode):
+- **Interactive Browser Paper Trading:** Full interactive simulated trading without server processes. Judges can place paper orders, simulate price spikes and drops, trigger stop loss / take profit / breakeven exits, close positions, and view order execution logs.
+- **Client-Side Account Persistence:** Paper account equity ($10,000 initial), positions, orders, trade journal, and rejected setups are preserved locally in the browser (`localStorage` with memory fallback), with a 1-click **Reset Demo Account** button.
+- **Stateless Serverless Execution:** Serverless endpoints statelessly hydrate execution engines with client state, query live Bitget public market feeds, enforce deterministic risk constraints, and compute fills and P&L.
+- **Automated Bot Cycles in Tab:** Automated bot cycle runs every 60s and position sentiment monitor runs every 5m via browser intervals while the tab remains active, with immediate catch-up cycles on tab visibility change.
+- **Live Bitget Public Feeds:** Real-time prices, 24-hour volume, and spreads queried directly from Bitget V2 REST endpoints from Vercel serverless execution (`iad1`, US East). Diagnostic `/api/ping` confirms Bitget public market feeds respond cleanly with 200 OK without geoblocking.
+- **Market Scanner:** Multi-timeframe trend, momentum, and volume filters across live Bitget tokenized US equities (dynamically discovers all 31 active `isRwa === "YES"` contracts from Bitget exchange, expanding from the 24-contract baseline snapshot in `config/equity-perps.json`) and continuous crypto contracts. Defaults to Stocks.
 - **Interactive Multi-Timeframe Chart:** Interactive candlestick chart rendering live Bitget candles with technical indicators (EMA20, EMA50, EMA200, ATR, RSI).
 - **Multi-Agent Deliberation (3 Agents):** Full deliberation pipeline running Market Intelligence Agent, Adversarial Review Agent, and Deterministic Risk Engine evaluation against live market data.
 - **Alpha Factory Backtest Report:** Observed (computed by the backtest script) In-Sample vs. Out-of-Sample metrics table, transaction cost breakdowns, and high-resolution SVG equity curve.
 - **Verification Suite & System Health:** Cryptographic signature verifiers, live latency diagnostics, and environment safety guards.
 
-### What Requires Running Locally:
-To run the persistent autonomous bot (`AutoTrader`), background position tick monitor (`TradeMonitor`), or persistent paper trade execution (`data/vt2.db`), run the application locally on Node.js:
+### Running as a Persistent Server Daemon (Local Node.js):
+To run VT2 with persistent server-side background loops independent of browser tabs, native SQLite file persistence on disk (`data/vt2.db`), and background WebSocket market streaming, run locally on Node.js:
 
 ```bash
 # 1. Clone the repository

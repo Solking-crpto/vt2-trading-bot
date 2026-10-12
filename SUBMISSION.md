@@ -5,7 +5,7 @@
 **Theme:** Open Theme (Execution-Aware, Risk-Budgeted Alpha on Tokenized US Equity Perpetuals)  
 **Strategy Hash:** `541c10ab1dcae7bbaaebe5d8c465730bd118747b`  
 **Operating Mode:** Strictly `PAPER` (Mainnet and Live Execution Architecturally Blocked)  
-**Verified Test Suite:** **94 Tests Passing (0 Failures)**  
+**Verified Test Suite:** **100 Tests Passing (0 Failures)**  
 
 ---
 
@@ -13,11 +13,13 @@
 
 - **Live URL:** [https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app)
 - **Alpha Factory Standalone Report:** [https://vt2-trading-bot.vercel.app/report.html](https://vt2-trading-bot.vercel.app/report.html)
-- **Deployment Mode:** Read-only hosted demo (`DEPLOY_MODE=DEMO_READONLY`) on Vercel Hobby with live Bitget public market data (US tokenized equities + continuous crypto), in-memory SQLite, and zero secrets.
-- **Active Features on Demo:** Live Bitget V2 public market scanner, multi-timeframe interactive chart (SPY, QQQ, NVDA, TSLA, etc.), 3-agent deliberation pipeline (Market Intelligence, Adversarial Review, Deterministic Risk Engine), verification suite, and pre-computed Alpha Factory backtest report.
+- **Deployment Mode:** Interactive Browser Paper Mode (`DEPLOY_MODE=DEMO_READONLY`) on Vercel Hobby with live Bitget public market data (US tokenized equities + continuous crypto), stateless serverless execution, client-side paper state, and zero secrets.
+- **Interactive Browser Paper Mode:** Judges can place test paper orders, simulate market ticks (stop loss, take profit, partial TP, breakeven), close positions, view order history and trade journal, adjust risk settings, and run automated bot cycles directly in the browser.
+- **Client-Side State with Stateless Serverless Execution:** The paper account, positions, orders, and journal are maintained in browser `localStorage` with in-memory fallbacks, while Vercel serverless functions statelessly evaluate live Bitget prices, enforce deterministic risk constraints, and compute P&L.
+- **Bot Cycles in Tab:** Automated trading cycles run via browser intervals (60s bot cycle, 5m sentiment monitor) while the tab remains active, with immediate catch-up cycles upon tab visibility change.
 - **Contract Universe Alignment:** Live Bitget REST API dynamically returns **31 tokenized equity perpetuals** (`isRwa === "YES"` across active USDT futures listings as of October 2026). The initial baseline offline configuration (`config/equity-perps.json`) contains a curated set of 24 contracts (of which 19 had continuous historical data for the Alpha Factory backtest replay). The live scanner automatically detects and streams all 31 active Bitget RWA contracts.
 - **Hosting Region & Public Market Access:** Functions execute on Vercel's `iad1` (US East) edge region. Diagnostic `/api/ping` confirms serverless execution in `iad1` directly queries Bitget's public V2 REST endpoints (`https://api.bitget.com/api/v2/mix/market/...`) with 200 OK without geoblocking (retracting earlier assumptions that Bitget blocked US server IPs for public market data).
-- **Local Application Features:** Background `AutoTrader` autonomous loops, `TradeMonitor` sentiment alerts, and disk-persisted SQLite trading journal (`npm start`).
+- **Local Application Features:** Background daemon `AutoTrader` autonomous loops, `TradeMonitor` sentiment alerts, and disk-persisted SQLite trading journal (`npm start`).
 
 ---
 

@@ -499,4 +499,41 @@ export class PaperExecutionEngine {
       isSimulated: true,
     };
   }
+
+  /**
+   * Exports full serializable state of the paper engine.
+   * @returns {Object}
+   */
+  exportState() {
+    return {
+      initialEquity: this.initialEquity,
+      startOfDayEquity: this.startOfDayEquity,
+      currentEquity: this.currentEquity,
+      realizedPnl: this.realizedPnl,
+      totalFeesPaid: this.totalFeesPaid,
+      consecutiveLosses: this.consecutiveLosses,
+      lastTradeClosedAt: this.lastTradeClosedAt,
+      positions: JSON.parse(JSON.stringify(this.positions)),
+      orders: JSON.parse(JSON.stringify(this.orders)),
+      tradeHistory: JSON.parse(JSON.stringify(this.tradeHistory)),
+      account: this.getAccountSummary(),
+    };
+  }
+
+  /**
+   * Hydrates paper engine from external state (e.g. browser localStorage).
+   * @param {Object} state
+   */
+  importState(state = {}) {
+    if (!state || typeof state !== 'object') return;
+    const accountState = state.account || state;
+    this.restoreState(accountState, state.positions || []);
+    if (Array.isArray(state.orders)) {
+      this.orders = JSON.parse(JSON.stringify(state.orders));
+    }
+    const history = state.tradeHistory || state.journal;
+    if (Array.isArray(history)) {
+      this.tradeHistory = JSON.parse(JSON.stringify(history));
+    }
+  }
 }

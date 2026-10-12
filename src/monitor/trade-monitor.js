@@ -323,4 +323,29 @@ export class TradeMonitor {
       activeSentiments: Object.fromEntries(this.positionSentiments),
     };
   }
+
+  /**
+   * Exports serializable sentiment state.
+   * @returns {Object}
+   */
+  exportState() {
+    return {
+      lastCheckAt: this.lastCheckAt,
+      nextCheckAt: this.nextCheckAt,
+      positionSentiments: Array.from(this.positionSentiments.entries()),
+    };
+  }
+
+  /**
+   * Hydrates sentiment monitor from external state.
+   * @param {Object} state
+   */
+  importState(state = {}) {
+    if (!state || typeof state !== 'object') return;
+    if (state.lastCheckAt !== undefined) this.lastCheckAt = state.lastCheckAt;
+    if (state.nextCheckAt !== undefined) this.nextCheckAt = state.nextCheckAt;
+    if (Array.isArray(state.positionSentiments)) {
+      this.positionSentiments = new Map(state.positionSentiments);
+    }
+  }
 }

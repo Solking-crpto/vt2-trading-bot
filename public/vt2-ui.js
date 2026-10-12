@@ -29,6 +29,298 @@ const state = {
   botStatus: null,
 };
 
+// Browser Paper Mode State Persistence (DemoStore)
+export const DemoStore = {
+  storageKey: 'vt2_demo_state',
+  memState: null,
+
+  getDefaultState() {
+    return {
+      account: {
+        initialEquity: 10000,
+        equity: 10000,
+        availableBalance: 10000,
+        usedMargin: 0,
+        unrealizedPnl: 0,
+        realizedPnl: 0,
+        dailyLoss: 0,
+        dailyLossLimit: 200,
+        openPositionsCount: 0,
+        totalExposureNotional: 0,
+        consecutiveLosses: 0,
+        startOfDayEquity: 10000,
+        currentEquity: 10000,
+        lastTradeClosedAt: null,
+        totalTrades: 0,
+        winningTrades: 0,
+        losingTrades: 0,
+        winRate: 0,
+        profitFactor: 0,
+        maxDrawdownPercent: 0,
+        maxAggregateOpenRiskPercent: 1.0,
+        maxConcurrentPositions: 1,
+      },
+      positions: [],
+      orders: [],
+      journal: [],
+      rejectedSetups: [],
+      settings: {
+        entryAllocationPercent: 10,
+        maxConcurrentPositions: 1,
+        maxAggregateOpenRiskPercent: 1.0,
+        maxTradesPerDay: 3,
+        botMarketMode: 'stocks',
+      },
+      botSettings: {
+        running: false,
+        status: 'STOPPED',
+        botMarketMode: 'stocks',
+        botCandidateOrder: 'equities_first',
+        candidateSkipMinutes: 15,
+        cooldownAfterManualClose: true,
+      },
+      activityLog: [],
+    };
+  },
+
+  getState() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem(this.storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[DemoStore] Error reading localStorage, using memory fallback:', e);
+    }
+    if (!this.memState) {
+      this.memState = this.getDefaultState();
+    }
+    return this.memState;
+  },
+
+  saveState(stateObj) {
+    if (!stateObj) return;
+    this.memState = stateObj;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.storageKey, JSON.stringify(stateObj));
+      }
+    } catch (e) {
+      console.warn('[DemoStore] Error saving to localStorage:', e);
+    }
+  },
+
+  reset() {
+    const fresh = this.getDefaultState();
+    this.saveState(fresh);
+    return fresh;
+  },
+
+  updateFromResponse(data) {
+    if (data && data.state) {
+      const current = this.getState();
+      const merged = {
+        ...current,
+        ...data.state,
+      };
+      if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+        const newEvents = data.events.map(ev => ({
+          action: ev.type || 'EVENT',
+          symbol: ev.symbol || 'SYSTEM',
+          details: ev.message || JSON.stringify(ev),
+          timestamp: ev.timestamp || Date.now(),
+        }));
+        merged.activityLog = [...newEvents, ...(merged.activityLog || [])].slice(0, 100);
+      }
+      this.saveState(merged);
+      return merged;
+    }
+    return this.getState();
+  }
+};
+
+// Browser Paper Mode Bot Runner (DemoBotManager)
+export const DemoBotManager = {
+  botInterval: null,
+  monitorInterval: null,
+  tickInterval: null,
+  isCycling: false,
+
+  startTickPolling() {
+    if (this.tickInterval) clearInterval(this.tickInterval);
+    this.tickInterval = setInterval(async () => {
+      const curState = DemoStore.getState();
+      const openPositions = curState.positions?.filter(p => p.status === 'OPEN') || [];
+      if (openPositions.length > 0) {
+        try {
+          const res = await fetch('/api/demo/tick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: curState }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            DemoStore.updateFromResponse(data);
+            await refreshAccount();
+            await refreshOrders();
+            await refreshJournal();
+          }
+        } catch (err) {
+          console.warn('[DemoTick] Background tick error:', err);
+        }
+      }
+    }, 12000);
+  },
+
+  async runBotCycle() {
+    if (this.isCycling) return;
+    this.isCycling = true;
+    try {
+      const curState = DemoStore.getState();
+      const res = await fetch('/api/demo/bot/cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: curState }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        DemoStore.updateFromResponse(data);
+        if (data.status) {
+          curState.botSettings = curState.botSettings || {};
+          curState.botSettings.status = data.status;
+          curState.botSettings.waitingReason = data.waitingReason;
+          curState.botSettings.waitingResumesAt = data.waitingResumesAt;
+        }
+        await refreshAccount();
+        await refreshOrders();
+        await refreshJournal();
+        await refreshRejectedArchive();
+        await refreshAutoTradingStatus();
+      }
+    } catch (err) {
+      console.warn('[DemoBot] Cycle error:', err);
+    } finally {
+      this.isCycling = false;
+    }
+  },
+
+  async runMonitor() {
+    try {
+      const curState = DemoStore.getState();
+      const openPositions = curState.positions?.filter(p => p.status === 'OPEN') || [];
+      if (openPositions.length === 0) return;
+      const res = await fetch('/api/demo/monitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: curState }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        DemoStore.updateFromResponse(data);
+        await refreshAccount();
+        await refreshJournal();
+      }
+    } catch (err) {
+      console.warn('[DemoMonitor] Monitor error:', err);
+    }
+  },
+
+  async start() {
+    const curState = DemoStore.getState();
+    curState.botSettings = curState.botSettings || {};
+    curState.botSettings.running = true;
+    curState.botSettings.status = 'RUNNING';
+    const startEvent = {
+      action: 'BOT_STARTED',
+      symbol: 'ALL',
+      details: 'AutoTrader started in Browser Paper Mode (60s loop with live Bitget public market feeds)',
+      timestamp: Date.now(),
+    };
+    curState.activityLog = [startEvent, ...(curState.activityLog || [])].slice(0, 100);
+    DemoStore.saveState(curState);
+
+    await refreshAutoTradingStatus();
+    await this.runBotCycle();
+
+    if (this.botInterval) clearInterval(this.botInterval);
+    this.botInterval = setInterval(() => this.runBotCycle(), 60000);
+
+    if (this.monitorInterval) clearInterval(this.monitorInterval);
+    this.monitorInterval = setInterval(() => this.runMonitor(), 300000);
+  },
+
+  async stop(reason = 'MANUAL_STOP') {
+    if (this.botInterval) clearInterval(this.botInterval);
+    if (this.monitorInterval) clearInterval(this.monitorInterval);
+    this.botInterval = null;
+    this.monitorInterval = null;
+
+    const curState = DemoStore.getState();
+    curState.botSettings = curState.botSettings || {};
+    curState.botSettings.running = false;
+    curState.botSettings.status = 'STOPPED';
+    const stopEvent = {
+      action: 'BOT_STOPPED',
+      symbol: 'ALL',
+      details: `AutoTrader stopped (${reason})`,
+      timestamp: Date.now(),
+    };
+    curState.activityLog = [stopEvent, ...(curState.activityLog || [])].slice(0, 100);
+    DemoStore.saveState(curState);
+
+    await refreshAutoTradingStatus();
+  },
+
+  async stopAndCloseAll(reason = 'MANUAL_STOP_CLOSE_ALL') {
+    await this.stop(reason);
+    const curState = DemoStore.getState();
+    try {
+      const res = await fetch('/api/demo/close-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: curState, exitReason: reason }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        DemoStore.updateFromResponse(data);
+        alert(`Bot stopped and ${data.closedCount || 0} position(s) closed.`);
+        await refreshAccount();
+        await refreshOrders();
+        await refreshJournal();
+      }
+    } catch (err) {
+      alert(`Error during close-all: ${friendlyError(err)}`);
+    }
+  },
+
+  async killSwitch() {
+    await this.stop('KILL_SWITCH');
+    const curState = DemoStore.getState();
+    try {
+      const res = await fetch('/api/demo/close-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: curState, exitReason: 'KILL_SWITCH_ENGAGED' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        DemoStore.updateFromResponse(data);
+        alert(`EMERGENCY KILL SWITCH ENGAGED!\nAutomated trading halted.\nClosed ${data.closedCount || 0} active positions.`);
+        await refreshAccount();
+        await refreshOrders();
+        await refreshJournal();
+      }
+    } catch (err) {
+      alert(`Error during kill switch: ${friendlyError(err)}`);
+    }
+  }
+};
+
 // Initialize Application
 window.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
@@ -140,19 +432,26 @@ async function setupMarketMode() {
     updateMarketSymbols(mode);
   };
 
+  const savedMode = (typeof localStorage !== 'undefined' && localStorage.getItem('vt2_market_mode')) || 'stocks';
+  updateModeUi(savedMode);
+
   try {
     const res = await fetch('/api/market/mode');
     const data = await res.json();
-    if (data.activeMode) {
+    if (savedMode) {
+      updateModeUi(savedMode);
+    } else if (data.activeMode) {
       updateModeUi(data.activeMode);
+      try { localStorage.setItem('vt2_market_mode', data.activeMode); } catch {}
     } else {
       updateModeUi('stocks');
     }
   } catch {
-    updateModeUi('stocks');
+    updateModeUi(savedMode);
   }
 
   const applyModeChange = async (mode) => {
+    try { localStorage.setItem('vt2_market_mode', mode); } catch {}
     updateModeUi(mode);
     try {
       await fetch('/api/market/mode', {
@@ -294,6 +593,10 @@ function setupKillSwitch() {
       modal.classList.remove('open');
       confirmBtn.disabled = true;
       try {
+        if (state.isDemoReadOnly) {
+          await DemoBotManager.killSwitch();
+          return;
+        }
         const res = await fetch('/api/autotrading/kill-switch', { method: 'POST' });
         const data = await res.json();
         alert(`EMERGENCY KILL SWITCH ENGAGED!\nAutomated trading halted.\nClosed ${data.closedPositionsCount || 0} active positions.`);
@@ -795,7 +1098,17 @@ async function checkDeployMode() {
       const demoBanner = document.getElementById('demoBanner');
       if (demoBanner) demoBanner.style.display = 'flex';
 
-      // Disable write action buttons with descriptive tooltip
+      const resetBtn = document.getElementById('resetDemoAccountBtn');
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          if (confirm('Reset your simulated paper account back to $10,000 equity and clear all local positions, orders, and journal history?')) {
+            DemoStore.reset();
+            location.reload();
+          }
+        };
+      }
+
+      // Ensure write action buttons are ENABLED in Browser Paper Mode
       const writeButtonIds = [
         'quickTestTradeBtn',
         'executePaperOrderBtn',
@@ -808,36 +1121,29 @@ async function checkDeployMode() {
         'autoStopCloseBtn',
         'killAutoBtn',
         'saveSettingsBtn',
-        'saveRiskBtn',
-        'runBacktestBtn',
       ];
       writeButtonIds.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-          btn.disabled = true;
-          btn.title = 'Not available in hosted demo; runs in local app';
-          btn.style.opacity = '0.5';
-          btn.style.cursor = 'not-allowed';
+          btn.disabled = false;
+          btn.removeAttribute('title');
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
         }
       });
 
-      // Close all buttons
+      // Close all buttons enabled
       document.querySelectorAll('[id*="CloseAll"], [id*="closeAll"]').forEach(btn => {
-        btn.disabled = true;
-        btn.title = 'Not available in hosted demo; runs in local app';
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
+        btn.disabled = false;
+        btn.removeAttribute('title');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
       });
 
       // Display clear notice on Automated Trading engine
       const autoSubtext = document.getElementById('autoStatusSubtext');
       if (autoSubtext) {
-        autoSubtext.textContent = 'Not available in hosted demo; runs in local app';
-        autoSubtext.style.color = 'var(--color-warning, #f59e0b)';
-      }
-      const autoStatusBadge = document.getElementById('autoStatusBadge');
-      if (autoStatusBadge) {
-        autoStatusBadge.textContent = 'HOSTED DEMO (LOCAL APP ONLY)';
+        autoSubtext.textContent = 'Browser Paper Mode active · Runs while tab is open';
       }
 
       // Add banner in tab-autotrading if not already present
@@ -846,7 +1152,7 @@ async function checkDeployMode() {
         const notice = document.createElement('div');
         notice.id = 'demoAutoTradingNotice';
         notice.style.cssText = 'margin-bottom: 16px; padding: 12px 16px; background: rgba(59, 130, 246, 0.12); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; color: var(--text-secondary);';
-        notice.innerHTML = '<strong style="color: var(--text-primary);">ℹ️ Server-Loop Notice:</strong> Autonomous background trading loops (AutoTrader interval, trade monitor, persistent paper fills) are <strong>not available in hosted demo; runs in local app</strong> via <code>npm start</code>. This hosted preview provides live Bitget public market feeds, interactive charting, AI deliberation, risk calculators, and historical research.';
+        notice.innerHTML = '<strong style="color: var(--text-primary);">ℹ️ Browser Paper Mode:</strong> All simulated paper trading, order execution, position tracking, and automated bot cycles run statelessly using live Bitget public market feeds. Your paper account is preserved locally in this browser (clearing site data resets it). The bot loop runs only while this tab is open.';
         const header = autoTab.querySelector('.section-header');
         if (header && header.nextSibling) {
           autoTab.insertBefore(notice, header.nextSibling);
@@ -854,6 +1160,27 @@ async function checkDeployMode() {
           autoTab.prepend(notice);
         }
       }
+
+      // Start periodic tick polling for live position P&L
+      DemoBotManager.startTickPolling();
+
+      // Resume bot if previously running in localStorage
+      const curState = DemoStore.getState();
+      if (curState.botSettings?.running) {
+        console.log('[DemoBot] Resuming active bot loop in tab');
+        DemoBotManager.start();
+      }
+
+      // Visibility change catch-up cycle
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          const cur = DemoStore.getState();
+          if (cur.botSettings?.running) {
+            console.log('[DemoBot] Tab became visible, running catch-up cycle');
+            DemoBotManager.runBotCycle();
+          }
+        }
+      });
     }
   } catch (err) {
     console.warn('Could not determine deploy mode:', err);
@@ -969,6 +1296,14 @@ async function checkFeedStatus() {
 
 async function refreshAccount() {
   try {
+    if (state.isDemoReadOnly) {
+      const demoState = DemoStore.getState();
+      state.account = demoState.account;
+      updateAccountUi(demoState.account);
+      state.positions = (demoState.positions || []).filter(p => p.status === 'OPEN');
+      updatePositionsUi(state.positions);
+      return;
+    }
     const res = await fetch('/api/account');
     const data = await res.json();
     state.account = data;
@@ -1121,6 +1456,19 @@ function updatePositionsUi(positions) {
 window.closePosition = async function(posId) {
   if (!confirm('Close this simulated paper position at current market price?')) return;
   try {
+    if (state.isDemoReadOnly) {
+      const res = await fetch('/api/demo/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: DemoStore.getState(), positionId: posId }),
+      });
+      const data = await res.json();
+      DemoStore.updateFromResponse(data);
+      await refreshAccount();
+      await refreshOrders();
+      await refreshJournal();
+      return;
+    }
     const res = await fetch(`/api/positions/${posId}/close`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
@@ -1135,6 +1483,20 @@ window.closePosition = async function(posId) {
 window.closeAllPositions = async function() {
   if (!confirm('Close all active simulated paper positions at current market prices?')) return;
   try {
+    if (state.isDemoReadOnly) {
+      const res = await fetch('/api/demo/close-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: DemoStore.getState() }),
+      });
+      const data = await res.json();
+      DemoStore.updateFromResponse(data);
+      alert(`Closed ${data.closedCount || 0} position(s).`);
+      await refreshAccount();
+      await refreshOrders();
+      await refreshJournal();
+      return;
+    }
     const res = await fetch('/api/positions/close-all', { method: 'POST' });
     const data = await res.json();
     alert(`Closed ${data.closedPositionsCount ?? data.closedCount ?? 0} position(s).`);
@@ -1149,13 +1511,24 @@ window.closeAllPositions = async function() {
 async function checkPositionSentiment() {
   const notif = document.getElementById('posLifecycleNotification');
   try {
-    const res = await fetch('/api/monitor/check-now', { method: 'POST' });
+    const url = state.isDemoReadOnly ? '/api/demo/monitor' : '/api/monitor/check-now';
+    const body = state.isDemoReadOnly
+      ? { state: DemoStore.getState() }
+      : {};
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
     const data = await res.json();
+    if (state.isDemoReadOnly) {
+      DemoStore.updateFromResponse(data);
+    }
     if (notif) {
       notif.style.display = 'block';
       notif.style.background = 'rgba(0, 229, 153, 0.1)';
       notif.style.border = '1px solid var(--border-color)';
-      notif.textContent = `Sentiment check complete: evaluated ${data.checkedCount || 0} open positions. Active summary: ${data.summary || 'HEALTHY'}`;
+      notif.textContent = `Sentiment check complete: evaluated ${data.checkedCount || data.results?.length || 0} open positions. Active summary: ${data.summary || 'HEALTHY'}`;
       setTimeout(() => { notif.style.display = 'none'; }, 5000);
     }
     await refreshAccount();
@@ -1458,12 +1831,33 @@ async function executePaperOrder() {
   };
 
   try {
-    const res = await fetch('/api/orders/paper', {
+    const url = state.isDemoReadOnly ? '/api/demo/order' : '/api/orders/paper';
+    const body = state.isDemoReadOnly
+      ? { state: DemoStore.getState(), order: orderPayload }
+      : orderPayload;
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
+
+    if (state.isDemoReadOnly) {
+      if (data.approved) {
+        DemoStore.updateFromResponse(data);
+        alert(`Paper order filled successfully! Position ID: ${data.position?.id || 'demo-pos'}`);
+        switchTab('positions');
+        await refreshAccount();
+        await refreshOrders();
+      } else {
+        DemoStore.updateFromResponse(data);
+        alert(`Order rejected: ${data.error || 'Risk policy rejected order'}`);
+        await refreshRejectedArchive();
+      }
+      return;
+    }
+
     if (res.ok) {
       alert(`Paper order filled successfully! Position ID: ${data.position.id}`);
       switchTab('positions');
@@ -1512,10 +1906,16 @@ async function loadChartData() {
 
 async function refreshJournal() {
   try {
-    const res = await fetch('/api/journal');
-    const data = await res.json();
+    let entries = [];
+    if (state.isDemoReadOnly) {
+      entries = DemoStore.getState().journal || DemoStore.getState().tradeHistory || [];
+    } else {
+      const res = await fetch('/api/journal');
+      const data = await res.json();
+      entries = data.entries || [];
+    }
     const tbody = document.getElementById('journalTableBody');
-    const entries = data.entries || [];
+    if (!tbody) return;
 
     if (entries.length === 0) {
       tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 24px;">No closed paper trades in journal yet.</td></tr>`;
@@ -1523,20 +1923,25 @@ async function refreshJournal() {
     }
 
     tbody.innerHTML = entries.map(e => {
-      const pnlClass = e.realized_pnl >= 0 ? 'text-success' : 'text-danger';
-      const durMins = Math.round((e.holding_time_ms || 0) / 60000);
+      const pnl = e.realized_pnl ?? e.realizedPnl ?? 0;
+      const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
+      const durMins = Math.round((e.holding_time_ms || e.holdingTimeMs || 0) / 60000);
+      const roi = e.roi_percent ?? e.roiPercent ?? 0;
+      const entryPrice = e.entry_price ?? e.entryPrice ?? '--';
+      const exitPrice = e.exit_price ?? e.exitPrice ?? '--';
+      const exitReason = e.exit_reason ?? e.exitReason ?? 'CLOSED';
       return `
         <tr>
-          <td>${new Date(e.timestamp).toLocaleString()}</td>
+          <td>${new Date(e.timestamp || e.closedAt).toLocaleString()}</td>
           <td><strong>${e.symbol}</strong></td>
           <td><span class="badge ${e.side === 'LONG' ? 'badge-long' : 'badge-short'}">${e.side}</span></td>
-          <td>$${e.entry_price}</td>
-          <td>$${e.exit_price}</td>
+          <td>$${entryPrice}</td>
+          <td>$${exitPrice}</td>
           <td>${e.quantity}</td>
-          <td class="${pnlClass}"><strong>${e.realized_pnl >= 0 ? '+' : ''}$${e.realized_pnl.toFixed(2)}</strong></td>
-          <td class="${pnlClass}">${e.roi_percent >= 0 ? '+' : ''}${e.roi_percent}%</td>
+          <td class="${pnlClass}"><strong>${pnl >= 0 ? '+' : ''}$${Number(pnl).toFixed(2)}</strong></td>
+          <td class="${pnlClass}">${roi >= 0 ? '+' : ''}${roi}%</td>
           <td>${durMins} mins</td>
-          <td><span class="badge badge-neutral">${e.exit_reason}</span></td>
+          <td><span class="badge badge-neutral">${exitReason}</span></td>
         </tr>
       `;
     }).join('');
@@ -1578,6 +1983,11 @@ async function runBacktest() {
       }),
     });
     const report = await res.json();
+    if (res.status === 501 || report.error === 'BACKTEST_SERVER_ONLY') {
+      alert(`Notice: ${report.message || 'Full 150-day backtest data is pre-computed and available at /report.html'}`);
+      window.open(report.reportUrl || '/report.html', '_blank');
+      return;
+    }
 
     document.getElementById('btResultsContainer').style.display = 'block';
 
@@ -1770,12 +2180,49 @@ async function openQuickTestPosition() {
   if (btn) { btn.disabled = true; btn.textContent = 'Placing...'; }
 
   try {
-    const res = await fetch('/api/orders/paper-test', {
+    const url = state.isDemoReadOnly ? '/api/demo/order' : '/api/orders/paper-test';
+    const body = state.isDemoReadOnly
+      ? {
+          state: DemoStore.getState(),
+          order: {
+            symbol: 'BTCUSDT',
+            side: 'LONG',
+            stopLoss: 60000,
+            takeProfit: 120000,
+            allocationPercent: 10,
+          },
+        }
+      : { symbol: 'BTCUSDT', side: 'LONG', quantity: 0.05 };
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol: 'BTCUSDT', side: 'LONG', quantity: 0.05 }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
+
+    if (state.isDemoReadOnly) {
+      DemoStore.updateFromResponse(data);
+      if (notif) {
+        notif.style.display = 'block';
+        if (data.approved) {
+          notif.style.background = 'rgba(0, 229, 153, 0.12)';
+          notif.style.border = '1px solid rgba(0, 229, 153, 0.4)';
+          notif.style.color = 'var(--color-success)';
+          notif.innerHTML = `<strong>⚡ Position Opened:</strong> ${data.order?.quantity || 0.05} BTCUSDT LONG filled at $${data.order?.fillPrice || data.fillPrice}. SL: $${data.position?.stopLoss || '60,000'}, TP: $${data.position?.takeProfit || '120,000'}.`;
+        } else {
+          notif.style.background = 'rgba(255, 59, 92, 0.12)';
+          notif.style.border = '1px solid rgba(255, 59, 92, 0.4)';
+          notif.style.color = 'var(--color-danger)';
+          notif.innerHTML = `<strong>Order Failed:</strong> ${data.error || 'Position open rejected'}`;
+        }
+      }
+      await refreshAccount();
+      await refreshOrders();
+      await refreshRejectedArchive();
+      return;
+    }
+
     if (notif) {
       notif.style.display = 'block';
       if (data.success) {
@@ -1812,12 +2259,37 @@ async function simulatePositionTick(changePct) {
   if (btn) { btn.disabled = true; }
 
   try {
-    const res = await fetch('/api/positions/simulate-tick', {
+    const url = state.isDemoReadOnly ? '/api/demo/tick' : '/api/positions/simulate-tick';
+    const body = state.isDemoReadOnly
+      ? { state: DemoStore.getState(), priceChangePct: changePct }
+      : { priceChangePct: changePct };
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceChangePct: changePct }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
+
+    if (state.isDemoReadOnly) {
+      DemoStore.updateFromResponse(data);
+      if (notif) {
+        notif.style.display = 'block';
+        notif.style.background = isUp ? 'rgba(0, 229, 153, 0.12)' : 'rgba(255, 59, 92, 0.12)';
+        notif.style.border = isUp ? '1px solid rgba(0, 229, 153, 0.4)' : '1px solid rgba(255, 59, 92, 0.4)';
+        notif.style.color = isUp ? 'var(--color-success)' : 'var(--color-danger)';
+        const evNames = (data.events || []).map(e => e.type).join(', ') || 'None (price within bounds)';
+        notif.innerHTML = `
+          <div><strong>${isUp ? '📈 PRICE TICK (+1.2%) APPLIED' : '📉 PRICE TICK (-0.8%) APPLIED'}</strong></div>
+          <div style="margin-top: 4px;">Events: ${evNames}</div>
+        `;
+      }
+      await refreshAccount();
+      await refreshOrders();
+      await refreshJournal();
+      return;
+    }
+
     if (notif) {
       notif.style.display = 'block';
       if (data.success) {
@@ -1984,11 +2456,16 @@ async function testSqlitePersistence() {
 // Order Management History
 async function refreshOrders() {
   try {
-    const res = await fetch('/api/orders');
-    const data = await res.json();
+    let orders = [];
+    if (state.isDemoReadOnly) {
+      orders = DemoStore.getState().orders || [];
+    } else {
+      const res = await fetch('/api/orders');
+      const data = await res.json();
+      orders = data.orders || [];
+    }
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
-    const orders = data.orders || [];
 
     if (orders.length === 0) {
       tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 18px;">No simulated orders executed yet.</td></tr>`;
@@ -1998,19 +2475,24 @@ async function refreshOrders() {
     tbody.innerHTML = orders.map(o => {
       const statusBadge = o.status === 'FILLED' ? 'badge-long' : (o.status === 'REJECTED' ? 'badge-short' : 'badge-neutral');
       const sideBadge = o.side === 'LONG' ? 'badge-long' : 'badge-short';
+      const reqPrice = o.requested_price !== undefined ? Number(o.requested_price).toFixed(4) : (o.requestedPrice !== undefined ? Number(o.requestedPrice).toFixed(4) : '--');
+      const fillPrice = o.fill_price !== undefined ? Number(o.fill_price).toFixed(4) : (o.fillPrice !== undefined ? Number(o.fillPrice).toFixed(4) : '--');
+      const notional = o.notional !== undefined ? Number(o.notional).toFixed(2) : (o.quantity && fillPrice !== '--' ? Number(o.quantity * fillPrice).toFixed(2) : '--');
+      const fee = o.fee !== undefined ? Number(o.fee).toFixed(4) : '0.0000';
+      const timeStr = new Date(o.submitted_at || o.timestamp || Date.now()).toLocaleTimeString();
       return `
         <tr>
           <td><code>${o.id}</code></td>
           <td><strong>${o.symbol}</strong></td>
           <td><span class="badge ${sideBadge}">${o.side}</span></td>
           <td><span class="badge ${statusBadge}">${o.status}</span></td>
-          <td>$${o.requested_price !== undefined ? Number(o.requested_price).toFixed(4) : '--'}</td>
-          <td>$${o.fill_price !== undefined ? Number(o.fill_price).toFixed(4) : '--'}</td>
+          <td>$${reqPrice}</td>
+          <td>$${fillPrice}</td>
           <td>${o.quantity}</td>
-          <td>$${o.notional !== undefined ? Number(o.notional).toFixed(2) : '--'}</td>
-          <td>$${o.fee !== undefined ? Number(o.fee).toFixed(4) : '0.0000'}</td>
-          <td><span class="badge badge-neutral">${o.environment}</span></td>
-          <td>${new Date(o.submitted_at).toLocaleTimeString()}</td>
+          <td>$${notional}</td>
+          <td>$${fee}</td>
+          <td><span class="badge badge-neutral">${o.environment || 'PAPER'}</span></td>
+          <td>${timeStr}</td>
         </tr>
       `;
     }).join('');
@@ -2022,27 +2504,38 @@ async function refreshOrders() {
 // Historical Disqualified / Rejected Setups Archive
 async function refreshRejectedArchive() {
   try {
-    const res = await fetch('/api/rejected-setups');
-    const data = await res.json();
+    let rejected = [];
+    if (state.isDemoReadOnly) {
+      rejected = DemoStore.getState().rejectedSetups || [];
+    } else {
+      const res = await fetch('/api/rejected-setups');
+      const data = await res.json();
+      rejected = data.rejected || [];
+    }
     const tbody = document.getElementById('journalRejectedTableBody');
     if (!tbody) return;
-    const rejected = data.rejected || [];
 
     if (rejected.length === 0) {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">No setups rejected in this session.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = rejected.map(r => `
+    tbody.innerHTML = rejected.map(r => {
+      const reason = r.rejection_reason || r.rejectionReason || 'RISK_REJECTED';
+      const explanation = r.explanation || r.details?.reason || reason;
+      const netRr = r.net_rr || r.details?.rewardRisk?.netRR || '--';
+      const score = r.score || '--';
+      return `
       <tr>
         <td><strong>${r.symbol}</strong></td>
-        <td><span class="badge badge-short">${r.rejection_reason}</span></td>
-        <td style="color: var(--text-secondary); max-width: 320px; white-space: normal;">${r.explanation}</td>
-        <td>${r.net_rr ? `${r.net_rr}:1` : '--'}</td>
-        <td><strong class="text-info">${r.score || '--'}</strong></td>
+        <td><span class="badge badge-short">${reason}</span></td>
+        <td style="color: var(--text-secondary); max-width: 320px; white-space: normal;">${explanation}</td>
+        <td>${netRr !== '--' ? `${netRr}:1` : '--'}</td>
+        <td><strong class="text-info">${score}</strong></td>
         <td>${new Date(r.timestamp).toLocaleString()}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   } catch (err) {
     console.error('Error refreshing rejected archive:', err);
   }
@@ -2227,6 +2720,11 @@ async function saveSettings() {
   const banner = document.getElementById('settingsAlertBanner');
 
   try {
+    if (state.isDemoReadOnly) {
+      const cur = DemoStore.getState();
+      cur.settings = { ...(cur.settings || {}), ...payload };
+      DemoStore.saveState(cur);
+    }
     const res = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2238,7 +2736,7 @@ async function saveSettings() {
       banner.style.background = 'rgba(0, 229, 153, 0.15)';
       banner.style.border = '1px solid rgba(0, 229, 153, 0.4)';
       banner.style.color = 'var(--color-success)';
-      banner.textContent = '✅ Settings successfully updated and saved to SQLite database.';
+      banner.textContent = '✅ Settings successfully updated and saved.';
       setTimeout(() => { banner.style.display = 'none'; }, 4000);
       await refreshAccount();
       await refreshAutoTradingStatus();
@@ -2383,6 +2881,34 @@ async function runAllVerificationChecks() {
 // ==========================================
 async function refreshAutoTradingStatus() {
   try {
+    if (state.isDemoReadOnly) {
+      const cur = DemoStore.getState();
+      const botConfig = cur.botSettings || {};
+      const openCount = (cur.positions || []).filter(p => p.status === 'OPEN').length;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const tradesToday = (cur.orders || []).filter(o => o.status === 'FILLED' && new Date(o.submitted_at || o.timestamp).toISOString().slice(0, 10) === todayStr).length;
+
+      const data = {
+        running: Boolean(botConfig.running),
+        status: botConfig.status || (botConfig.running ? 'RUNNING' : 'STOPPED'),
+        waitingReason: botConfig.waitingReason,
+        waitingResumesAt: botConfig.waitingResumesAt,
+        tradesToday,
+        maxTradesPerDay: cur.settings?.maxTradesPerDay || 3,
+        openPositionsCount: openCount,
+        maxConcurrentPositions: cur.settings?.maxConcurrentPositions || 1,
+        config: {
+          botMarketMode: botConfig.botMarketMode || 'stocks',
+          botCandidateOrder: botConfig.botCandidateOrder || 'equities_first',
+          candidateSkipMinutes: botConfig.candidateSkipMinutes || 15,
+          minScore: 70,
+          minNetRR: 1.5,
+        },
+        recentActivity: cur.activityLog || [],
+      };
+      updateAutoTradingUi(data);
+      return;
+    }
     const res = await fetch('/api/autotrading/status');
     const data = await res.json();
     updateAutoTradingUi(data);
@@ -2523,6 +3049,10 @@ async function startAutoTrading() {
   if (btn) btn.disabled = true;
 
   try {
+    if (state.isDemoReadOnly) {
+      await DemoBotManager.start();
+      return;
+    }
     const res = await fetch('/api/autotrading/start', { method: 'POST' });
     const data = await res.json();
     if (!data.success && data.error) {
@@ -2541,6 +3071,10 @@ async function stopAutoTrading() {
   if (btn) btn.disabled = true;
 
   try {
+    if (state.isDemoReadOnly) {
+      await DemoBotManager.stop('MANUAL_STOP');
+      return;
+    }
     const res = await fetch('/api/autotrading/stop', { method: 'POST' });
     const data = await res.json();
     await refreshAutoTradingStatus();
@@ -2557,6 +3091,10 @@ async function stopAndCloseAllAutoTrading() {
   if (btn) btn.disabled = true;
 
   try {
+    if (state.isDemoReadOnly) {
+      await DemoBotManager.stopAndCloseAll('MANUAL_STOP_CLOSE_ALL');
+      return;
+    }
     const res = await fetch('/api/autotrading/stop-and-close-all', { method: 'POST' });
     const data = await res.json();
     alert(`Bot stopped. Closed ${data.closedPositionsCount || 0} position(s).`);

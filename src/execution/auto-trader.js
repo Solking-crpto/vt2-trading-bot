@@ -453,4 +453,41 @@ export class AutoTrader {
       recentActivity: this.activityLog.slice(0, 50),
     };
   }
+
+  /**
+   * Exports serializable state of the automated trading engine.
+   * @returns {Object}
+   */
+  exportState() {
+    return {
+      status: this.status,
+      pauseReason: this.pauseReason,
+      waitingReason: this.waitingReason,
+      waitingResumesAt: this.waitingResumesAt,
+      tradesToday: this.tradesToday,
+      lastDailyResetUtc: this.lastDailyResetUtc,
+      activityLog: JSON.parse(JSON.stringify(this.activityLog)),
+      config: { ...this.config },
+      skippedSymbols: Array.from(this.skippedSymbols.entries()),
+    };
+  }
+
+  /**
+   * Hydrates automated trader from external state.
+   * @param {Object} state
+   */
+  importState(state = {}) {
+    if (!state || typeof state !== 'object') return;
+    if (state.status !== undefined) this.status = state.status;
+    if (state.pauseReason !== undefined) this.pauseReason = state.pauseReason;
+    if (state.waitingReason !== undefined) this.waitingReason = state.waitingReason;
+    if (state.waitingResumesAt !== undefined) this.waitingResumesAt = state.waitingResumesAt;
+    if (typeof state.tradesToday === 'number') this.tradesToday = state.tradesToday;
+    if (typeof state.lastDailyResetUtc === 'number') this.lastDailyResetUtc = state.lastDailyResetUtc;
+    if (Array.isArray(state.activityLog)) this.activityLog = JSON.parse(JSON.stringify(state.activityLog));
+    if (state.config && typeof state.config === 'object') this.config = { ...this.config, ...state.config };
+    if (Array.isArray(state.skippedSymbols)) {
+      this.skippedSymbols = new Map(state.skippedSymbols);
+    }
+  }
 }

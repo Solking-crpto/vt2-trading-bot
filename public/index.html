@@ -208,14 +208,17 @@
         </div>
 
         <!-- Hosted Demo Banner (shown when deployMode === 'DEMO_READONLY') -->
-        <div class="alert-banner" id="demoBanner" style="display: none; background: rgba(59, 130, 246, 0.12); border-left: 4px solid #3b82f6; margin-bottom: 12px;">
-          <div class="alert-banner-content">
+        <div class="alert-banner" id="demoBanner" style="display: none; background: rgba(59, 130, 246, 0.12); border-left: 4px solid #3b82f6; margin-bottom: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div class="alert-banner-content" style="flex: 1; min-width: 280px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             <div>
-              <strong style="color: #60a5fa;">Hosted Demo (Read-Only Mode):</strong> Live Bitget public market data, in-memory SQLite, no persistent orders or background timers. To run the full autonomous trading engine and paper broker, run locally with <code>npm start</code>. See <a href="https://github.com/Solking-crpto/vt2-trading-bot" target="_blank" style="color: #93c5fd; text-decoration: underline;">GitHub README</a> and demo video.
+              <strong style="color: #60a5fa;">Browser Paper Mode:</strong> All simulated paper trading, order execution, position tracking, and automated bot cycles run statelessly using live Bitget public market feeds. Your paper account is preserved locally in this browser (clearing site data resets it). The bot loop runs only while this tab is open.
             </div>
           </div>
-          <span class="badge" style="background: #1e3a8a; color: #bfdbfe; font-size: 11px;">VERCEL HOBBY</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="resetDemoAccountBtn" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 11px;">🔄 Reset Demo Account ($10k)</button>
+            <span class="badge" style="background: #1e3a8a; color: #bfdbfe; font-size: 11px;">BROWSER PAPER MODE</span>
+          </div>
         </div>
 
         <!-- 1. OVERVIEW TAB -->

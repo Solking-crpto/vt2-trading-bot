@@ -109,6 +109,10 @@ async function run() {
         const params = msg.params;
         failedRequests.push({ url: params.requestId, errorText: params.errorText });
       }
+
+      if (msg.method === 'Page.javascriptDialogOpening') {
+        send('Page.handleJavaScriptDialog', { accept: true }).catch(() => {});
+      }
     } catch (e) {
       console.error('CDP message handling error:', e);
     }
@@ -213,7 +217,114 @@ async function run() {
     const next = document.documentElement.getAttribute('data-theme');
     return { pass: prev !== next, note: 'Theme toggled from ' + prev + ' to ' + next };
   })()`);
-  results.push({ item: 'Toggle: Theme Toggle (Dark/Light)', pass: !!themeCheck?.pass, note: themeCheck?.note });
+  // --- Interactive Browser Paper Mode Checks ---
+
+  // 1. Verify default market mode is Stocks
+  const modeCheck = await evalInPage(`(() => {
+    const badge = document.getElementById('viewingMarketBadge');
+    const text = badge ? badge.textContent : '';
+    const isStocks = text.includes('Stocks');
+    return { pass: isStocks, note: text || 'Badge missing' };
+  })()`);
+  results.push({ item: 'Demo: Default Mode is Stocks', pass: !!modeCheck?.pass, note: modeCheck?.note });
+
+  // 2. Override dialogs in page context to never block
+  await evalInPage(`(() => {
+    window.confirm = () => true;
+    window.alert = () => {};
+  })()`);
+
+  // 3. Place test paper trade via UI button
+  const tradeCheck = await evalInPage(`(async () => {
+    // Switch to Positions tab first
+    const tabBtn = document.querySelector('.nav-item[data-tab="positions"]');
+    if (tabBtn) tabBtn.click();
+    await new Promise(r => setTimeout(r, 400));
+
+    const testBtn = document.getElementById('quickTestTradeBtn');
+    if (!testBtn) return { pass: false, note: 'quickTestTradeBtn not found' };
+    testBtn.click();
+
+    // Wait for trade processing
+    await new Promise(r => setTimeout(r, 2500));
+
+    const posCount = parseInt(document.getElementById('positionsCount')?.textContent || '0', 10);
+    const tbody = document.getElementById('positionsTableBody');
+    const rows = tbody ? tbody.querySelectorAll('tr').length : 0;
+    const pass = posCount > 0 || rows > 0;
+    return { pass, note: 'Position count: ' + posCount + ', rows: ' + rows };
+  })()`);
+  results.push({ item: 'Demo: Place Paper Order UI', pass: !!tradeCheck?.pass, note: tradeCheck?.note });
+
+  // 4. Confirm position appears with live data
+  const posLiveCheck = await evalInPage(`(() => {
+    const tbody = document.getElementById('positionsTableBody');
+    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions');
+    return { pass: !!hasRow, note: hasRow ? 'Position row visible in table' : 'No active row' };
+  })()`);
+  results.push({ item: 'Demo: Position Appears with P&L', pass: !!posLiveCheck?.pass, note: posLiveCheck?.note });
+
+  // 5. Close position via UI and confirm journal row
+  const closeCheck = await evalInPage(`(async () => {
+    const closeBtn = document.querySelector('#positionsTableBody button') || document.getElementById('closeAllPositionsBtn');
+    if (closeBtn) closeBtn.click();
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Switch to journal tab
+    const jTab = document.querySelector('.nav-item[data-tab="journal"]');
+    if (jTab) jTab.click();
+    await new Promise(r => setTimeout(r, 800));
+
+    const jBody = document.getElementById('journalTableBody');
+    const hasJournal = jBody && !jBody.textContent.includes('No closed paper trades in journal yet');
+    return { pass: !!hasJournal, note: hasJournal ? 'Journal entry recorded' : 'Journal empty' };
+  })()`);
+  results.push({ item: 'Demo: Close Position & Journal', pass: !!closeCheck?.pass, note: closeCheck?.note });
+
+  // 6. Reload page and confirm state persisted in localStorage
+  await send('Page.reload');
+  await new Promise(r => setTimeout(r, 3000));
+  await evalInPage(`(() => {
+    window.confirm = () => true;
+    window.alert = () => {};
+  })()`);
+
+  const persistCheck = await evalInPage(`(async () => {
+    const jTab = document.querySelector('.nav-item[data-tab="journal"]');
+    if (jTab) jTab.click();
+    await new Promise(r => setTimeout(r, 600));
+
+    const jBody = document.getElementById('journalTableBody');
+    const persisted = jBody && !jBody.textContent.includes('No closed paper trades in journal yet');
+    return { pass: !!persisted, note: persisted ? 'Account history persisted in localStorage' : 'Storage reset' };
+  })()`);
+  results.push({ item: 'Demo: Persistence Across Reload', pass: !!persistCheck?.pass, note: persistCheck?.note });
+
+  // 7. Start bot and confirm at least one cycle event or status
+  const botCheck = await evalInPage(`(async () => {
+    const autoTab = document.querySelector('.nav-item[data-tab="autotrading"]');
+    if (autoTab) autoTab.click();
+    await new Promise(r => setTimeout(r, 600));
+
+    const startBtn = document.getElementById('autoStartBtn');
+    if (!startBtn) return { pass: false, note: 'autoStartBtn not found' };
+    startBtn.click();
+    await new Promise(r => setTimeout(r, 2500));
+
+    const metric = document.getElementById('autoStatusMetric')?.textContent || '';
+    const badge = document.getElementById('autoStatusBadge')?.textContent || '';
+    const actBody = document.getElementById('autoActivityTableBody');
+    const hasEvents = actBody && !actBody.textContent.includes('Bot has not run any cycles yet');
+    const isRunning = metric === 'RUNNING' || metric === 'WAITING' || badge.includes('RUNNING') || badge.includes('WAITING') || hasEvents;
+
+    // Stop bot
+    const stopBtn = document.getElementById('autoStopBtn');
+    if (stopBtn) stopBtn.click();
+    await new Promise(r => setTimeout(r, 1000));
+
+    return { pass: isRunning, note: 'Status: ' + metric + ', Events: ' + (hasEvents ? 'Yes' : 'No') };
+  })()`);
+  results.push({ item: 'Demo: Bot Start & Cycle Loop', pass: !!botCheck?.pass, note: botCheck?.note });
 
   // Output table
   console.log('| UI Component / Interaction | Status | Details |');

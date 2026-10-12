@@ -15,7 +15,8 @@ import { BacktestEngine } from './backtest/engine.js';
 import { evaluatePaperTrade } from './risk-engine.js';
 import { VerificationEngine } from './verification/verifier.js';
 import { TradeMonitor } from './monitor/trade-monitor.js';
-import { AutoTrader } from './execution/auto-trader.js';
+import { AutoTrader, BOT_STATUS } from './execution/auto-trader.js';
+import { isEligibleContract, isEquityContract, isCryptoContract } from './config/contracts.js';
 import { BitgetCryptoProvider, StockMarketProvider } from './adapters/market-provider.js';
 import {
   CURRENT_ENVIRONMENT,
@@ -56,6 +57,77 @@ export const DEFAULT_SETTINGS = Object.freeze({
   cooldownAfterManualClose: true,
   equityEntriesWhenUnderlyingClosed: 'ALLOW_WITH_WARNING',
 });
+
+/**
+ * Validates browser-supplied paper demo state for stateless serverless operations.
+ * Enforces finite numbers, sane equity bounds, max array lengths, and contract universe membership.
+ * @param {Object} state
+ * @returns {{valid: boolean, error?: string}}
+ */
+export function validateDemoState(state) {
+  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+    return { valid: false, error: 'State must be a JSON object' };
+  }
+
+  const account = state.account || state;
+  const equity = account.currentEquity ?? account.equity;
+  if (typeof equity !== 'number' || !Number.isFinite(equity) || equity < 100 || equity > 10000000) {
+    return { valid: false, error: 'Account equity must be a finite number between 100 and 10,000,000' };
+  }
+
+  if (account.initialEquity !== undefined && (!Number.isFinite(account.initialEquity) || account.initialEquity <= 0)) {
+    return { valid: false, error: 'Invalid initialEquity: must be a positive finite number' };
+  }
+  if (account.startOfDayEquity !== undefined && (!Number.isFinite(account.startOfDayEquity) || account.startOfDayEquity <= 0)) {
+    return { valid: false, error: 'Invalid startOfDayEquity: must be a positive finite number' };
+  }
+
+  const positions = state.positions || [];
+  if (!Array.isArray(positions)) {
+    return { valid: false, error: 'Positions must be an array' };
+  }
+  if (positions.length > 10) {
+    return { valid: false, error: 'Positions array exceeds maximum limit of 10' };
+  }
+
+  for (const pos of positions) {
+    if (!pos || typeof pos !== 'object') {
+      return { valid: false, error: 'Invalid position object in array' };
+    }
+    if (!pos.symbol || !isEligibleContract(pos.symbol)) {
+      return { valid: false, error: `Position symbol ${pos.symbol} is not an eligible contract in universe` };
+    }
+    if (!Number.isFinite(pos.entryPrice) || pos.entryPrice <= 0) {
+      return { valid: false, error: 'Invalid position entryPrice' };
+    }
+    if (!Number.isFinite(pos.currentQuantity) || pos.currentQuantity <= 0) {
+      return { valid: false, error: 'Invalid position quantity' };
+    }
+  }
+
+  const journal = state.journal || state.tradeHistory || [];
+  if (!Array.isArray(journal)) {
+    return { valid: false, error: 'Journal must be an array' };
+  }
+  if (journal.length > 200) {
+    return { valid: false, error: 'Journal array exceeds maximum limit of 200' };
+  }
+
+  const orders = state.orders || [];
+  if (!Array.isArray(orders)) {
+    return { valid: false, error: 'Orders must be an array' };
+  }
+  if (orders.length > 200) {
+    return { valid: false, error: 'Orders array exceeds maximum limit of 200' };
+  }
+
+  const activity = state.bot?.activityLog || state.activityLog || [];
+  if (Array.isArray(activity) && activity.length > 200) {
+    return { valid: false, error: 'Activity log exceeds maximum limit of 200' };
+  }
+
+  return { valid: true };
+}
 
 export class VT2Server {
   constructor(options = {}) {
@@ -163,6 +235,405 @@ export class VT2Server {
     return this.sendJson(res, 501, {
       error: 'DEMO_READONLY',
       message: 'Persistent paper trading and the automated bot run in the local app. See the README and demo video.',
+    });
+  }
+
+  async handleDemoOrder(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const orderInput = body.order;
+    if (!orderInput || typeof orderInput !== 'object') {
+      return this.sendJson(res, 400, { error: 'INVALID_ORDER', details: 'Order payload required' });
+    }
+    const symbol = (orderInput.symbol || '').toUpperCase().trim();
+    if (!isEligibleContract(symbol)) {
+      return this.sendJson(res, 400, { error: 'INELIGIBLE_CONTRACT', details: `Symbol ${symbol} is not eligible` });
+    }
+    if (!['LONG', 'SHORT'].includes(orderInput.side)) {
+      return this.sendJson(res, 400, { error: 'INVALID_SIDE', details: 'Side must be LONG or SHORT' });
+    }
+
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+
+    let livePrice = Number(orderInput.entryPrice) || (DEFAULT_MARKET_FIXTURES[symbol]?.currentPrice || 0);
+    try {
+      const tickersRes = await this.bitget.getTickers();
+      const tickersList = Array.isArray(tickersRes) ? tickersRes : (Array.isArray(tickersRes?.data) ? tickersRes.data : []);
+      const tick = tickersList.find(t => t.symbol?.toUpperCase() === symbol);
+      const p = Number(tick?.lastPr || tick?.price || tick?.lastPrice);
+      if (p > 0) {
+        livePrice = p;
+      }
+    } catch {}
+
+    if (!Number.isFinite(livePrice) || livePrice <= 0) {
+      return this.sendJson(res, 400, { error: 'LIVE_PRICE_UNAVAILABLE', details: 'Unable to retrieve live market price' });
+    }
+
+    const acc = paper.getAccountSummary();
+    const savedSettings = { ...DEFAULT_SETTINGS, ...(body.state.settings || {}) };
+    const stopLoss = Number(orderInput.stopLoss);
+    const takeProfit = orderInput.takeProfit ? Number(orderInput.takeProfit) : undefined;
+    const allocPercent = orderInput.allocationPercent ? Number(orderInput.allocationPercent) : savedSettings.entryAllocationPercent;
+
+    const riskResult = evaluatePaperTrade({
+      symbol,
+      side: orderInput.side,
+      entryPrice: livePrice,
+      stopLoss,
+      takeProfit,
+      equity: acc.equity,
+      startOfDayEquity: acc.startOfDayEquity,
+      currentEquity: acc.currentEquity,
+      consecutiveLosses: acc.consecutiveLosses,
+      openPositionsCount: paper.positions.filter(p => p.status === 'OPEN').length,
+      lastTradeClosedAt: acc.lastTradeClosedAt,
+      existingOrders: paper.orders,
+      openPositions: paper.positions,
+      entryAllocationPercent: allocPercent,
+      enforceResearchConstraints: false,
+    }, savedSettings);
+
+    if (!riskResult.allowed) {
+      const rejectedRecord = {
+        id: `rej-${Date.now()}`,
+        symbol,
+        side: orderInput.side,
+        rejectionReason: riskResult.reason || 'RISK_REJECTED',
+        timestamp: Date.now(),
+        details: riskResult,
+      };
+      const updatedRejected = [rejectedRecord, ...(body.state.rejectedSetups || [])].slice(0, 100);
+      return this.sendJson(res, 200, {
+        state: {
+          ...body.state,
+          account: acc,
+          rejectedSetups: updatedRejected,
+        },
+        approved: false,
+        events: [],
+        error: riskResult.reason,
+        ruleCode: riskResult.reason,
+      });
+    }
+
+    const execution = paper.submitOrder({
+      symbol,
+      side: orderInput.side,
+      entryPrice: livePrice,
+      stopLoss,
+      takeProfit,
+      quantity: riskResult.quantity,
+      partialTakeProfitPrice: orderInput.partialTakeProfitPrice,
+    });
+
+    const exported = paper.exportState();
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exported.positions,
+      orders: exported.orders.slice(-200),
+      tradeHistory: exported.tradeHistory.slice(-200),
+      journal: exported.tradeHistory.slice(-200),
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events: [{
+        type: 'ORDER_FILLED',
+        symbol,
+        side: orderInput.side,
+        fillPrice: execution.order.fillPrice,
+        quantity: execution.order.quantity,
+        positionId: execution.position.id,
+      }],
+      approved: true,
+      order: execution.order,
+      position: execution.position,
+    });
+  }
+
+  async handleDemoTick(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+
+    const openPositions = paper.positions.filter(p => p.status === 'OPEN');
+    const allEvents = [];
+
+    if (openPositions.length > 0) {
+      const tickersMap = new Map();
+      try {
+        const tickers = await this.bitget.getTickers();
+        if (Array.isArray(tickers)) {
+          for (const t of tickers) {
+            if (t.symbol && Number(t.price) > 0) {
+              tickersMap.set(t.symbol.toUpperCase(), Number(t.price));
+            }
+          }
+        }
+      } catch {}
+
+      for (const pos of openPositions) {
+        const livePrice = tickersMap.get(pos.symbol.toUpperCase()) || pos.currentPrice;
+        const evs = paper.updateMarketTick({
+          symbol: pos.symbol,
+          price: livePrice,
+          timestamp: Date.now(),
+        });
+        allEvents.push(...evs);
+      }
+    }
+
+    const exported = paper.exportState();
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exported.positions,
+      orders: exported.orders.slice(-200),
+      tradeHistory: exported.tradeHistory.slice(-200),
+      journal: exported.tradeHistory.slice(-200),
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events: allEvents,
+    });
+  }
+
+  async handleDemoClose(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const positionId = body.positionId;
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+
+    const pos = paper.positions.find(p => p.id === positionId);
+    if (!pos) {
+      return this.sendJson(res, 404, { error: 'POSITION_NOT_FOUND', state: body.state });
+    }
+
+    let livePrice = pos.currentPrice;
+    try {
+      const tickers = await this.bitget.getTickers();
+      const tick = tickers?.find?.(t => t.symbol?.toUpperCase() === pos.symbol.toUpperCase());
+      if (tick && Number(tick.price) > 0) livePrice = Number(tick.price);
+    } catch {}
+
+    const closed = paper.closePosition(positionId, livePrice, 'MANUAL_CLOSE');
+    const exported = paper.exportState();
+
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exported.positions,
+      orders: exported.orders.slice(-200),
+      tradeHistory: exported.tradeHistory.slice(-200),
+      journal: exported.tradeHistory.slice(-200),
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events: [{ type: 'POSITION_CLOSED', positionId, exitPrice: livePrice, pnl: closed?.realizedPnl }],
+      closedPosition: closed,
+    });
+  }
+
+  async handleDemoCloseAll(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+
+    const closedList = paper.closeAllPositions(body.exitReason || 'MANUAL_CLOSE_ALL');
+    const exported = paper.exportState();
+
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exported.positions,
+      orders: exported.orders.slice(-200),
+      tradeHistory: exported.tradeHistory.slice(-200),
+      journal: exported.tradeHistory.slice(-200),
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events: [{ type: 'ALL_POSITIONS_CLOSED', count: closedList.length }],
+      closedCount: closedList.length,
+    });
+  }
+
+  async handleDemoMonitor(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+    const openPositions = paper.positions.filter(p => p.status === 'OPEN');
+
+    const events = [];
+    const sentiments = [];
+
+    if (openPositions.length > 0) {
+      let btcContext = null;
+      try {
+        const btcCandles = await this.bitget.getCandles('BTCUSDT', '4h', 50);
+        btcContext = this.strategy.evaluateBtcTrend(btcCandles.candles);
+      } catch {}
+
+      for (const pos of openPositions) {
+        try {
+          const [c4h, c15m, c5m] = await Promise.all([
+            this.bitget.getCandles(pos.symbol, '4h', 50),
+            this.bitget.getCandles(pos.symbol, '15m', 50),
+            this.bitget.getCandles(pos.symbol, '5m', 50),
+          ]);
+          const sent = this.tradeMonitor.evaluateSentiment(pos, {
+            '4h': c4h.candles,
+            '15m': c15m.candles,
+            '5m': c5m.candles,
+          }, btcContext);
+
+          sentiments.push({ positionId: pos.id, symbol: pos.symbol, side: pos.side, ...sent });
+
+          const isAuto = pos.mode === 'AUTO' || body.mode === 'AUTO';
+          if (isAuto) {
+            if (sent.state === 'REVERSED') {
+              const closed = paper.closePosition(pos.id, pos.currentPrice, 'SENTIMENT_REVERSED');
+              events.push({ type: 'AUTO_MARKET_EXIT', positionId: pos.id, symbol: pos.symbol, pnl: closed?.realizedPnl });
+            } else if (sent.state === 'WEAKENING') {
+              const inProfit = pos.side === 'LONG' ? pos.currentPrice > pos.entryPrice : pos.currentPrice < pos.entryPrice;
+              if (inProfit && !pos.isBreakevenMoved) {
+                const roundTripCost = (0.0005 * 2) + (0.0002 * 2);
+                pos.stopLoss = pos.side === 'LONG'
+                  ? Number((pos.entryPrice * (1 + roundTripCost)).toFixed(4))
+                  : Number((pos.entryPrice * (1 - roundTripCost)).toFixed(4));
+                pos.isBreakevenMoved = true;
+                events.push({ type: 'AUTO_STOP_TIGHTENED_BREAKEVEN', positionId: pos.id, newStop: pos.stopLoss });
+              }
+            }
+          }
+        } catch (err) {
+          sentiments.push({ positionId: pos.id, symbol: pos.symbol, state: 'CHECK_FAILED', reasons: [err.message] });
+        }
+      }
+    }
+
+    const exported = paper.exportState();
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exported.positions,
+      orders: exported.orders.slice(-200),
+      tradeHistory: exported.tradeHistory.slice(-200),
+      journal: exported.tradeHistory.slice(-200),
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events,
+      sentiments,
+    });
+  }
+
+  async handleDemoBotCycle(body, res) {
+    const stateCheck = validateDemoState(body?.state);
+    if (!stateCheck.valid) {
+      return this.sendJson(res, 400, { error: 'INVALID_STATE', details: stateCheck.error });
+    }
+
+    const botSettings = body.botSettings || body.state.bot?.config || {};
+    const paper = new PaperExecutionEngine(body.state.account?.initialEquity || 10000);
+    paper.importState(body.state);
+
+    const mockDb = {
+      getAllSettings: () => ({ ...DEFAULT_SETTINGS, ...(body.state.settings || {}) }),
+      getSetting: (k, d) => (body.state.settings?.[k] !== undefined ? body.state.settings[k] : d),
+      saveOrder: () => {},
+      savePosition: () => {},
+      saveAccountState: () => {},
+      saveRejectedSetup: (rej) => {
+        if (!body.state.rejectedSetups) body.state.rejectedSetups = [];
+        body.state.rejectedSetups.unshift({ id: `rej-${Date.now()}`, ...rej });
+        if (body.state.rejectedSetups.length > 100) body.state.rejectedSetups.pop();
+      },
+    };
+
+    const autoTrader = new AutoTrader({
+      db: mockDb,
+      paperEngine: paper,
+      bitget: this.bitget,
+      strategy: this.strategy,
+      coordinator: this.coordinator,
+      monitor: this.tradeMonitor,
+      sseBroadcast: () => {},
+    });
+
+    const botObj = body.botSettings || body.state.botSettings || body.state.bot || {};
+    if (body.state.bot) {
+      autoTrader.importState(body.state.bot);
+    } else if (body.state.botSettings) {
+      autoTrader.importState(body.state.botSettings);
+    }
+    autoTrader.config = { ...autoTrader.config, ...botObj };
+    if (botObj.running || botObj.status === 'RUNNING' || botObj.status === 'WAITING' || body.startBot) {
+      autoTrader.status = BOT_STATUS.RUNNING;
+    }
+
+    await autoTrader.runCycle();
+
+    const exportedPaper = paper.exportState();
+    const exportedBot = autoTrader.exportState();
+
+    const updatedState = {
+      ...body.state,
+      account: paper.getAccountSummary(),
+      positions: exportedPaper.positions,
+      orders: exportedPaper.orders.slice(-200),
+      tradeHistory: exportedPaper.tradeHistory.slice(-200),
+      journal: exportedPaper.tradeHistory.slice(-200),
+      bot: {
+        ...body.state.bot,
+        ...exportedBot,
+        tradesToday: autoTrader.tradesToday,
+        waitingReason: autoTrader.waitingReason,
+        waitingResumesAt: autoTrader.waitingResumesAt,
+        status: autoTrader.status,
+      },
+      botSettings: {
+        ...body.state.botSettings,
+        tradesToday: autoTrader.tradesToday,
+        waitingReason: autoTrader.waitingReason,
+        waitingResumesAt: autoTrader.waitingResumesAt,
+        status: autoTrader.status,
+      },
+    };
+
+    return this.sendJson(res, 200, {
+      state: updatedState,
+      events: autoTrader.activityLog.slice(0, 10),
+      status: autoTrader.status,
+      botStatus: autoTrader.status,
+      waitingReason: autoTrader.waitingReason,
+      waitingResumesAt: autoTrader.waitingResumesAt,
+      resumesAt: autoTrader.waitingResumesAt,
     });
   }
 
@@ -599,8 +1070,12 @@ export class VT2Server {
 
       // 10. Close Single Position
       if (pathname.startsWith('/api/positions/') && pathname.endsWith('/close') && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        const body = await this.parseJsonBody(req).catch(() => ({}));
         const posId = pathname.split('/')[3];
+        if (this.isDemoReadOnly) {
+          if (body?.state) return this.handleDemoClose({ ...body, positionId: posId }, res);
+          return this.sendDemoReadOnlyError(res);
+        }
         const posIndex = this.paperEngine.positions.findIndex(p => p.id === posId);
         if (posIndex === -1) {
           return this.sendJson(res, 404, { error: 'Position not found' });
@@ -635,8 +1110,11 @@ export class VT2Server {
 
       // 10a. Close All Open Positions
       if (pathname === '/api/positions/close-all' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (this.isDemoReadOnly) {
+          if (body?.state) return this.handleDemoCloseAll(body, res);
+          return this.sendDemoReadOnlyError(res);
+        }
         const closed = this.paperEngine.closeAllPositions(body.exitReason || 'MANUAL_CLOSE_ALL');
         for (const c of closed) {
           this.db.savePosition(c);
@@ -669,8 +1147,11 @@ export class VT2Server {
 
       // 10b. Simulate Market Tick on Open Paper Positions (Triggers Partial TP, Breakeven Stop, Trailing Stop, or SL)
       if (pathname === '/api/positions/simulate-tick' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req);
+        if (this.isDemoReadOnly) {
+          if (body?.state) return this.handleDemoTick(body, res);
+          return this.sendDemoReadOnlyError(res);
+        }
         const changePct = Number(body.priceChangePct || 1.2);
         const events = [];
 
@@ -710,7 +1191,23 @@ export class VT2Server {
 
       // 10c. Place Instant Test Paper Position for Live Interactive Verification
       if (pathname === '/api/orders/paper-test' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (this.isDemoReadOnly) {
+          if (body?.state) {
+            const sym = 'BTCUSDT';
+            return this.handleDemoOrder({
+              state: body.state,
+              order: {
+                symbol: sym,
+                side: 'LONG',
+                stopLoss: 60000,
+                takeProfit: 120000,
+                allocationPercent: 10,
+              },
+            }, res);
+          }
+          return this.sendDemoReadOnlyError(res);
+        }
         const savedSettings = { ...DEFAULT_SETTINGS, ...this.db.getAllSettings() };
         const maxConcurrent = Number(savedSettings.maxConcurrentPositions || 1);
         const openPositions = this.paperEngine.positions;
@@ -769,9 +1266,12 @@ export class VT2Server {
 
       // 11. Submit Paper Order
       if (pathname === '/api/orders/paper' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req);
         validateExecutionMode({ environment: 'PAPER' });
+        if (this.isDemoReadOnly) {
+          if (body?.state) return this.handleDemoOrder(body, res);
+          return this.sendDemoReadOnlyError(res);
+        }
 
         const execution = this.paperEngine.submitOrder(body);
         this.db.saveOrder(execution.order);
@@ -779,6 +1279,42 @@ export class VT2Server {
         this.db.saveAccountState(this.paperEngine.getAccountSummary());
 
         return this.sendJson(res, 201, execution);
+      }
+
+      // 11a. Stateless Demo API: Place Order
+      if (pathname === '/api/demo/order' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoOrder(body, res);
+      }
+
+      // 11b. Stateless Demo API: Batched Market Tick
+      if (pathname === '/api/demo/tick' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoTick(body, res);
+      }
+
+      // 11c. Stateless Demo API: Close Position
+      if (pathname === '/api/demo/close' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoClose(body, res);
+      }
+
+      // 11d. Stateless Demo API: Close All Positions
+      if (pathname === '/api/demo/close-all' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoCloseAll(body, res);
+      }
+
+      // 11e. Stateless Demo API: Trade Sentiment Monitor
+      if (pathname === '/api/demo/monitor' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoMonitor(body, res);
+      }
+
+      // 11f. Stateless Demo API: Single Bot Cycle Walk
+      if (pathname === '/api/demo/bot/cycle' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req);
+        return this.handleDemoBotCycle(body, res);
       }
 
       // 12. Order History
@@ -797,7 +1333,6 @@ export class VT2Server {
           });
         }
         if (req.method === 'POST') {
-          if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
           const body = await this.parseJsonBody(req);
           if (body.entryAllocationPercent !== undefined) {
             const alloc = Number(body.entryAllocationPercent);
@@ -986,7 +1521,13 @@ export class VT2Server {
 
       // 19. Backtesting Runner
       if (pathname === '/api/backtest' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        if (this.isDemoReadOnly) {
+          return this.sendJson(res, 501, {
+            error: 'BACKTEST_SERVER_ONLY',
+            message: 'Full 150-day backtest data is pre-computed and available at /report.html',
+            reportUrl: '/report.html',
+          });
+        }
         const body = await this.parseJsonBody(req);
         const symbol = body.symbol || 'BTCUSDT';
         const timeframe = body.timeframe || '15m';
@@ -1238,7 +1779,15 @@ export class VT2Server {
         return this.sendJson(res, 200, this.tradeMonitor.getStatus());
       }
       if (pathname === '/api/monitor/check-now' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        if (this.isDemoReadOnly) {
+          const body = await this.parseJsonBody(req).catch(() => ({}));
+          if (body?.state) return this.handleDemoMonitor(body, res);
+          return this.sendJson(res, 200, {
+            success: true,
+            checkedAt: Date.now(),
+            results: [],
+          });
+        }
         const results = await this.tradeMonitor.checkPositions();
         return this.sendJson(res, 200, {
           success: true,
@@ -1252,25 +1801,59 @@ export class VT2Server {
         return this.sendJson(res, 200, this.autoTrader.getStatus());
       }
       if (pathname === '/api/autotrading/start' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        if (this.isDemoReadOnly) {
+          return this.sendJson(res, 200, {
+            running: true,
+            status: 'RUNNING',
+            mode: 'demo_browser',
+            message: 'Auto-trading started in browser mode. Bot cycles will run while this tab remains active.',
+          });
+        }
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const status = this.autoTrader.start(body);
         return this.sendJson(res, 200, status);
       }
       if (pathname === '/api/autotrading/stop' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        if (this.isDemoReadOnly) {
+          return this.sendJson(res, 200, {
+            running: false,
+            status: 'STOPPED',
+            mode: 'demo_browser',
+            message: 'Auto-trading stopped.',
+          });
+        }
         const body = await this.parseJsonBody(req).catch(() => ({}));
         const status = this.autoTrader.stop(body.reason || 'MANUAL_STOP');
         return this.sendJson(res, 200, status);
       }
       if (pathname === '/api/autotrading/stop-and-close-all' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (this.isDemoReadOnly) {
+          if (body?.state) {
+            return this.handleDemoCloseAll({ ...body, exitReason: 'AUTOTRADING_STOP_CLOSE_ALL' }, res);
+          }
+          return this.sendJson(res, 200, {
+            running: false,
+            status: 'STOPPED',
+            closedCount: 0,
+            message: 'Auto-trading stopped in demo mode.',
+          });
+        }
         const result = this.autoTrader.stopAndCloseAll(body.reason || 'MANUAL_STOP_CLOSE_ALL');
         return this.sendJson(res, 200, result);
       }
       if (pathname === '/api/autotrading/kill-switch' && req.method === 'POST') {
-        if (this.isDemoReadOnly) return this.sendDemoReadOnlyError(res);
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (this.isDemoReadOnly) {
+          if (body?.state) {
+            return this.handleDemoCloseAll({ ...body, exitReason: 'KILL_SWITCH_TRIGGERED' }, res);
+          }
+          return this.sendJson(res, 200, {
+            status: 'KILL_SWITCH_ACTIVE',
+            activePositionsCount: 0,
+            message: 'Kill switch triggered in demo mode.',
+          });
+        }
         const result = this.autoTrader.killSwitch();
         return this.sendJson(res, 200, result);
       }
