@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { evaluatePaperTrade } from '../src/risk-engine.js';
-import { VT2Server } from '../src/server.js';
+import { VT2Server } from '../src/vt2-server.js';
 
 const baseTrade = {
   side: 'LONG',

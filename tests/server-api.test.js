@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VT2Server } from '../src/server.js';
+import { VT2Server } from '../src/vt2-server.js';
 
 test('VT2Server launches, handles API routes, and enforces mainnet security denial', async () => {
   // Use port 0 to dynamically bind to any free operating system port

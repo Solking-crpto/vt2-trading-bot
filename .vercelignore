@@ -8,4 +8,4 @@
 /user_prompt*.txt
 /reports/alpha-factory/equity_curve.csv
 /reports/alpha-factory/trades.csv
-/index.js
+/start.js

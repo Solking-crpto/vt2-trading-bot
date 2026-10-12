@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { evaluatePaperTrade } from '../src/risk-engine.js';
 import { StockMarketProvider } from '../src/adapters/market-provider.js';
 import { CORRELATION_GROUPS, getCorrelationGroup, getLeveragedProductInfo } from '../src/config/contracts.js';
-import { VT2Server } from '../src/server.js';
+import { VT2Server } from '../src/vt2-server.js';
 
 test('risk engine rejects opposite exposure inside correlation group (Long TQQQ + Long SQQQ)', () => {
   const existingPositions = [

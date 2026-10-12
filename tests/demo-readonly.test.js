@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 process.env.DEPLOY_MODE = 'DEMO_READONLY';
 
-import { VT2Server, handleRequest } from '../src/server.js';
+import { VT2Server, handleRequest } from '../src/vt2-server.js';
 import serverlessHandler from '../api/index.js';
 
 test('VT2Server demo-readonly mode configuration and behavior', async () => {

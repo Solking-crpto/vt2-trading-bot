@@ -353,6 +353,14 @@ export class VT2Server {
       }
 
       // 2. Health & Safety
+      if (pathname === '/api/ping') {
+        return this.sendJson(res, 200, {
+          ok: true,
+          node: process.version,
+          region: process.env.VERCEL_REGION || null,
+        });
+      }
+
       if (pathname === '/api/health') {
         return this.sendJson(res, 200, {
           status: 'HEALTHY',

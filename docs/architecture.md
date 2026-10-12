@@ -65,7 +65,7 @@ flowchart TD
    - Real-time updates via Server-Sent Events (`/api/stream`).
    - PWA installable manifest and service worker shell.
 
-2. **Backend Server (`src/server.js`)**:
+2. **Backend Server (`src/vt2-server.js`)**:
    - Modular HTTP server using Node.js native runtime.
    - Strict mainnet interception guard denying live order attempts.
    - Background ticker simulating realistic order fills and stop tracking.

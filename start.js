@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { VT2Server } from './src/server.js';
+import { VT2Server } from './src/vt2-server.js';
 
+export { VT2Server };
 export * from './src/risk-engine.js';
 export * from './src/environment.js';
 export * from './src/config/contracts.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VT2Server } from '../src/server.js';
+import { VT2Server } from '../src/vt2-server.js';
 import { AutoTrader, BOT_STATUS } from '../src/execution/auto-trader.js';
 import { Database } from '../src/storage/db.js';
 import { PaperExecutionEngine } from '../src/execution/paper-engine.js';

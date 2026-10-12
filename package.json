@@ -2,7 +2,7 @@
   "name": "vt2-trading-bot",
   "version": "0.1.0",
   "description": "VT2 — Verifiable Trading Technology. Think. Verify. Trade.",
-  "main": "index.js",
+  "main": "start.js",
   "engines": {
     "node": "22.x"
   },
@@ -11,8 +11,8 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
+    "start": "node start.js",
+    "dev": "node --watch start.js",
     "test": "node --test --test-force-exit --test-timeout=60000",
     "backtest:alpha": "node scripts/run-alpha-backtest.js"
   },

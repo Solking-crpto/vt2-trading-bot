@@ -3,7 +3,7 @@ const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
-  '/app.js',
+  '/vt2-ui.js',
   '/chart.js',
   '/manifest.json',
   '/icon.svg'

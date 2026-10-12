@@ -15,7 +15,7 @@ async function getOrCreateServer() {
       process.env.DEPLOY_MODE = 'DEMO_READONLY';
       process.env.VERCEL = '1';
 
-      const { VT2Server } = await import('../src/server.js');
+      const { VT2Server } = await import('../src/vt2-server.js');
       serverInstance = new VT2Server({
         demoReadOnly: true,
         disableWs: true,
@@ -31,6 +31,18 @@ async function getOrCreateServer() {
 }
 
 export default async function handler(req, res) {
+  // Fast path for dependency-free ping probe
+  const url = req?.url || '';
+  if (url === '/api/ping' || url.startsWith('/api/ping?')) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({
+      ok: true,
+      node: process.version,
+      region: process.env.VERCEL_REGION || null,
+    }));
+  }
+
   try {
     const server = await getOrCreateServer();
     return await server.handleRequest(req, res);

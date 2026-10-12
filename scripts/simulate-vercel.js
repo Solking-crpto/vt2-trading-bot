@@ -44,7 +44,7 @@ const ignoreDeletions = [
   path.join(tempDir, 'tests'),
   path.join(tempDir, 'media'),
   path.join(tempDir, 'docs'),
-  path.join(tempDir, 'index.js')
+  path.join(tempDir, 'start.js')
 ];
 
 for (const delPath of ignoreDeletions) {
@@ -126,11 +126,28 @@ function createMockReqRes(options) {
 
 // 4. Test handler from temp directory
 async function runSimulation() {
+  // Test direct ping.js module first
+  console.log('[Vercel Sim] Testing api/ping.js directly...');
+  const pingModule = await import(`file://${path.join(tempDir, 'api/ping.js').replace(/\\/g, '/')}`);
+  const { req: pReq, res: pRes } = createMockReqRes({ method: 'GET', url: '/api/ping' });
+  await pingModule.default(pReq, pRes);
+  if (pRes.statusCode === 200 && pRes.json?.ok === true) {
+    console.log(`PASS: Direct api/ping.js returned status 200:`, pRes.body);
+  } else {
+    throw new Error(`Direct api/ping.js failed: ${pRes.body}`);
+  }
+
   console.log('[Vercel Sim] Loading handler from:', path.join(tempDir, 'api/index.js'));
   const handlerModule = await import(`file://${path.join(tempDir, 'api/index.js').replace(/\\/g, '/')}`);
   const handler = handlerModule.default;
 
   const testCases = [
+    {
+      name: '0. Ping probe (/api/ping)',
+      options: { method: 'GET', url: '/api/ping' },
+      expectedStatus: 200,
+      verify: (res) => res.json && res.json.ok === true
+    },
     {
       name: '1. Health check (/api/health)',
       options: { method: 'GET', url: '/api/health' },
