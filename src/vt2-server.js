@@ -276,8 +276,12 @@ export class VT2Server {
 
     const acc = paper.getAccountSummary();
     const savedSettings = { ...DEFAULT_SETTINGS, ...(body.state.settings || {}) };
-    const stopLoss = Number(orderInput.stopLoss);
-    const takeProfit = orderInput.takeProfit ? Number(orderInput.takeProfit) : undefined;
+    const stopLoss = (Number.isFinite(Number(orderInput.stopLoss)) && Number(orderInput.stopLoss) > 0)
+      ? Number(orderInput.stopLoss)
+      : Number((livePrice * (orderInput.side === 'LONG' ? 0.993 : 1.007)).toFixed(4));
+    const takeProfit = (Number.isFinite(Number(orderInput.takeProfit)) && Number(orderInput.takeProfit) > 0)
+      ? Number(orderInput.takeProfit)
+      : Number((livePrice * (orderInput.side === 'LONG' ? 1.025 : 0.975)).toFixed(4));
     const allocPercent = orderInput.allocationPercent ? Number(orderInput.allocationPercent) : savedSettings.entryAllocationPercent;
 
     const riskResult = evaluatePaperTrade({

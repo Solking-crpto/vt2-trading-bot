@@ -193,6 +193,17 @@ async function run() {
     await new Promise(r => setTimeout(r, 100));
   }
 
+  // --- Interactive Browser Paper Mode Checks ---
+
+  // 1. Verify default market mode is Stocks (checked on fresh load before switcher)
+  const modeCheck = await evalInPage(`(() => {
+    const badge = document.getElementById('viewingMarketBadge');
+    const text = badge ? badge.textContent : '';
+    const isStocks = text.includes('Stocks');
+    return { pass: isStocks, note: text || 'Badge missing' };
+  })()`);
+  results.push({ item: 'Demo: Default Mode is Stocks', pass: !!modeCheck?.pass, note: modeCheck?.note });
+
   // Market Mode Switcher Tests
   for (const mode of ['stocks', 'crypto', 'both']) {
     const check = await evalInPage(`(() => {
@@ -204,6 +215,13 @@ async function run() {
     results.push({ item: `Mode Switcher: ${mode.toUpperCase()}`, pass: !!check?.pass, note: check?.pass ? 'PASS' : check?.note });
     await new Promise(r => setTimeout(r, 100));
   }
+
+  // Restore stocks mode
+  await evalInPage(`(() => {
+    const btn = document.getElementById('modeBtnStocks');
+    if (btn) btn.click();
+  })()`);
+  await new Promise(r => setTimeout(r, 200));
 
   // Rescan Button Test
   const rescanCheck = await evalInPage(`(() => {
@@ -223,24 +241,14 @@ async function run() {
     const next = document.documentElement.getAttribute('data-theme');
     return { pass: prev !== next, note: 'Theme toggled from ' + prev + ' to ' + next };
   })()`);
-  // --- Interactive Browser Paper Mode Checks ---
 
-  // 1. Verify default market mode is Stocks
-  const modeCheck = await evalInPage(`(() => {
-    const badge = document.getElementById('viewingMarketBadge');
-    const text = badge ? badge.textContent : '';
-    const isStocks = text.includes('Stocks');
-    return { pass: isStocks, note: text || 'Badge missing' };
-  })()`);
-  results.push({ item: 'Demo: Default Mode is Stocks', pass: !!modeCheck?.pass, note: modeCheck?.note });
-
-  // 2. Override dialogs in page context to never block
+  // Override dialogs in page context to never block
   await evalInPage(`(() => {
     window.confirm = () => true;
     window.alert = () => {};
   })()`);
 
-  // 3. Place test paper trade via UI button
+  // Place test paper trade via UI button
   const tradeCheck = await evalInPage(`(async () => {
     // Switch to Positions tab first
     const tabBtn = document.querySelector('.nav-item[data-tab="positions"]');
@@ -252,20 +260,20 @@ async function run() {
     testBtn.click();
 
     // Wait for trade processing
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r, 3500));
 
     const posCount = parseInt(document.getElementById('positionsCount')?.textContent || '0', 10);
     const tbody = document.getElementById('positionsTableBody');
-    const rows = tbody ? tbody.querySelectorAll('tr').length : 0;
-    const pass = posCount > 0 || rows > 0;
-    return { pass, note: 'Position count: ' + posCount + ', rows: ' + rows };
+    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions');
+    const pass = posCount > 0 && hasRow;
+    return { pass, note: 'Position count: ' + posCount + ', hasActiveRow: ' + hasRow };
   })()`);
   results.push({ item: 'Demo: Place Paper Order UI', pass: !!tradeCheck?.pass, note: tradeCheck?.note });
 
-  // 4. Confirm position appears with live data
+  // Confirm position appears with live data
   const posLiveCheck = await evalInPage(`(() => {
     const tbody = document.getElementById('positionsTableBody');
-    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions');
+    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions');
     return { pass: !!hasRow, note: hasRow ? 'Position row visible in table' : 'No active row' };
   })()`);
   results.push({ item: 'Demo: Position Appears with P&L', pass: !!posLiveCheck?.pass, note: posLiveCheck?.note });

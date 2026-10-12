@@ -1896,13 +1896,7 @@ async function loadChartData() {
     }
 
     if (state.chart) {
-      // Calculate indicators locally for smooth rendering
-      import('/src/indicators/index.js').then(module => {
-        const ind = module.computeIndicators(data.candles);
-        state.chart.setData(data.candles, ind);
-      }).catch(() => {
-        state.chart.setData(data.candles, null);
-      });
+      state.chart.setData(data.candles, null);
     }
 
     document.getElementById('chartCandleInfo').textContent = `${state.symbol} | ${data.candles?.length || 0} Candles | Timeframe: ${state.timeframe}`;
@@ -2194,9 +2188,7 @@ async function openQuickTestPosition() {
           order: {
             symbol: 'BTCUSDT',
             side: 'LONG',
-            stopLoss: 60000,
-            takeProfit: 120000,
-            allocationPercent: 10,
+            allocationPercent: 100,
           },
         }
       : { symbol: 'BTCUSDT', side: 'LONG', quantity: 0.05 };
