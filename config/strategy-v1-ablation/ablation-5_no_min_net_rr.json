@@ -1,0 +1,7 @@
+{
+  "ablationId": "5_no_min_net_rr",
+  "name": "Disable Min Net R:R",
+  "overrides": {
+    "disableMinNetRR": true
+  }
+}

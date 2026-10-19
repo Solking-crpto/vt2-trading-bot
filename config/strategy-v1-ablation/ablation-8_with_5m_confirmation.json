@@ -1,0 +1,7 @@
+{
+  "ablationId": "8_with_5m_confirmation",
+  "name": "Add 5m Confirmation Filter (>=1.2x)",
+  "overrides": {
+    "enable5mConfirmation": true
+  }
+}

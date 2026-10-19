@@ -1,115 +1,105 @@
 {
   "rejections": {
-    "totalEvaluations": 28566,
-    "cooldownBlocked": 578,
+    "totalEvaluations": 5807,
+    "cooldownBlocked": 492,
     "macroBenchmarkTrend": 0,
-    "trend4hAlignment": 6543,
-    "trend15mAlignment": 4015,
-    "rsiBand": 1148,
-    "rvolSpike": 3320,
-    "confirmation5m": 164,
-    "stopDistanceBandClamped": 241
+    "trend4hAlignment": 1210,
+    "trend15mAlignment": 766,
+    "rsiBand": 185,
+    "rvolSpike": 0,
+    "confirmation5m": 0,
+    "stopDistanceBandClamped": 207
   },
   "results": [
     {
-      "rule": "Baseline (v1 All Rules)",
-      "trades": 289,
+      "rule": "Baseline (v1 All Rules — Exact Reconciled)",
+      "trades": 246,
       "tradeDelta": 0,
-      "winRate": 40.48,
-      "netPnl": -2796.55,
+      "winRate": 41.46,
+      "netPnl": -2360.18,
       "pnlDelta": 0,
-      "profitFactor": 0.69,
-      "maxDrawdownPct": 30.85
+      "profitFactor": 0.71,
+      "maxDrawdownPct": 25.67
     },
     {
       "rule": "Disable 4h Alignment",
-      "trades": 283,
-      "tradeDelta": "-6",
-      "winRate": 37.81,
-      "netPnl": -3501.03,
-      "pnlDelta": "-704.48",
-      "profitFactor": 0.61,
-      "maxDrawdownPct": 35.52
+      "trades": 211,
+      "tradeDelta": "-35",
+      "winRate": 40.28,
+      "netPnl": -2387.29,
+      "pnlDelta": "-27.11",
+      "profitFactor": 0.68,
+      "maxDrawdownPct": 25.14
     },
     {
-      "rule": "Disable 5m Confirmation",
+      "rule": "Disable RSI Band",
+      "trades": 235,
+      "tradeDelta": "-11",
+      "winRate": 38.3,
+      "netPnl": -2991.57,
+      "pnlDelta": "-631.39",
+      "profitFactor": 0.62,
+      "maxDrawdownPct": 30.02
+    },
+    {
+      "rule": "Disable Benchmark (SPY) Filter",
+      "trades": 230,
+      "tradeDelta": "-16",
+      "winRate": 36.09,
+      "netPnl": -3464.77,
+      "pnlDelta": "-1104.59",
+      "profitFactor": 0.55,
+      "maxDrawdownPct": 35.93
+    },
+    {
+      "rule": "Disable 30-min Cooldown",
       "trades": 292,
-      "tradeDelta": "+3",
-      "winRate": 39.38,
-      "netPnl": -3160.49,
-      "pnlDelta": "-363.94",
+      "tradeDelta": "+46",
+      "winRate": 36.99,
+      "netPnl": -3769.19,
+      "pnlDelta": "-1409.01",
+      "profitFactor": 0.59,
+      "maxDrawdownPct": 37.69
+    },
+    {
+      "rule": "Disable Min Net R:R",
+      "trades": 334,
+      "tradeDelta": "+88",
+      "winRate": 46.11,
+      "netPnl": -4170.74,
+      "pnlDelta": "-1810.56",
+      "profitFactor": 0.54,
+      "maxDrawdownPct": 41.79
+    },
+    {
+      "rule": "Disable Stop Distance Band (0.5-0.8%)",
+      "trades": 434,
+      "tradeDelta": "+188",
+      "winRate": 31.8,
+      "netPnl": -8899.43,
+      "pnlDelta": "-6539.25",
+      "profitFactor": 0.28,
+      "maxDrawdownPct": 88.99
+    },
+    {
+      "rule": "Add RVOL Spike Filter (>=1.5x)",
+      "trades": 295,
+      "tradeDelta": "+49",
+      "winRate": 39.32,
+      "netPnl": -3208.12,
+      "pnlDelta": "-847.94",
       "profitFactor": 0.66,
       "maxDrawdownPct": 35.27
     },
     {
-      "rule": "Disable RSI Band",
-      "trades": 282,
-      "tradeDelta": "-7",
-      "winRate": 40.43,
-      "netPnl": -2819.76,
-      "pnlDelta": "-23.21",
-      "profitFactor": 0.69,
-      "maxDrawdownPct": 28.74
-    },
-    {
-      "rule": "Disable RVOL Spike",
-      "trades": 254,
-      "tradeDelta": "-35",
-      "winRate": 41.73,
-      "netPnl": -2312.53,
-      "pnlDelta": "+484.02",
+      "rule": "Add 5m Confirmation Filter (>=1.2x)",
+      "trades": 257,
+      "tradeDelta": "+11",
+      "winRate": 41.63,
+      "netPnl": -2366.05,
+      "pnlDelta": "-5.87",
       "profitFactor": 0.72,
       "maxDrawdownPct": 25.71
-    },
-    {
-      "rule": "Disable Benchmark (SPY) Filter",
-      "trades": 275,
-      "tradeDelta": "-14",
-      "winRate": 42.18,
-      "netPnl": -2409.85,
-      "pnlDelta": "+386.7",
-      "profitFactor": 0.73,
-      "maxDrawdownPct": 28.86
-    },
-    {
-      "rule": "Disable Signal-Age Limit",
-      "trades": 289,
-      "tradeDelta": "+0",
-      "winRate": 40.48,
-      "netPnl": -2796.55,
-      "pnlDelta": "+0",
-      "profitFactor": 0.69,
-      "maxDrawdownPct": 30.85
-    },
-    {
-      "rule": "Disable 30-min Cooldown",
-      "trades": 297,
-      "tradeDelta": "+8",
-      "winRate": 39.06,
-      "netPnl": -3452.75,
-      "pnlDelta": "-656.2",
-      "profitFactor": 0.63,
-      "maxDrawdownPct": 34.58
-    },
-    {
-      "rule": "Disable Min Net R:R",
-      "trades": 348,
-      "tradeDelta": "+59",
-      "winRate": 49.14,
-      "netPnl": -3600.37,
-      "pnlDelta": "-803.82",
-      "profitFactor": 0.58,
-      "maxDrawdownPct": 39.34
-    },
-    {
-      "rule": "Disable Stop Distance Band (0.5-0.8%)",
-      "trades": 476,
-      "tradeDelta": "+187",
-      "winRate": 35.71,
-      "netPnl": -8498.74,
-      "pnlDelta": "-5702.19",
-      "profitFactor": 0.31,
-      "maxDrawdownPct": 85.22
     }
   ]
 }

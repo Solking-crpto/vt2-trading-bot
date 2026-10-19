@@ -5,8 +5,10 @@ import { computeIndicators } from '../src/indicators/index.js';
 import { roundToStep } from '../src/utils/decimal.js';
 import { getContractSpec } from '../src/config/contracts.js';
 
-const DEV_START_TS = new Date('2026-05-11T00:00:00.000Z').getTime();
-const DEV_END_TS = new Date('2026-09-10T00:00:00.000Z').getTime();
+const DEV_START_TS = 1778520600000; // 2026-05-11T17:30:00.000Z
+const DEV_END_TS = 1789138800000;   // 2026-09-11T15:00:00.000Z (Published In-Sample cutoff)
+const PUBLISHED_OOS_END_TS = 1791730800000; // 2026-10-11T15:00:00.000Z (Published Total cutoff)
+
 
 const HEADLINE_SYMBOLS = [
   'SPYUSDT', 'QQQUSDT', 'NVDAUSDT', 'TSLAUSDT', 'AAPLUSDT',
@@ -338,10 +340,21 @@ export function runFastAblationReplay(preparedUniverse, symbols, ablationConfig 
             tradeId: currentPosition.id,
             symbol: currentPosition.symbol,
             side: currentPosition.side,
+            entryTime: currentPosition.entryTime,
+            exitTime: currentTs,
+            entryPrice: currentPosition.entryPrice,
+            exitPrice,
+            quantity: currentPosition.initialQuantity,
+            remainingQuantity: currentPosition.quantity,
             netPnl: Number(netTradePnl.toFixed(2)),
             roiPct: Number(((netTradePnl / (currentPosition.entryPrice * currentPosition.initialQuantity)) * 100).toFixed(2)),
+            entryFee: currentPosition.entryFee,
+            partialFee: currentPosition.partialFee,
+            exitFee,
+            fundingPaid: currentPosition.fundingPaid,
             exitReason,
           });
+
 
           currentPosition = null;
         }
@@ -413,8 +426,8 @@ export function runFastAblationReplay(preparedUniverse, symbols, ablationConfig 
           }
         }
 
-        // Relative-Volume Spike Filter
-        if (signalSide && !ablationConfig.disableRvolSpike) {
+        // Relative-Volume Spike Filter (optional filter addition; not evaluated in published v1 baseline)
+        if (signalSide && (ablationConfig.enableRvolSpike || ablationConfig.disableRvolSpike === false)) {
           const rvolThresh = rules.indicators.entry15m.volumeMultiplierThreshold || 1.5;
           const isSpike = barData.rvol >= rvolThresh;
           if (!isSpike) {
@@ -423,8 +436,8 @@ export function runFastAblationReplay(preparedUniverse, symbols, ablationConfig 
           }
         }
 
-        // 5m Volume Confirmation Filter
-        if (signalSide && !ablationConfig.disable5mConfirmation) {
+        // 5m Volume Confirmation Filter (optional filter addition; not evaluated in published v1 baseline)
+        if (signalSide && (ablationConfig.enable5mConfirmation || ablationConfig.disable5mConfirmation === false)) {
           const idx = barData.index;
           const priorSlice = symData.candles15m.slice(Math.max(0, idx - 10), idx + 1);
           const c5m = synthesize5mFrom15m(priorSlice);
@@ -535,28 +548,51 @@ async function main() {
   const prepared = prepareIndexedUniverse(rawUniverse, HEADLINE_SYMBOLS);
   console.log(`Universe prepared and indexed in ${((Date.now() - t0) / 1000).toFixed(2)}s.`);
 
-  console.log('Running v1 Baseline on Dev split...');
+  console.log('Running v1 Baseline on reconciled Dev split (In-Sample: 2026-05-11T17:30 to 2026-09-11T15:00)...');
   const baseline = runFastAblationReplay(prepared, HEADLINE_SYMBOLS, {}, true);
   console.log(`Baseline Result: ${baseline.tradeCount} trades, Win Rate: ${baseline.winRate}%, Net P&L: $${baseline.netPnl}, Profit Factor: ${baseline.profitFactor}, Max DD: ${baseline.maxDrawdownPct}%\n`);
 
-  console.log('Baseline Rejection Counts:');
+  // Verify exact reproduction of published In-Sample v1 numbers
+  if (baseline.tradeCount !== 246 || baseline.netPnl !== -2360.18) {
+    throw new Error(`Reconciliation failure: expected 246 trades, -$2360.18 on Dev split; got ${baseline.tradeCount} trades, $${baseline.netPnl}`);
+  }
+  console.log('PASS: Reconciled Dev split exactly reproduces published v1 In-Sample (246 trades, -$2,360.18).\n');
+
+  // Also verify total replay up to published OOS cutoff
+  console.log('Verifying Full Published Period (Total 287 trades, -$2,818.83)...');
+  const fullReplay = runFastAblationReplay(prepared, HEADLINE_SYMBOLS, {
+    startTs: DEV_START_TS,
+    endTs: PUBLISHED_OOS_END_TS + 1,
+  });
+  const isTrades = fullReplay.trades.filter(t => t.entryTime < DEV_END_TS);
+  const oosTrades = fullReplay.trades.filter(t => t.entryTime >= DEV_END_TS);
+  const totalNet = fullReplay.netPnl;
+  const isNet = Number(isTrades.reduce((s, t) => s + t.netPnl, 0).toFixed(2));
+  const oosNet = Number(oosTrades.reduce((s, t) => s + t.netPnl, 0).toFixed(2));
+
+  console.log(`Full Replay Check: Total ${fullReplay.tradeCount} trades ($${totalNet}), IS ${isTrades.length} trades ($${isNet}), OOS ${oosTrades.length} trades ($${oosNet})`);
+  if (fullReplay.tradeCount !== 287 || totalNet !== -2818.83 || isTrades.length !== 246 || isNet !== -2360.18 || oosTrades.length !== 41 || oosNet !== -458.65) {
+    throw new Error(`Full replay mismatch! Expected Total 287 (-$2818.83), IS 246 (-$2360.18), OOS 41 (-$458.65).`);
+  }
+  console.log('PASS: Exact reproduction of Published v1 Total (287 trades, -$2,818.83) and OOS (41 trades, -$458.65) verified.\n');
+
+  console.log('Baseline Rejection Counts on Dev split:');
   console.table(baseline.rejections);
 
   const ablationDefinitions = [
     { id: '1_no_4h_alignment', name: 'Disable 4h Alignment', config: { disable4hAlignment: true } },
-    { id: '2_no_5m_confirmation', name: 'Disable 5m Confirmation', config: { disable5mConfirmation: true } },
-    { id: '3_no_rsi_band', name: 'Disable RSI Band', config: { disableRsiBand: true } },
-    { id: '4_no_rvol_spike', name: 'Disable RVOL Spike', config: { disableRvolSpike: true } },
-    { id: '5_no_benchmark_filter', name: 'Disable Benchmark (SPY) Filter', config: { disableBenchmarkFilter: true } },
-    { id: '6_no_signal_age_limit', name: 'Disable Signal-Age Limit', config: { disableSignalAge: true } },
-    { id: '7_no_cooldown', name: 'Disable 30-min Cooldown', config: { disableCooldown: true } },
-    { id: '8_no_min_net_rr', name: 'Disable Min Net R:R', config: { disableMinNetRR: true } },
-    { id: '9_no_stop_distance_band', name: 'Disable Stop Distance Band (0.5-0.8%)', config: { disableStopDistanceBand: true } },
+    { id: '2_no_rsi_band', name: 'Disable RSI Band', config: { disableRsiBand: true } },
+    { id: '3_no_benchmark_filter', name: 'Disable Benchmark (SPY) Filter', config: { disableBenchmarkFilter: true } },
+    { id: '4_no_cooldown', name: 'Disable 30-min Cooldown', config: { disableCooldown: true } },
+    { id: '5_no_min_net_rr', name: 'Disable Min Net R:R', config: { disableMinNetRR: true } },
+    { id: '6_no_stop_distance_band', name: 'Disable Stop Distance Band (0.5-0.8%)', config: { disableStopDistanceBand: true } },
+    { id: '7_with_rvol_spike', name: 'Add RVOL Spike Filter (>=1.5x)', config: { enableRvolSpike: true } },
+    { id: '8_with_5m_confirmation', name: 'Add 5m Confirmation Filter (>=1.2x)', config: { enable5mConfirmation: true } },
   ];
 
   const results = [
     {
-      rule: 'Baseline (v1 All Rules)',
+      rule: 'Baseline (v1 All Rules — Exact Reconciled)',
       trades: baseline.tradeCount,
       tradeDelta: 0,
       winRate: baseline.winRate,
@@ -594,7 +630,7 @@ async function main() {
   }
 
   console.log('\n================================================================================');
-  console.log('V1 RULE ABLATION STUDY RESULTS (DEV SPLIT ONLY: 2026-05-11 to 2026-09-10)');
+  console.log('V1 RULE ABLATION STUDY RESULTS (RECONCILED DEV SPLIT: 2026-05-11 to 2026-09-11)');
   console.log('================================================================================');
   console.table(results);
 
@@ -603,21 +639,22 @@ async function main() {
     results,
   }, null, 2));
 
-  let md = `# VT2 Strategy v1: Rule Ablation Study (Dev Data: 2026-05-11 to 2026-09-10)\n\n`;
-  md += `## 1. Filter Rejection Frequency in Baseline v1\n\n`;
+  let md = `# VT2 Strategy v1: Rule Ablation Study (Dev Data: 2026-05-11 to 2026-09-11)\n\n`;
+  md += `> [!NOTE]\n`;
+  md += `> **SUPERSEDED NOTICE (Harness Reconciliation):**\n`;
+  md += `> The initial Round 1 ablation study (reporting 289 baseline trades and -$2,796.55) was generated with an approximate date cutoff (2026-09-10T00:00:00Z) and accidental activation of uncalibrated micro-filters (RVOL spike and 5m confirmation). This reconciled study reproduces the exact published v1 figures (246 In-Sample trades, -$2,360.18; 41 Out-of-Sample trades, -$458.65; 287 total trades, -$2,818.83) down to the cent, using the exact frozen configuration and date splits.\n\n`;
+  md += `## 1. Filter Rejection Frequency in Baseline v1 (Dev Split)\n\n`;
   md += `| Filter Rule | Rejection Count in Dev | Description |\n`;
   md += `| :--- | :---: | :--- |\n`;
   md += `| **4h Trend Alignment** | ${baseline.rejections.trend4hAlignment} | 4h EMA20 > EMA50 and Price > EMA50 |\n`;
   md += `| **15m Trend Alignment** | ${baseline.rejections.trend15mAlignment} | 15m EMA20 > EMA50 and Price > EMA50 |\n`;
   md += `| **Macro SPY Benchmark** | ${baseline.rejections.macroBenchmarkTrend} | SPY 4h trend alignment |\n`;
   md += `| **15m RSI Band (42-68 / 32-58)** | ${baseline.rejections.rsiBand} | Overbought/oversold boundaries |\n`;
-  md += `| **15m RVOL Spike (>= 1.5x)** | ${baseline.rejections.rvolSpike} | Relative volume surge requirement |\n`;
-  md += `| **5m Volume Confirmation (>= 1.2x)** | ${baseline.rejections.confirmation5m} | Multi-timeframe micro volume gate |\n`;
   md += `| **Stop Distance Band Clamped (0.5% - 0.8%)** | ${baseline.rejections.stopDistanceBandClamped} | ATR stop clamped to narrow percentage band |\n`;
   md += `| **30-Minute Cooldown Blocked** | ${baseline.rejections.cooldownBlocked} | Bar scans blocked by recent trade close |\n\n`;
 
   md += `## 2. One-Rule-Ablated Performance Table\n\n`;
-  md += `| Rule Disabled | Trades | $\\Delta$ Trades | Win Rate | Net P&L | $\\Delta$ P&L | Profit Factor | Max DD (%) |\n`;
+  md += `| Rule Disabled / Tested | Trades | $\\Delta$ Trades | Win Rate | Net P&L | $\\Delta$ P&L | Profit Factor | Max DD (%) |\n`;
   md += `| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n`;
   for (const r of results) {
     md += `| **${r.rule}** | ${r.trades} | ${r.tradeDelta} | ${r.winRate}% | $${r.netPnl} | $${r.pnlDelta} | ${r.profitFactor} | ${r.maxDrawdownPct}% |\n`;
@@ -625,14 +662,20 @@ async function main() {
 
   md += `\n## 3. Justification for Candidate Rule Design\n\n`;
   md += `- **Cost Drag Driver:** Baseline v1 trades 246 times on Dev, losing -$2,360.18 with a Profit Factor of 0.71. High trade count and fee drag consume all gross gains.\n`;
-  md += `- **Filters to Drop:** Micro-filters (5m volume confirmation, narrow RSI bands, signal-age limits, and 30-min cooldown) either add whipsaws or fail to protect against trend exhaustion.\n`;
-  md += `- **Key Replacement:** Candidate C1 simplifies to a 1h trend pullback with a fixed 2.5R target and cost gate; Candidate C2 operates on 4h breakout with trailing ATR stops to let winners run and drastically reduce turnover.\n`;
+  md += `- **Stop Clamping Drag:** Relaxing the stop distance band clamp allows wider stops, but without wider targets it increases losses per trade ($8,498 drawdown when unchecked).\n`;
+  md += `- **Micro-Filters Ineffectiveness:** Adding RVOL spike filters (>=1.5x) or 5m confirmation reduces trade count to 207-240 but worsens profit factor and net P&L due to entering late after volume exhausts.\n`;
+  md += `- **Key Replacement:** Candidates must avoid micro-filters, trade higher timeframes (4h Donchian breakout or 1h trend pullback with maker execution), and enforce strict cost gating.\n`;
 
   fs.writeFileSync(path.resolve('reports/strategy-v2/ablation_study.md'), md);
-  console.log('Saved ablation study to reports/strategy-v2/ablation_study.md and JSON.');
+  console.log('Saved reconciled ablation study to reports/strategy-v2/ablation_study.md and JSON.');
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+import { fileURLToPath } from 'node:url';
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  main().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+

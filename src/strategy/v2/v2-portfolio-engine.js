@@ -364,6 +364,8 @@ export class V2PortfolioEngine {
             symbol: pendingOrder.symbol,
             side: pendingOrder.side,
             entryPrice: fillPrice,
+            rawEntryPrice: rawOpen,
+            isMakerEntry: !!pendingOrder.isMaker,
             currentPrice: fillPrice,
             bestClose: fillPrice,
             quantity: pendingOrder.quantity,
@@ -513,11 +515,19 @@ export class V2PortfolioEngine {
               exitDate: currentDate.toISOString(),
               entryPrice: pos.entryPrice,
               exitPrice,
+              rawEntryPrice: pos.rawEntryPrice || pos.entryPrice,
+              rawExitPrice,
               quantity: pos.quantity,
               netPnl: Number(netTradePnl.toFixed(2)),
               grossPnl: Number(grossTradePnl.toFixed(2)),
               roiPct,
               rMultiple,
+              entryFee: pos.entryFee,
+              exitFee,
+              fundingPaid: pos.fundingPaid,
+              slippagePaid: pos.slippagePaid,
+              isMakerEntry: !!pos.isMakerEntry,
+              isMakerExit: !!pos.isMakerExit,
               exitReason,
               equityAfter: Number(equity.toFixed(2)),
             });
@@ -780,4 +790,106 @@ export class V2PortfolioEngine {
       equityCurve: [],
     };
   }
+
+  computeFixedTradeSensitivity(trades, options = {}) {
+    return computeFixedTradeListSensitivity(trades, {
+      baseSlippageRate: this.baseSlippageRate,
+      baseTakerFeeRate: this.takerFeeRate,
+      baseMakerFeeRate: this.makerFeeRate,
+      ...options,
+    });
+  }
 }
+
+/**
+ * Computes fixed-trade-list cost sensitivity across slippage/fee multipliers (e.g. x0, x1, x2).
+ * On a fixed trade list, entry/exit timing and quantities are frozen, guaranteeing that
+ * higher slippage strictly and monotonically degrades net trade P&L by construction.
+ */
+export function computeFixedTradeListSensitivity(trades, options = {}) {
+  const baseSlippageRate = options.baseSlippageRate ?? 0.0002;
+  const baseTakerFeeRate = options.baseTakerFeeRate ?? 0.0006;
+  const baseMakerFeeRate = options.baseMakerFeeRate ?? 0.0002;
+  const multipliers = options.multipliers ?? [0, 1, 2];
+  const scaleFees = options.scaleFees ?? false;
+
+  const results = {};
+
+  for (const m of multipliers) {
+    let totalGross = 0;
+    let totalFees = 0;
+    let totalSlippage = 0;
+    let totalFunding = 0;
+    let totalNet = 0;
+    const repricedTrades = [];
+
+    for (const t of trades) {
+      const rawEntry = t.rawEntryPrice || (t.side === 'LONG' ? t.entryPrice / (1 + baseSlippageRate) : t.entryPrice / (1 - baseSlippageRate));
+      const rawExit = t.rawExitPrice || (t.side === 'LONG' ? t.exitPrice / (1 - baseSlippageRate) : t.exitPrice / (1 + baseSlippageRate));
+
+      const entrySlip = t.isMakerEntry ? 0 : rawEntry * baseSlippageRate * m;
+      const exitSlip = t.isMakerExit ? 0 : rawExit * baseSlippageRate * m;
+
+      const fillEntry = t.side === 'LONG' ? rawEntry + entrySlip : rawEntry - entrySlip;
+      const fillExit = t.side === 'LONG' ? rawExit - exitSlip : rawExit + exitSlip;
+
+      const entryFeeRate = t.isMakerEntry ? baseMakerFeeRate : baseTakerFeeRate;
+      const exitFeeRate = t.isMakerExit ? baseMakerFeeRate : baseTakerFeeRate;
+
+      const tradeSlippageCost = (entrySlip + exitSlip) * t.quantity;
+      const feeMult = scaleFees ? m : 1;
+      const tradeFees = (fillEntry * entryFeeRate + fillExit * exitFeeRate) * t.quantity * feeMult;
+      const grossPnl = (t.side === 'LONG' ? fillExit - fillEntry : fillEntry - fillExit) * t.quantity;
+      const funding = t.fundingPaid || 0;
+      const netPnl = grossPnl - tradeFees - funding;
+
+      totalGross += grossPnl;
+      totalFees += tradeFees;
+      totalSlippage += tradeSlippageCost;
+      totalFunding += funding;
+      totalNet += netPnl;
+
+      repricedTrades.push({
+        tradeId: t.tradeId,
+        symbol: t.symbol,
+        side: t.side,
+        quantity: t.quantity,
+        rawEntry,
+        rawExit,
+        fillEntry,
+        fillExit,
+        grossPnl: Number(grossPnl.toFixed(4)),
+        fees: Number(tradeFees.toFixed(4)),
+        slippage: Number(tradeSlippageCost.toFixed(4)),
+        funding: Number(funding.toFixed(4)),
+        netPnl: Number(netTradePnl(netPnl)),
+      });
+    }
+
+    const wins = repricedTrades.filter(t => t.netPnl > 0);
+    const losses = repricedTrades.filter(t => t.netPnl < 0);
+    const grossProfit = wins.reduce((s, t) => s + t.netPnl, 0);
+    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.netPnl, 0));
+    const pf = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : (grossProfit > 0 ? 99 : 0);
+
+    results[`x${m}`] = {
+      multiplier: m,
+      tradeCount: trades.length,
+      netPnl: Number(totalNet.toFixed(2)),
+      grossPnl: Number(totalGross.toFixed(2)),
+      fees: Number(totalFees.toFixed(2)),
+      slippage: Number(totalSlippage.toFixed(2)),
+      funding: Number(totalFunding.toFixed(2)),
+      profitFactor: pf,
+      winRate: trades.length > 0 ? Number(((wins.length / trades.length) * 100).toFixed(2)) : 0,
+      trades: repricedTrades,
+    };
+  }
+
+  return results;
+}
+
+function netTradePnl(val) {
+  return Number(val.toFixed(4));
+}
+
