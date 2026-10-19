@@ -1,0 +1,35 @@
+{
+  "crypto": {
+    "assetClass": "crypto",
+    "name": "Crypto Futures",
+    "tradingHours": "24/7",
+    "maxLeverage": 5,
+    "showFundingRateOnPreview": true,
+    "feeRatesSource": "CONTRACT_SPEC",
+    "maxDailyTrades": 5,
+    "maxNotionalPerOrderUsd": 50,
+    "gapRiskWarning": false,
+    "demoSupported": true,
+    "demoSymbolPrefix": "S",
+    "demoProductType": "susdt-futures",
+    "demoMarginCoin": "SUSDT"
+  },
+  "equity": {
+    "assetClass": "equity",
+    "name": "Tokenized US Equity Perps",
+    "tradingHours": "24/7_UNDERLYING_RTH",
+    "timezone": "America/New_York",
+    "maxLeverage": 3,
+    "underlyingMarketOpen": "09:30",
+    "underlyingMarketClose": "16:00",
+    "showUnderlyingMarketBadge": true,
+    "equityEntriesWhenUnderlyingClosed": "ALLOW_WITH_WARNING",
+    "gapRiskNoteOnPreview": true,
+    "gapRiskWarning": "Overnight & weekend holds carry equity gap risk upon US market open.",
+    "maxDailyTrades": 3,
+    "maxNotionalPerOrderUsd": 50,
+    "feeRatesSource": "CONTRACT_SPEC",
+    "demoSupported": false,
+    "demoUnavailableReason": "Equities: PAPER only, no Bitget demo contracts"
+  }
+}

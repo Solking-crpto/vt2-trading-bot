@@ -1,0 +1,7 @@
+{
+  "ablationId": "5_no_benchmark_filter",
+  "name": "Disable Benchmark (SPY) Filter",
+  "overrides": {
+    "disableBenchmarkFilter": true
+  }
+}

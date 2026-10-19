@@ -1,0 +1,7 @@
+{
+  "ablationId": "7_no_cooldown",
+  "name": "Disable 30-min Cooldown",
+  "overrides": {
+    "disableCooldown": true
+  }
+}

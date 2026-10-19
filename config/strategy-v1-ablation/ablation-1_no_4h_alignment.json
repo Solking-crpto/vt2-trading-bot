@@ -1,0 +1,7 @@
+{
+  "ablationId": "1_no_4h_alignment",
+  "name": "Disable 4h Alignment",
+  "overrides": {
+    "disable4hAlignment": true
+  }
+}

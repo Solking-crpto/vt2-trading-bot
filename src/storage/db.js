@@ -403,12 +403,19 @@ export class Database {
   }
 
   saveJournalEntry(entry) {
+    const mode = entry.mode || entry.environment || 'PAPER';
+    const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(entry.symbol?.toUpperCase());
+    const assetClass = entry.assetClass || entry.asset_class || (isCrypto ? 'crypto' : 'equity');
+
     if (this.isInMemoryFallback) {
       const row = {
         id: entry.id,
         position_id: entry.positionId,
         timestamp: entry.timestamp,
-        environment: entry.environment || 'PAPER',
+        environment: mode,
+        mode,
+        asset_class: assetClass,
+        assetClass,
         symbol: entry.symbol,
         side: entry.side,
         strategy_version: entry.strategyVersion || 'v1.0.0',
@@ -423,7 +430,7 @@ export class Database {
         thesis_json: JSON.stringify(entry.thesis || {}),
         review_json: JSON.stringify(entry.review || {}),
         risk_result_json: JSON.stringify(entry.riskResult || {}),
-        is_simulated: 1,
+        is_simulated: mode === 'LIVE' ? 0 : 1,
       };
       this.memJournal.push(row);
       return;
@@ -434,38 +441,44 @@ export class Database {
         strategy_version, entry_price, exit_price, quantity, realized_pnl,
         roi_percent, holding_time_ms, fees_paid, exit_reason,
         thesis_json, review_json, risk_result_json, is_simulated
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      entry.id, entry.positionId, entry.timestamp, entry.environment || 'PAPER',
+      entry.id, entry.positionId, entry.timestamp, mode,
       entry.symbol, entry.side, entry.strategyVersion || 'v1.0.0',
       entry.entryPrice, entry.exitPrice, entry.quantity, entry.realizedPnl,
       entry.roiPercent, entry.holdingTimeMs || 0, entry.feesPaid, entry.exitReason,
       JSON.stringify(entry.thesis || {}), JSON.stringify(entry.review || {}),
-      JSON.stringify(entry.riskResult || {})
+      JSON.stringify(entry.riskResult || {}),
+      mode === 'LIVE' ? 0 : 1
     );
   }
 
   getJournalEntries(limit = 100) {
+    const enrich = (row) => {
+      const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(row.symbol?.toUpperCase());
+      const assetClass = row.asset_class || row.assetClass || (isCrypto ? 'crypto' : 'equity');
+      const mode = row.mode || row.environment || 'PAPER';
+      return {
+        ...row,
+        mode,
+        assetClass,
+        asset_class: assetClass,
+        thesis: JSON.parse(row.thesis_json || '{}'),
+        review: JSON.parse(row.review_json || '{}'),
+        riskResult: JSON.parse(row.risk_result_json || '{}'),
+      };
+    };
+
     if (this.isInMemoryFallback) {
       return [...this.memJournal]
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, limit)
-        .map(row => ({
-          ...row,
-          thesis: JSON.parse(row.thesis_json || '{}'),
-          review: JSON.parse(row.review_json || '{}'),
-          riskResult: JSON.parse(row.risk_result_json || '{}'),
-        }));
+        .map(enrich);
     }
     const stmt = this.db.prepare('SELECT * FROM trade_journal ORDER BY timestamp DESC LIMIT ?');
-    return stmt.all(limit).map(row => ({
-      ...row,
-      thesis: JSON.parse(row.thesis_json || '{}'),
-      review: JSON.parse(row.review_json || '{}'),
-      riskResult: JSON.parse(row.risk_result_json || '{}'),
-    }));
+    return stmt.all(limit).map(enrich);
   }
 
   saveRejectedSetup(setup) {

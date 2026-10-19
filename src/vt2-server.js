@@ -20,12 +20,29 @@ import { isEligibleContract, isEquityContract, isCryptoContract } from './config
 import { BitgetCryptoProvider, StockMarketProvider } from './adapters/market-provider.js';
 import {
   CURRENT_ENVIRONMENT,
+  EXECUTION_MODES,
+  getCurrentMode,
+  setExecutionMode,
+  isLiveArmed,
+  getLiveArmingStatus,
+  armLiveTrading,
+  disarmLive,
+  isLiveTradingAllowed,
+  isHosted,
+  getCredentialOverview,
+  getDemoCredentialStatus,
+  getLiveCredentialStatus,
   assertMainnetExecutionBlocked,
   validateExecutionMode,
   isMainnetExecutionAllowed,
   isMainnetKillSwitchDisarmed,
   assertLiveExecutionGates,
+  redactSecrets,
+  incrementLiveTradeCount,
 } from './environment.js';
+import { BitgetTradeClient } from './execution/bitget-trade-client.js';
+import { loadProfiles, getProfileForSymbol, getUnderlyingMarketStatus } from './config/profiles.js';
+import { loadLiveLimits, validateLiveOrderCaps } from './config/live-limits.js';
 import { DEFAULT_MARKET_FIXTURES, generateCandleSeries } from './data/market-fixtures.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1436,22 +1453,29 @@ export class VT2Server {
         }
       }
 
-      // 15. Environment Status & Live Activation Gate
-      if (pathname === '/api/environment') {
+      // 15. Mode Management & Environment Guardrails
+      if (pathname === '/api/mode' || pathname === '/api/environment') {
         if (req.method === 'GET') {
           return this.sendJson(res, 200, {
-            activeEnvironment: 'PAPER',
-            availableEnvironments: ['PAPER', 'TESTNET', 'MAINNET'],
+            mode: getCurrentMode(),
+            activeEnvironment: getCurrentMode(),
+            isHosted: isHosted(),
+            liveTradingEnabled: isLiveTradingAllowed(),
+            isLiveArmed: isLiveArmed(),
+            armingStatus: getLiveArmingStatus(),
+            credentials: getCredentialOverview(),
+            limits: loadLiveLimits(),
+            profiles: loadProfiles(),
             mainnetAllowed: isMainnetExecutionAllowed(),
             mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
-            credentialsConfigured: this.bitgetAuth.getCredentialStatus().isConfigured,
+            credentialsConfigured: getDemoCredentialStatus().isConfigured || getLiveCredentialStatus().isConfigured,
           });
         }
-        if (req.method === 'POST') {
-          const body = await this.parseJsonBody(req);
 
-          // Strict Allow-List Enforcement: Only 'PAPER' is permitted.
-          // Recursively inspect all values and keys for forbidden environments
+        if (req.method === 'POST') {
+          const body = await this.parseJsonBody(req).catch(() => ({}));
+
+          // Strict Security Evasion Detection (Recursively scan body for forbidden words like MAINNET)
           const collected = [];
           const collectStrings = (val) => {
             if (typeof val === 'string') {
@@ -1467,11 +1491,15 @@ export class VT2Server {
           };
           collectStrings(body);
 
-          const forbiddenWords = ['MAINNET', 'LIVE', 'PROD', 'PRODUCTION', 'REAL'];
+          const isLegitimateArmedLive = (body.mode === 'LIVE' || body.environment === 'LIVE') && isLiveArmed();
+          const mainnetWords = ['MAINNET', 'PROD', 'PRODUCTION', 'REAL'];
+          if (!isLegitimateArmedLive) {
+            mainnetWords.push('LIVE');
+          }
           for (const s of collected) {
             const up = s.toUpperCase();
-            for (const fw of forbiddenWords) {
-              if (up === fw || up.includes(fw)) {
+            for (const mw of mainnetWords) {
+              if (up === mw || up.includes(mw)) {
                 assertMainnetExecutionBlocked('MAINNET');
                 return this.sendJson(res, 403, {
                   error: 'MAINNET_EXECUTION_BLOCKED',
@@ -1482,29 +1510,254 @@ export class VT2Server {
             }
           }
 
-          // Allow-List Check: If any environment is specified, it must be strictly 'PAPER'
-          const target = (body.targetEnvironment || body.environment || body.target || body.env || body.mode || 'PAPER');
-          const targetNormalized = typeof target === 'string' ? target.trim().toUpperCase() : 'INVALID';
-          if (targetNormalized !== 'PAPER') {
-            assertMainnetExecutionBlocked(targetNormalized);
+          // Hosted / Serverless enforcement
+          if (isHosted()) {
+            const rawTarget = body.mode || body.targetEnvironment || body.environment || body.target || body.env || 'PAPER';
+            if (rawTarget !== 'PAPER') {
+              return this.sendJson(res, 403, {
+                error: 'SERVERLESS_MODE_LOCKED',
+                message: 'Hosted deployment operates exclusively in PAPER mode. DEMO and LIVE modes are prohibited on hosted sites.',
+                securityAlert: true,
+              });
+            }
+            setExecutionMode('PAPER');
+            return this.sendJson(res, 200, { success: true, mode: 'PAPER', environment: 'PAPER' });
+          }
+
+          // Determine requested mode (must be exactly 'PAPER', 'DEMO', or 'LIVE')
+          let targetMode = body.mode || body.targetEnvironment || body.environment || body.target || body.env;
+          if (typeof targetMode !== 'string') {
             return this.sendJson(res, 403, {
-              error: 'MAINNET_EXECUTION_BLOCKED',
-              message: 'CRITICAL SECURITY INTERCEPTION: Live Mainnet execution is strictly disabled. Only PAPER mode is permitted.',
-              securityAlert: true,
+              error: 'INVALID_ENVIRONMENT',
+              message: 'Mode must be a string: PAPER, DEMO, or LIVE',
             });
           }
 
-          return this.sendJson(res, 200, { success: true, environment: 'PAPER' });
+          // Case-sensitivity and allow-list check: only exact 'PAPER', 'DEMO', 'LIVE'
+          if (targetMode !== 'PAPER' && targetMode !== 'DEMO' && targetMode !== 'LIVE') {
+            return this.sendJson(res, 403, {
+              error: 'INVALID_ENVIRONMENT',
+              message: `Unsupported mode "${targetMode}". Only PAPER, DEMO, and LIVE are permitted.`,
+            });
+          }
+
+          if (targetMode === 'LIVE') {
+            if (!isLiveArmed()) {
+              return this.sendJson(res, 403, {
+                error: 'LIVE_NOT_ARMED',
+                message: 'LIVE mode requires explicit arming. Arm the terminal with "ENABLE LIVE TRADING" and passing preflight checks first.',
+              });
+            }
+          }
+
+          try {
+            const active = setExecutionMode(targetMode, { allowUnconfiguredDemo: true });
+            return this.sendJson(res, 200, {
+              success: true,
+              mode: active,
+              environment: active,
+              notice: active === 'DEMO' ? 'Equities: PAPER only, no Bitget demo contracts' : undefined,
+            });
+          } catch (err) {
+            return this.sendJson(res, 403, { error: err.code || 'MODE_CHANGE_FAILED', message: err.message });
+          }
         }
       }
 
-      // 16. Live Mainnet Order Interception Guard (Strict Denial)
-      if (pathname === '/api/orders/live' || pathname === '/api/orders/mainnet') {
-        assertMainnetExecutionBlocked('MAINNET');
-        return this.sendJson(res, 403, {
-          error: 'MAINNET_EXECUTION_BLOCKED',
-          message: 'Real live mainnet trading is strictly prohibited.',
+      // 15b. LIVE Arming Endpoint
+      if (pathname === '/api/mode/arm-live' && req.method === 'POST') {
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'HOSTED_LIVE_PROHIBITED', message: 'Hosted deployment cannot arm live trading.' });
+        }
+        if (!isLiveTradingAllowed()) {
+          return this.sendJson(res, 403, {
+            error: 'LIVE_TRADING_FLAG_DISABLED',
+            message: 'LIVE_TRADING_ENABLED environment variable is not set to "true".',
+          });
+        }
+
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (body.confirmationPhrase !== 'ENABLE LIVE TRADING') {
+          return this.sendJson(res, 400, {
+            error: 'INVALID_ARMING_PHRASE',
+            message: 'Confirmation phrase must exactly match "ENABLE LIVE TRADING".',
+          });
+        }
+
+        try {
+          const client = new BitgetTradeClient('LIVE', { allowUnarmedForTesting: true });
+          const preflight = await client.preflight({ attestationChecked: Boolean(body.attestationChecked) });
+          if (!preflight.passed) {
+            return this.sendJson(res, 400, {
+              error: 'PREFLIGHT_FAILED',
+              message: 'Preflight verification failed.',
+              preflight,
+            });
+          }
+
+          armLiveTrading('ENABLE LIVE TRADING', preflight);
+          setExecutionMode('LIVE');
+          return this.sendJson(res, 200, {
+            success: true,
+            mode: 'LIVE',
+            armingStatus: getLiveArmingStatus(),
+            preflight,
+          });
+        } catch (err) {
+          return this.sendJson(res, 400, { error: err.code || 'ARMING_FAILED', message: err.message });
+        }
+      }
+
+      // 15c. LIVE Disarm Endpoint
+      if (pathname === '/api/mode/disarm-live' && req.method === 'POST') {
+        const resDisarm = disarmLive('USER_MANUAL_DISARM');
+        return this.sendJson(res, 200, { success: true, mode: 'PAPER', disarmed: true });
+      }
+
+      // 15d. Preflight Check Endpoint
+      if (pathname === '/api/mode/preflight' && req.method === 'POST') {
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'HOSTED_PREFLIGHT_PROHIBITED', message: 'Hosted site cannot execute exchange preflight.' });
+        }
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const targetMode = body.mode === 'LIVE' ? 'LIVE' : 'DEMO';
+        try {
+          const client = new BitgetTradeClient(targetMode, { allowUnarmedForTesting: true });
+          const result = await client.preflight({ attestationChecked: Boolean(body.attestationChecked) });
+          return this.sendJson(res, result.passed ? 200 : 400, result);
+        } catch (err) {
+          return this.sendJson(res, 400, { passed: false, error: err.message });
+        }
+      }
+
+      // 15e. Order Preview with Profiles, Limits and Max Dollar Loss
+      if (pathname === '/api/orders/preview' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const sym = body.symbol || 'BTCUSDT';
+        const profile = getProfileForSymbol(sym);
+        const limits = loadLiveLimits();
+        const price = Number(body.price || body.entryPrice || 100);
+        const qty = Number(body.quantity || body.size || 0.01);
+        const notional = Number((price * qty).toFixed(2));
+        const side = (body.side || 'LONG').toUpperCase();
+        const stopLoss = Number(body.stopLoss || (side === 'LONG' ? price * 0.98 : price * 1.02));
+        const takeProfit = Number(body.takeProfit || (side === 'LONG' ? price * 1.05 : price * 0.95));
+        const perUnitLoss = Math.abs(price - stopLoss);
+        const maxDollarLoss = Number((perUnitLoss * qty).toFixed(2));
+        const underlyingStatus = getUnderlyingMarketStatus();
+
+        const capCheck = validateLiveOrderCaps({
+          symbol: sym,
+          entryPrice: price,
+          quantity: qty,
+          leverage: body.leverage || 1,
+        }, {
+          currentOpenNotional: this.paperEngine.positions.reduce((s, p) => s + (p.currentQuantity * p.entryPrice), 0),
+          openPositionsCount: this.paperEngine.positions.length,
+          todayRealizedLoss: 0,
+          completedLiveTradesCount: getLiveArmingStatus().confirmedTradesCompleted,
         });
+
+        return this.sendJson(res, 200, {
+          symbol: sym,
+          side,
+          quantity: qty,
+          entryPrice: price,
+          notionalUsd: notional,
+          leverage: body.leverage || 1,
+          stopLoss,
+          takeProfit,
+          maxDollarLoss,
+          profile,
+          underlyingStatus,
+          capCheck,
+          requiresManualConfirm: capCheck.requiresManualConfirm,
+        });
+      }
+
+      // 15f. Exchange Reconciliation Endpoint
+      if (pathname === '/api/exchange/reconcile' && req.method === 'POST') {
+        const curMode = getCurrentMode();
+        if (curMode === 'PAPER') {
+          return this.sendJson(res, 200, { reconciled: true, mode: 'PAPER', message: 'Paper engine is self-contained.' });
+        }
+        try {
+          const client = new BitgetTradeClient(curMode);
+          const rec = await client.reconcile();
+          return this.sendJson(res, rec.reconciled ? 200 : 409, rec);
+        } catch (err) {
+          return this.sendJson(res, 500, { reconciled: false, error: err.message, mode: curMode });
+        }
+      }
+
+      // 15g. Exchange & Paper Kill Switch
+      if (pathname === '/api/exchange/kill-switch' && req.method === 'POST') {
+        const curMode = getCurrentMode();
+        const results = {
+          mode: curMode,
+          paperClosed: this.paperEngine.cancelAllOrdersAndClosePositions(),
+          exchange: null,
+        };
+
+        if (curMode !== 'PAPER') {
+          try {
+            const client = new BitgetTradeClient(curMode);
+            results.exchange = await client.killSwitch();
+          } catch (e) {
+            results.exchange = { error: e.message };
+          }
+        }
+
+        disarmLive('KILL_SWITCH_TRIGGERED');
+        return this.sendJson(res, 200, { success: true, results });
+      }
+
+      // 16. Live Mainnet Order Interception Guard & Execution
+      if (pathname === '/api/orders/live' || pathname === '/api/orders/mainnet') {
+        if (!isLiveArmed() || getCurrentMode() !== 'LIVE') {
+          assertMainnetExecutionBlocked('MAINNET');
+          return this.sendJson(res, 403, {
+            error: 'MAINNET_EXECUTION_BLOCKED',
+            message: 'Real live mainnet trading is strictly prohibited without active arming.',
+            securityAlert: true,
+          });
+        }
+
+        // Armed LIVE execution path
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        try {
+          const client = new BitgetTradeClient('LIVE');
+          if (body.dryRun) {
+            const preview = client.formatDryRunOrder(body);
+            return this.sendJson(res, 200, preview);
+          }
+          const orderResult = await client.placeOrderWithProtection(body);
+          incrementLiveTradeCount();
+          return this.sendJson(res, 200, { success: true, orderResult });
+        } catch (err) {
+          return this.sendJson(res, 400, {
+            error: err.code || 'ORDER_REJECTED',
+            message: err.message,
+          });
+        }
+      }
+
+      // 16b. Demo Order Placement
+      if (pathname === '/api/orders/demo' && req.method === 'POST') {
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'SERVERLESS_MODE_LOCKED', message: 'Demo trading unavailable on hosted site.' });
+        }
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        try {
+          const client = new BitgetTradeClient('DEMO');
+          const orderResult = await client.placeOrderWithProtection(body);
+          return this.sendJson(res, 200, { success: true, orderResult });
+        } catch (err) {
+          return this.sendJson(res, 400, {
+            error: err.code || 'ORDER_REJECTED',
+            message: err.message,
+          });
+        }
       }
 
       // 17. Trade Journal

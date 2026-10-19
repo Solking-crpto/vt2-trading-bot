@@ -1,0 +1,7 @@
+{
+  "ablationId": "2_no_5m_confirmation",
+  "name": "Disable 5m Confirmation",
+  "overrides": {
+    "disable5mConfirmation": true
+  }
+}

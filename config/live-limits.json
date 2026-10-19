@@ -1,0 +1,23 @@
+{
+  "maxNotionalPerOrderUsd": 50,
+  "maxTotalOpenNotionalUsd": 100,
+  "maxRiskPerTradePct": 0.0025,
+  "maxDailyLossUsd": 10,
+  "maxOpenPositions": 1,
+  "maxLeverage": {
+    "equity": 3,
+    "crypto": 5
+  },
+  "allowedSymbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SPYUSDT",
+    "QQQUSDT",
+    "NVDAUSDT",
+    "AAPLUSDT",
+    "MSFTUSDT",
+    "AMZNUSDT"
+  ],
+  "confirmFirstNTrades": 3,
+  "enforceStrictestWins": true
+}

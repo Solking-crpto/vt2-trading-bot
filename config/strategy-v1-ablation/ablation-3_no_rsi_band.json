@@ -1,0 +1,7 @@
+{
+  "ablationId": "3_no_rsi_band",
+  "name": "Disable RSI Band",
+  "overrides": {
+    "disableRsiBand": true
+  }
+}
