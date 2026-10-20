@@ -24,6 +24,11 @@ Across two pre-registered quantitative research rounds, a total of **22 independ
 
 *(Note: Candidates C3, C4, C5 do not exist; previous text referencing "[C1-E0 through C5-E1]" was an unverified narrative error. Round 1 contained only C0, C1, and C2).*
 
+### Round 2 Crypto Data Truncation Notice
+All 4 Round 2 Crypto trials (R2-A Dev [9 trades], R2-A Val [3 trades], R2-B Dev [13 trades], R2-B Val [20 trades]) are marked **NOT EVALUABLE**:
+- **Severe Sample Truncation:** Each split had fewer than the pre-registered 30-trade minimum sample threshold.
+- **Missing Universe Data:** 8 of the 10 configured crypto symbols (`SOL`, `XRP`, `DOGE`, `SUI`, `PEPE`, `ADA`, `AVAX`, `NEAR`) had 0 bars in `data/history/`. Only `BTCUSDT` had Dev bars, and only `BTCUSDT` and `ETHUSDT` had Validation bars. Consequently, these crypto runs cannot be evaluated as representing the multi-asset crypto universe.
+
 > [!CAUTION]
 > **Definitive Scientific Verdict: NONE of the 25 experimental runs achieved the pre-registered dual-split pass criteria.**
 > In strict accordance with the pre-registration protocol, the **Forward Holdout Splits (October 10, 2026 to Present for 5-month, and 2026 to Present for L1) were KEPT STRICTLY CLOSED** to prevent holdout contamination and selective reporting.

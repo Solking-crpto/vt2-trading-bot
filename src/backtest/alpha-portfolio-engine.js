@@ -167,9 +167,6 @@ export class AlphaPortfolioEngine {
     let totalFeesPaid = 0;
     let totalSlippagePaid = 0;
     let totalFundingPaid = 0;
-    let isFeesPaid = 0, oosFeesPaid = 0;
-    let isSlippagePaid = 0, oosSlippagePaid = 0;
-    let isFundingPaid = 0, oosFundingPaid = 0;
     let barsWithPositionOpen = 0;
 
     const trades = [];
@@ -215,11 +212,6 @@ export class AlphaPortfolioEngine {
         const fundingCost = notional * fundingRate8h;
         equity -= fundingCost;
         totalFundingPaid += fundingCost;
-        if (currentTs >= oosStartTs) {
-          oosFundingPaid += fundingCost;
-        } else {
-          isFundingPaid += fundingCost;
-        }
         currentPosition.fundingPaid = (currentPosition.fundingPaid || 0) + fundingCost;
       }
 
@@ -239,13 +231,6 @@ export class AlphaPortfolioEngine {
           equity -= entryFee;
           totalFeesPaid += entryFee;
           totalSlippagePaid += slippageCost;
-          if (currentTs >= oosStartTs) {
-            oosFeesPaid += entryFee;
-            oosSlippagePaid += slippageCost;
-          } else {
-            isFeesPaid += entryFee;
-            isSlippagePaid += slippageCost;
-          }
 
           currentPosition = {
             id: `trade-${trades.length + 1}`,
@@ -317,13 +302,6 @@ export class AlphaPortfolioEngine {
               equity += partialPnl;
               totalFeesPaid += partialFee;
               totalSlippagePaid += partialSlippage;
-              if (currentTs >= oosStartTs) {
-                oosFeesPaid += partialFee;
-                oosSlippagePaid += partialSlippage;
-              } else {
-                isFeesPaid += partialFee;
-                isSlippagePaid += partialSlippage;
-              }
               currentPosition.realizedPnl += partialPnl;
               currentPosition.partialFee = partialFee;
               currentPosition.slippagePaid += partialSlippage;
@@ -351,13 +329,6 @@ export class AlphaPortfolioEngine {
               equity += partialPnl;
               totalFeesPaid += partialFee;
               totalSlippagePaid += partialSlippage;
-              if (currentTs >= oosStartTs) {
-                oosFeesPaid += partialFee;
-                oosSlippagePaid += partialSlippage;
-              } else {
-                isFeesPaid += partialFee;
-                isSlippagePaid += partialSlippage;
-              }
               currentPosition.realizedPnl += partialPnl;
               currentPosition.partialFee = partialFee;
               currentPosition.slippagePaid += partialSlippage;
@@ -373,13 +344,6 @@ export class AlphaPortfolioEngine {
             const exitSlippage = Math.abs(exitPrice - rawExitPrice) * currentPosition.quantity;
             totalFeesPaid += exitFee;
             totalSlippagePaid += exitSlippage;
-            if (currentTs >= oosStartTs) {
-              oosFeesPaid += exitFee;
-              oosSlippagePaid += exitSlippage;
-            } else {
-              isFeesPaid += exitFee;
-              isSlippagePaid += exitSlippage;
-            }
 
             currentPosition.exitFee = exitFee;
             currentPosition.slippagePaid += exitSlippage;
@@ -411,9 +375,6 @@ export class AlphaPortfolioEngine {
               entryPrice: currentPosition.entryPrice,
               exitPrice,
               quantity: currentPosition.initialQuantity,
-              fees: Number(((currentPosition.entryFee || 0) + (currentPosition.partialFee || 0) + (currentPosition.exitFee || 0)).toFixed(2)),
-              slippage: Number((currentPosition.slippagePaid || 0).toFixed(2)),
-              funding: Number((currentPosition.fundingPaid || 0).toFixed(2)),
               netPnl: Number(netTradePnl.toFixed(2)),
               roiPct: Number(((netTradePnl / (currentPosition.entryPrice * currentPosition.initialQuantity)) * 100).toFixed(2)),
               exitReason,
@@ -545,12 +506,6 @@ export class AlphaPortfolioEngine {
       totalFeesPaid,
       totalSlippagePaid,
       totalFundingPaid,
-      isFeesPaid,
-      oosFeesPaid,
-      isSlippagePaid,
-      oosSlippagePaid,
-      isFundingPaid,
-      oosFundingPaid,
       barsWithPositionOpen,
       totalBars: timeline.length,
       oosStartTs,
@@ -743,18 +698,6 @@ export class AlphaPortfolioEngine {
         totalSlippagePaid: Number(ctx.totalSlippagePaid.toFixed(2)),
         totalFundingPaid: Number(ctx.totalFundingPaid.toFixed(2)),
         totalTradingCosts: Number((ctx.totalFeesPaid + ctx.totalSlippagePaid + ctx.totalFundingPaid).toFixed(2)),
-        inSample: {
-          fees: Number((ctx.isFeesPaid || 0).toFixed(2)),
-          slippage: Number((ctx.isSlippagePaid || 0).toFixed(2)),
-          funding: Number((ctx.isFundingPaid || 0).toFixed(2)),
-          total: Number(((ctx.isFeesPaid || 0) + (ctx.isSlippagePaid || 0) + (ctx.isFundingPaid || 0)).toFixed(2)),
-        },
-        outOfSample: {
-          fees: Number((ctx.oosFeesPaid || 0).toFixed(2)),
-          slippage: Number((ctx.oosSlippagePaid || 0).toFixed(2)),
-          funding: Number((ctx.oosFundingPaid || 0).toFixed(2)),
-          total: Number(((ctx.oosFeesPaid || 0) + (ctx.oosSlippagePaid || 0) + (ctx.oosFundingPaid || 0)).toFixed(2)),
-        },
       },
       exposureTimePct: Number(exposureTimePct.toFixed(2)),
       benchmarks: {
