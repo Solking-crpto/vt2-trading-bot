@@ -5,25 +5,27 @@ import { roundToStep } from '../../utils/decimal.js';
 import { getContractSpec, getCorrelationGroup } from '../../config/contracts.js';
 import { CandidateC1 } from './candidate-c1.js';
 import { CandidateC2 } from './candidate-c2.js';
+import { CandidateR2A } from './candidate-r2a.js';
+import { CandidateR2B } from './candidate-r2b.js';
 
 export const SPLITS = {
   dev: {
     id: 'dev',
     name: 'Dev (In-Sample)',
-    startTs: new Date('2026-05-11T00:00:00.000Z').getTime(),
-    endTs: new Date('2026-09-10T00:00:00.000Z').getTime(),
+    startTs: 1778520600000, // 2026-05-11T17:30:00.000Z
+    endTs: 1789138800000,   // 2026-09-11T15:00:00.000Z
   },
   validation: {
     id: 'validation',
-    name: 'Validation (Contaminated)',
-    startTs: new Date('2026-09-10T00:00:00.000Z').getTime(),
-    endTs: new Date('2026-10-10T00:00:00.000Z').getTime(),
+    name: 'Validation (Out-of-Sample)',
+    startTs: 1789138800000, // 2026-09-11T15:00:00.000Z
+    endTs: 1791660000000,   // 2026-10-10T00:00:00.000Z
   },
   forwardHoldout: {
     id: 'forwardHoldout',
     name: 'Forward Holdout',
-    startTs: new Date('2026-10-10T00:00:00.000Z').getTime(),
-    endTs: new Date('2026-10-19T11:00:00.000Z').getTime(),
+    startTs: 1791660000000, // 2026-10-10T00:00:00.000Z
+    endTs: 1792440000000,   // 2026-10-19 (Present)
   },
 };
 
@@ -259,6 +261,19 @@ export class V2PortfolioEngine {
         takerFeeRate,
         slippageRate,
       });
+    } else if (candidateId === 'R2-A') {
+      strategy = new CandidateR2A({
+        sessionMode,
+        takerFeeRate,
+        slippageRate,
+      });
+    } else if (candidateId === 'R2-B') {
+      strategy = new CandidateR2B({
+        sessionMode,
+        takerFeeRate,
+        makerFeeRate: this.makerFeeRate,
+        slippageRate,
+      });
     } else {
       throw new Error(`Candidate ${candidateId} must be evaluated via v1 baseline engine`);
     }
@@ -335,58 +350,123 @@ export class V2PortfolioEngine {
         }
       }
 
-      // 2. Execute Pending Order (Fill at NEXT bar open + slippage)
-      if (pendingOrder && pendingOrder.fillAtTs === currentTs) {
-        const symData = universe[pendingOrder.symbol];
-        const barData = symData?.map15m.get(currentTs);
-        const canOpen = openPositions.length < this.maxConcurrentPositions && !isDailyLossLocked;
+      // 2. Execute Pending Order (Fill at NEXT bar open for taker, or through-tick for maker)
+      if (pendingOrder) {
+        if (!pendingOrder.isMaker) {
+          // Taker order execution (fill at scheduled fillAtTs)
+          if (pendingOrder.fillAtTs === currentTs) {
+            const symData = universe[pendingOrder.symbol];
+            const barData = symData?.map15m.get(currentTs);
+            const canOpen = openPositions.length < this.maxConcurrentPositions && !isDailyLossLocked;
 
-        // Check correlation group constraint
-        const proposedGroup = getCorrelationGroup(pendingOrder.symbol)?.id;
-        const groupOccupied = proposedGroup && openPositions.some(p => getCorrelationGroup(p.symbol)?.id === proposedGroup);
+            // Check correlation group constraint
+            const proposedGroup = getCorrelationGroup(pendingOrder.symbol)?.id;
+            const groupOccupied = proposedGroup && openPositions.some(p => getCorrelationGroup(p.symbol)?.id === proposedGroup);
 
-        if (barData && canOpen && !groupOccupied) {
-          const rawOpen = barData.open;
-          const fillPrice = pendingOrder.side === 'LONG'
-            ? Number((rawOpen * (1 + slippageRate)).toFixed(4))
-            : Number((rawOpen * (1 - slippageRate)).toFixed(4));
+            if (barData && canOpen && !groupOccupied) {
+              const rawOpen = barData.open;
+              const fillPrice = pendingOrder.side === 'LONG'
+                ? Number((rawOpen * (1 + slippageRate)).toFixed(4))
+                : Number((rawOpen * (1 - slippageRate)).toFixed(4));
 
-          const slippageCost = Math.abs(fillPrice - rawOpen) * pendingOrder.quantity;
-          const entryFee = fillPrice * pendingOrder.quantity * takerFeeRate;
+              const slippageCost = Math.abs(fillPrice - rawOpen) * pendingOrder.quantity;
+              const entryFee = fillPrice * pendingOrder.quantity * takerFeeRate;
 
-          equity -= entryFee;
-          totalFeesPaid += entryFee;
-          totalSlippagePaid += slippageCost;
+              equity -= entryFee;
+              totalFeesPaid += entryFee;
+              totalSlippagePaid += slippageCost;
 
-          openPositions.push({
-            id: `trade-${trades.length + openPositions.length + 1}`,
-            candidateId,
-            symbol: pendingOrder.symbol,
-            side: pendingOrder.side,
-            entryPrice: fillPrice,
-            rawEntryPrice: rawOpen,
-            isMakerEntry: !!pendingOrder.isMaker,
-            currentPrice: fillPrice,
-            bestClose: fillPrice,
-            quantity: pendingOrder.quantity,
-            initialQuantity: pendingOrder.quantity,
-            stopLoss: pendingOrder.stopLoss,
-            takeProfit: pendingOrder.takeProfit,
-            breakevenLevel: pendingOrder.breakevenLevel,
-            breakevenStop: pendingOrder.breakevenStop,
-            trailingAtrDistance: pendingOrder.trailingAtrDistance,
-            isBreakevenMoved: false,
-            entryTime: currentTs,
-            entryDate: currentDate.toISOString(),
-            riskBudgetDollars: pendingOrder.riskBudgetDollars,
-            stopDistance: pendingOrder.stopDistance,
-            entryFee,
-            exitFee: 0,
-            fundingPaid: 0,
-            slippagePaid: slippageCost,
-          });
+              openPositions.push({
+                id: `trade-${trades.length + openPositions.length + 1}`,
+                candidateId,
+                symbol: pendingOrder.symbol,
+                side: pendingOrder.side,
+                entryPrice: fillPrice,
+                rawEntryPrice: rawOpen,
+                isMakerEntry: false,
+                currentPrice: fillPrice,
+                bestClose: fillPrice,
+                quantity: pendingOrder.quantity,
+                initialQuantity: pendingOrder.quantity,
+                stopLoss: pendingOrder.stopLoss,
+                takeProfit: pendingOrder.takeProfit,
+                breakevenLevel: pendingOrder.breakevenLevel,
+                breakevenStop: pendingOrder.breakevenStop,
+                trailingAtrDistance: pendingOrder.trailingAtrDistance,
+                isBreakevenMoved: false,
+                entryTime: currentTs,
+                entryDate: currentDate.toISOString(),
+                riskBudgetDollars: pendingOrder.riskBudgetDollars,
+                stopDistance: pendingOrder.stopDistance,
+                entryFee,
+                exitFee: 0,
+                fundingPaid: 0,
+                slippagePaid: slippageCost,
+              });
+            }
+            pendingOrder = null;
+          }
+        } else {
+          // Maker Limit Order execution (through-tick fill on subsequent bars)
+          if (currentTs > pendingOrder.placedAtTs) {
+            const symData = universe[pendingOrder.symbol];
+            const barData = symData?.map15m.get(currentTs);
+            const canOpen = openPositions.length < this.maxConcurrentPositions && !isDailyLossLocked;
+            const proposedGroup = getCorrelationGroup(pendingOrder.symbol)?.id;
+            const groupOccupied = proposedGroup && openPositions.some(p => getCorrelationGroup(p.symbol)?.id === proposedGroup);
+
+            pendingOrder.barsElapsed = (pendingOrder.barsElapsed || 0) + 1;
+
+            if (barData && canOpen && !groupOccupied) {
+              const throughTickFilled = pendingOrder.side === 'LONG'
+                ? barData.low < pendingOrder.limitPrice
+                : barData.high > pendingOrder.limitPrice;
+
+              if (throughTickFilled) {
+                const fillPrice = pendingOrder.limitPrice;
+                const entryFee = fillPrice * pendingOrder.quantity * this.makerFeeRate;
+
+                equity -= entryFee;
+                totalFeesPaid += entryFee;
+                // 0 slippage for maker order
+
+                openPositions.push({
+                  id: `trade-${trades.length + openPositions.length + 1}`,
+                  candidateId,
+                  symbol: pendingOrder.symbol,
+                  side: pendingOrder.side,
+                  entryPrice: fillPrice,
+                  rawEntryPrice: fillPrice,
+                  isMakerEntry: true,
+                  currentPrice: fillPrice,
+                  bestClose: fillPrice,
+                  quantity: pendingOrder.quantity,
+                  initialQuantity: pendingOrder.quantity,
+                  stopLoss: pendingOrder.stopLoss,
+                  takeProfit: pendingOrder.takeProfit,
+                  breakevenLevel: null,
+                  breakevenStop: null,
+                  trailingAtrDistance: null,
+                  isBreakevenMoved: false,
+                  entryTime: currentTs,
+                  entryDate: currentDate.toISOString(),
+                  riskBudgetDollars: pendingOrder.riskBudgetDollars,
+                  stopDistance: pendingOrder.stopDistance,
+                  entryFee,
+                  exitFee: 0,
+                  fundingPaid: 0,
+                  slippagePaid: 0,
+                });
+                pendingOrder = null;
+              }
+            }
+
+            // Expiration check if not filled
+            if (pendingOrder && pendingOrder.barsElapsed >= pendingOrder.orderExpiryBars) {
+              pendingOrder = null;
+            }
+          }
         }
-        pendingOrder = null;
       }
 
       // 3. Manage Open Positions
@@ -416,8 +496,8 @@ export class V2PortfolioEngine {
             }
           }
 
-          // B. Trailing ATR stop & EMA20 cross exit check (C2)
-          if (candidateId === 'C2' && pos.trailingAtrDistance) {
+          // B. Trailing ATR stop & EMA20 cross exit check (C2 & R2-A)
+          if ((candidateId === 'C2' || candidateId === 'R2-A') && pos.trailingAtrDistance) {
             // Update trailing stop
             if (pos.side === 'LONG') {
               const newTrail = Number((pos.bestClose - pos.trailingAtrDistance).toFixed(4));
@@ -427,8 +507,8 @@ export class V2PortfolioEngine {
               if (newTrail < pos.stopLoss) pos.stopLoss = newTrail;
             }
 
-            // Check 4h EMA20 cross exit at 4h bar boundaries
-            if (currentTs % (4 * 60 * 60 * 1000) === 0) {
+            // Check 4h EMA20 cross exit at 4h bar boundaries (C2 only)
+            if (candidateId === 'C2' && currentTs % (4 * 60 * 60 * 1000) === 0) {
               const closed4h = this.getClosedBar(symData.list4h, currentTs);
               if (closed4h && closed4h.ema20) {
                 if (pos.side === 'LONG' && closed4h.close < closed4h.ema20) {
@@ -575,7 +655,7 @@ export class V2PortfolioEngine {
               history15m,
               closed1h,
             });
-          } else if (candidateId === 'C2') {
+          } else if (candidateId === 'C2' || candidateId === 'R2-A') {
             // Evaluated at 4h bar boundaries
             if (currentTs % (4 * 60 * 60 * 1000) === 0) {
               const closed4h = this.getClosedBar(symData.list4h, currentTs);
@@ -589,6 +669,15 @@ export class V2PortfolioEngine {
                 history4h,
               });
             }
+          } else if (candidateId === 'R2-B') {
+            const closed1h = this.getClosedBar(symData.list1h, currentTs);
+            signal = strategy.evaluate({
+              symbol: sym,
+              assetClass: symData.assetClass,
+              currentTs,
+              bar15m: barData,
+              closed1h,
+            });
           }
 
           if (signal) {
@@ -599,20 +688,38 @@ export class V2PortfolioEngine {
             const quantity = roundToStep(rawQty, spec?.minTradeNum || 0.01);
 
             if (quantity > 0 && (currentOpenRiskDollars + riskBudgetDollars <= maxAggregateDollarRisk + 0.01)) {
-              pendingOrder = {
-                symbol: sym,
-                side: signal.side,
-                requestedEntryPrice: signal.entryPrice,
-                stopLoss: signal.stopLoss,
-                takeProfit: signal.takeProfit,
-                breakevenLevel: signal.breakevenLevel,
-                breakevenStop: signal.breakevenStop,
-                trailingAtrDistance: signal.trailingAtrDistance,
-                stopDistance: signal.stopDistance,
-                riskBudgetDollars,
-                quantity,
-                fillAtTs: currentTs + 15 * 60 * 1000,
-              };
+              if (signal.isMaker) {
+                pendingOrder = {
+                  symbol: sym,
+                  side: signal.side,
+                  isMaker: true,
+                  limitPrice: signal.limitPrice,
+                  stopLoss: signal.stopLoss,
+                  takeProfit: signal.takeProfit,
+                  orderExpiryBars: signal.orderExpiryBars || 4,
+                  stopDistance: signal.stopDistance,
+                  riskBudgetDollars,
+                  quantity,
+                  placedAtTs: currentTs,
+                  barsElapsed: 0,
+                };
+              } else {
+                pendingOrder = {
+                  symbol: sym,
+                  side: signal.side,
+                  isMaker: false,
+                  requestedEntryPrice: signal.entryPrice,
+                  stopLoss: signal.stopLoss,
+                  takeProfit: signal.takeProfit,
+                  breakevenLevel: signal.breakevenLevel,
+                  breakevenStop: signal.breakevenStop,
+                  trailingAtrDistance: signal.trailingAtrDistance,
+                  stopDistance: signal.stopDistance,
+                  riskBudgetDollars,
+                  quantity,
+                  fillAtTs: currentTs + 15 * 60 * 1000,
+                };
+              }
               break;
             }
           }

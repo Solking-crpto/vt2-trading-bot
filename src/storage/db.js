@@ -136,6 +136,8 @@ export class Database {
         symbol TEXT NOT NULL,
         side TEXT NOT NULL,
         strategy_version TEXT NOT NULL,
+        strategy_id TEXT,
+        config_hash TEXT,
         entry_price REAL NOT NULL,
         exit_price REAL NOT NULL,
         quantity REAL NOT NULL,
@@ -179,6 +181,13 @@ export class Database {
         trades_json TEXT NOT NULL
       );
     `);
+
+    try {
+      this.db.exec("ALTER TABLE trade_journal ADD COLUMN strategy_id TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE trade_journal ADD COLUMN config_hash TEXT;");
+    } catch (_) {}
   }
 
   saveSetting(key, value) {
@@ -406,6 +415,13 @@ export class Database {
     const mode = entry.mode || entry.environment || 'PAPER';
     const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(entry.symbol?.toUpperCase());
     const assetClass = entry.assetClass || entry.asset_class || (isCrypto ? 'crypto' : 'equity');
+    const strategyId = entry.strategyId || entry.strategy_id || entry.strategyVersion || 'v1.0.0';
+    const configHash = entry.configHash || entry.config_hash || null;
+    const thesis = {
+      ...(entry.thesis || {}),
+      strategy_id: strategyId,
+      config_hash: configHash,
+    };
 
     if (this.isInMemoryFallback) {
       const row = {
@@ -418,7 +434,11 @@ export class Database {
         assetClass,
         symbol: entry.symbol,
         side: entry.side,
-        strategy_version: entry.strategyVersion || 'v1.0.0',
+        strategy_version: entry.strategyVersion || strategyId,
+        strategy_id: strategyId,
+        strategyId,
+        config_hash: configHash,
+        configHash,
         entry_price: entry.entryPrice,
         exit_price: entry.exitPrice,
         quantity: entry.quantity,
@@ -427,7 +447,7 @@ export class Database {
         holding_time_ms: entry.holdingTimeMs || 0,
         fees_paid: entry.feesPaid,
         exit_reason: entry.exitReason,
-        thesis_json: JSON.stringify(entry.thesis || {}),
+        thesis_json: JSON.stringify(thesis),
         review_json: JSON.stringify(entry.review || {}),
         risk_result_json: JSON.stringify(entry.riskResult || {}),
         is_simulated: mode === 'LIVE' ? 0 : 1,
@@ -438,18 +458,19 @@ export class Database {
     const stmt = this.db.prepare(`
       INSERT INTO trade_journal (
         id, position_id, timestamp, environment, symbol, side,
-        strategy_version, entry_price, exit_price, quantity, realized_pnl,
+        strategy_version, strategy_id, config_hash, entry_price, exit_price, quantity, realized_pnl,
         roi_percent, holding_time_ms, fees_paid, exit_reason,
         thesis_json, review_json, risk_result_json, is_simulated
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
       entry.id, entry.positionId, entry.timestamp, mode,
-      entry.symbol, entry.side, entry.strategyVersion || 'v1.0.0',
+      entry.symbol, entry.side, entry.strategyVersion || strategyId,
+      strategyId, configHash,
       entry.entryPrice, entry.exitPrice, entry.quantity, entry.realizedPnl,
       entry.roiPercent, entry.holdingTimeMs || 0, entry.feesPaid, entry.exitReason,
-      JSON.stringify(entry.thesis || {}), JSON.stringify(entry.review || {}),
+      JSON.stringify(thesis), JSON.stringify(entry.review || {}),
       JSON.stringify(entry.riskResult || {}),
       mode === 'LIVE' ? 0 : 1
     );
@@ -460,12 +481,19 @@ export class Database {
       const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(row.symbol?.toUpperCase());
       const assetClass = row.asset_class || row.assetClass || (isCrypto ? 'crypto' : 'equity');
       const mode = row.mode || row.environment || 'PAPER';
+      const thesis = JSON.parse(row.thesis_json || '{}');
+      const strategyId = row.strategy_id || thesis.strategy_id || row.strategy_version || 'v1.0.0';
+      const configHash = row.config_hash || thesis.config_hash || null;
       return {
         ...row,
+        strategy_id: strategyId,
+        strategyId,
+        config_hash: configHash,
+        configHash,
         mode,
         assetClass,
         asset_class: assetClass,
-        thesis: JSON.parse(row.thesis_json || '{}'),
+        thesis,
         review: JSON.parse(row.review_json || '{}'),
         riskResult: JSON.parse(row.risk_result_json || '{}'),
       };

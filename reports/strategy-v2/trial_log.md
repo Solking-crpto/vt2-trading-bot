@@ -17,3 +17,23 @@ This log immutably records all backtest trials, parameter executions, and outcom
 | 8 | 2026-10-19 13:25 UTC | C2 (4h Breakout Trend-Follower) | validation | Equity | E0 | $-254.64 | 16 | 25% | 0.5 | 3.78% | FAIL | 2xSens PnL: $-380.56 |
 | 9 | 2026-10-19 13:25 UTC | C2 (4h Breakout Trend-Follower) | dev | Equity | E1 | $-782.29 | 47 | 29.79% | 0.37 | 7.96% | FAIL | 2xSens PnL: $-493.54 |
 | 10 | 2026-10-19 13:25 UTC | C2 (4h Breakout Trend-Follower) | validation | Equity | E1 | $-339.04 | 12 | 16.67% | 0.27 | 3.41% | FAIL | 2xSens PnL: $-195.56 |
+
+
+## Round 2 Pre-Registered Trials (Commit: 33beca481f2f20904faa57135f36e092cba399ff)
+
+| Date | Candidate | Universe | Session | Split | Trades | Win Rate | Net P&L | PF | Max DD | Sens x0 | Sens x1 | Sens x2 | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-19 | R2-A | Equity | E0 | dev | 43 | 34.88% | $-414.81 | 0.46 | 4.15% | $-387.60 | $-414.80 | $-442.00 | FAIL |
+| 2026-10-19 | R2-A | Equity | E0 | validation | 11 | 9.09% | $-333.34 | 0.08 | 3.61% | $-324.15 | $-333.34 | $-342.54 | FAIL |
+| 2026-10-19 | R2-A | Equity | E1 | dev | 33 | 39.39% | $-309.36 | 0.52 | 3.09% | $-286.38 | $-309.35 | $-332.31 | FAIL |
+| 2026-10-19 | R2-A | Equity | E1 | validation | 5 | 0% | $-144.50 | 0 | 1.46% | $-140.53 | $-144.50 | $-148.47 | FAIL |
+| 2026-10-19 | R2-A | Crypto | E0 | dev | 9 | 11.11% | $-125.65 | 0.57 | 1.99% | $-120.82 | $-125.65 | $-130.47 | FAIL |
+| 2026-10-19 | R2-A | Crypto | E0 | validation | 3 | 66.67% | $63.87 | 2.28 | 0.03% | $65.76 | $63.87 | $61.99 | **PASS** |
+| 2026-10-19 | R2-B | Equity | E0 | dev | 266 | 24.81% | $-1366.89 | 0.87 | 21.43% | $-1161.89 | $-1366.95 | $-1572.00 | FAIL |
+| 2026-10-19 | R2-B | Equity | E0 | validation | 47 | 27.66% | $-18.99 | 0.99 | 6.74% | $22.88 | $-18.99 | $-60.87 | FAIL |
+| 2026-10-19 | R2-B | Equity | E1 | dev | 122 | 29.51% | $392.80 | 1.08 | 13.02% | $508.20 | $392.77 | $277.35 | FAIL |
+| 2026-10-19 | R2-B | Equity | E1 | validation | 27 | 22.22% | $-313.31 | 0.73 | 4.85% | $-289.10 | $-313.29 | $-337.48 | FAIL |
+| 2026-10-19 | R2-B | Crypto | E0 | dev | 13 | 30.77% | $72.74 | 1.15 | 1.69% | $85.98 | $72.74 | $59.50 | FAIL |
+| 2026-10-19 | R2-B | Crypto | E0 | validation | 20 | 20% | $-331.48 | 0.63 | 6.63% | $-310.13 | $-331.48 | $-352.82 | FAIL |
+
+**Forward Holdout Split Status**: KEPT CLOSED (no candidate satisfied pre-registered pass criteria)
