@@ -1,6 +1,8 @@
 # VT2 Strategy v2: Trial Log
 
 This log immutably records all backtest trials, parameter executions, and outcomes (including failed runs) to prevent selective reporting.
+**Total Recorded Runs: 25** (1 Ablation run, 10 Round 1 trials across C0/C1/C2, 12 Round 2 trials across R2-A/R2-B, and 2 Long-History trials for L1).
+*(Clarification: Candidates C3, C4, C5 do not exist. Any prior narrative reference to "[C1-E0 through C5-E1]" was an unverified assistant drafting error).*
 
 | Trial # | Timestamp | Candidate | Segment | Asset Class | Session | Net P&L | Trades | Win Rate | Profit Factor | Max DD | Status / Verdict | Notes |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |

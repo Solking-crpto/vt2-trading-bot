@@ -13,16 +13,20 @@ Across two pre-registered quantitative research rounds, a total of **22 independ
 
 | Round | Candidate | Session Mode | Universe | Splits Tested | Total Trials | Passing Candidates |
 |---|---|---|---|---|---|---|
+| **Ablation** | Trial 0 (v1 Baseline Ablation) | E0 (24/7) | Equity | Dev | 1 | None |
 | **Round 1** | C0 (v1 Baseline) | E0 (24/7) | Equity | Dev, Validation | 2 | None |
 | **Round 1** | C1 (15m Pullback in 1h Trend) | E0, E1 (RTH) | Equity | Dev, Validation | 4 | None |
 | **Round 1** | C2 (4h Donchian Breakout) | E0, E1 (RTH) | Equity | Dev, Validation | 4 | None |
 | **Round 2** | R2-A (4h Donchian Breakout 55-Bar) | E0, E1 | Equity, Crypto | Dev, Validation | 6 | None |
 | **Round 2** | R2-B (15m Pullback Maker Execution) | E0, E1 | Equity, Crypto | Dev, Validation | 6 | None |
-| **TOTALS** | — | — | — | — | **22 Trials** | **0 Passed** |
+| **Long-History** | L1 (100d SMA Trend Filter) | 24/7 | BTC + ETH (50/50) | Dev (2019-2023), Val (2024-2025) | 2 | None |
+| **TOTALS** | — | — | — | — | **25 Experimental Runs** | **0 Passed** |
+
+*(Note: Candidates C3, C4, C5 do not exist; previous text referencing "[C1-E0 through C5-E1]" was an unverified narrative error. Round 1 contained only C0, C1, and C2).*
 
 > [!CAUTION]
-> **Definitive Scientific Verdict: NONE of the 22 candidate configurations achieved the pre-registered dual-split pass criteria.**
-> In strict accordance with the pre-registration protocol, the **Forward Holdout Split (October 10, 2026 to Present) was KEPT STRICTLY CLOSED** to prevent holdout contamination and selective reporting.
+> **Definitive Scientific Verdict: NONE of the 25 experimental runs achieved the pre-registered dual-split pass criteria.**
+> In strict accordance with the pre-registration protocol, the **Forward Holdout Splits (October 10, 2026 to Present for 5-month, and 2026 to Present for L1) were KEPT STRICTLY CLOSED** to prevent holdout contamination and selective reporting.
 
 ---
 
@@ -31,9 +35,9 @@ Across two pre-registered quantitative research rounds, a total of **22 independ
 A primary quantitative question addressed across these trials was whether strategy failure is driven by **pure cost friction** or by **negative signal edge**:
 
 1. **Candidate C1 (15m Pullback with Taker Execution): Negative Signal Edge:**
-   - Candidate C1 incurred gross losses of **-$1,567.87** on Dev *before deducting exchange fees and slippage*.
+   - Candidate C1 incurred gross losses of **-$2,724.67** on Dev *before deducting exchange fees and slippage* (from `reports/strategy-v2/trades.csv`).
    - The underlying signal itself has negative expectancy in tokenized equity perpetuals.
-   - Taker fees ($2,381.93) and slippage ($1,489.14) compounded this negative signal into an unsustainable **64.0% drawdown** across 443 trades (win rate 14.67%).
+   - Total friction of **$3,544.82** (Fees ~$2,357.65, Slippage ~$1,113.31, Funding ~$73.86) compounded this negative signal into an unsustainable **64.0% drawdown** across 443 trades (net win rate 14.67%, gross win rate 48.08%, net P&L -$6,269.49).
 
 2. **v1 Baseline: Flat Signal Edge Swallowed by Friction:**
    - v1 produced a gross P&L of **-$160.99** over 246 in-sample trades (~flat before costs).
