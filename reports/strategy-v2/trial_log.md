@@ -37,3 +37,13 @@ This log immutably records all backtest trials, parameter executions, and outcom
 | 2026-10-19 | R2-B | Crypto | E0 | validation | 20 | 20% | $-331.48 | 0.63 | 6.63% | $-310.13 | $-331.48 | $-352.82 | FAIL |
 
 **Forward Holdout Split Status**: KEPT CLOSED (no candidate satisfied pre-registered pass criteria)
+
+
+## Long-History Pre-Registered Trials (Candidate L1, Commit: 49bc92f)
+
+| Date | Candidate | Universe | Timeframe | Split | Trades | Net Return | B&H Return | Max DD | B&H Max DD | Return/DD | B&H Ret/DD | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-20 | L1 (100d SMA) | BTC+ETH (50/50) | 1D | Dev (2019-2023) | 43 | +702.78% | +779.37% | 51.87% | 77.90% | 13.55 | 10.00 | FAIL (DD ratio 0.67x > 0.60x) |
+| 2026-10-20 | L1 (100d SMA) | BTC+ETH (50/50) | 1D | Val (2024-2025) | 36 | +44.80% | +67.31% | 41.82% | 41.60% | 1.07 | 1.62 | FAIL (DD ratio 1.01x > 0.60x) |
+
+**L1 Forward Holdout Status**: KEPT CLOSED (did not pass pre-registered criteria on Dev and Validation)

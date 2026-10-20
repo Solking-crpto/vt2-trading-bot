@@ -1,0 +1,780 @@
+{
+  "timestamp": "2026-10-20T17:56:11.884Z",
+  "preRegistrationCommit": "49bc92f",
+  "candidate": "L1",
+  "description": "100-Day SMA Trend Filtered Equal-Weight BTC/ETH Long-Only Portfolio",
+  "dev": {
+    "splitKey": "dev",
+    "label": "Dev (In-Sample: 2019 - 2023)",
+    "startDate": "2019-11-17",
+    "endDate": "2023-12-31",
+    "days": 1506,
+    "tradesCount": 43,
+    "l1ReturnPct": 702.78,
+    "bhReturnPct": 779.37,
+    "l1MaxDdPct": 51.87,
+    "bhMaxDdPct": 77.9,
+    "l1ReturnToDd": 13.55,
+    "bhReturnToDd": 10,
+    "ddReductionRatio": 0.67,
+    "totalFees": 1507.37,
+    "totalSlippage": 502.46,
+    "totalFunding": 7006.25,
+    "totalCosts": 9016.07,
+    "bootstrapCI": {
+      "mean": 20.93,
+      "lower80": 2.45,
+      "upper80": 38.71
+    },
+    "passNetProfit": true,
+    "passDdReduction": false,
+    "passReturnToDd": true,
+    "isPassing": false,
+    "trades": [
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-01-08",
+        "exitDate": "2020-01-09",
+        "entryPrice": 8305.5,
+        "exitPrice": 7903.5,
+        "netPnl": -245.81,
+        "roiPct": -4.92
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-01-10",
+        "exitDate": "2020-03-08",
+        "entryPrice": 8065,
+        "exitPrice": 8400.5,
+        "netPnl": 198.1,
+        "roiPct": 4.06
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2020-01-15",
+        "exitDate": "2020-03-12",
+        "entryPrice": 162.39,
+        "exitPrice": 141.17,
+        "netPnl": -667.09,
+        "roiPct": -13.13
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2020-04-18",
+        "exitDate": "2020-04-19",
+        "entryPrice": 184.3,
+        "exitPrice": 178.76,
+        "netPnl": -144.18,
+        "roiPct": -3.08
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2020-04-23",
+        "exitDate": "2020-05-10",
+        "entryPrice": 189.26,
+        "exitPrice": 188.28,
+        "netPnl": -27.54,
+        "roiPct": -0.6
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-04-29",
+        "exitDate": "2020-09-06",
+        "entryPrice": 8359,
+        "exitPrice": 10177.5,
+        "netPnl": 1048.16,
+        "roiPct": 21.64
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-09-10",
+        "exitDate": "2020-09-13",
+        "entryPrice": 10417,
+        "exitPrice": 10281.5,
+        "netPnl": -94.27,
+        "roiPct": -1.38
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-09-14",
+        "exitDate": "2020-10-02",
+        "entryPrice": 10687.5,
+        "exitPrice": 10506.5,
+        "netPnl": -121.95,
+        "roiPct": -1.77
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2020-05-13",
+        "exitDate": "2020-10-07",
+        "entryPrice": 198.18,
+        "exitPrice": 340.5,
+        "netPnl": 3434.33,
+        "roiPct": 71.71
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2020-10-04",
+        "exitDate": "2021-05-13",
+        "entryPrice": 10587,
+        "exitPrice": 49683.5,
+        "netPnl": 23902.13,
+        "roiPct": 368.75
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2020-10-08",
+        "exitDate": "2021-05-23",
+        "entryPrice": 349.3,
+        "exitPrice": 1925.39,
+        "netPnl": 29349.45,
+        "roiPct": 450.87
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-05-24",
+        "exitDate": "2021-06-08",
+        "entryPrice": 2508.85,
+        "exitPrice": 2375.36,
+        "netPnl": -1700.72,
+        "roiPct": -5.39
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-06-09",
+        "exitDate": "2021-06-11",
+        "entryPrice": 2565.69,
+        "exitPrice": 2416.51,
+        "netPnl": -1819.4,
+        "roiPct": -5.89
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-06-14",
+        "exitDate": "2021-06-16",
+        "entryPrice": 2575.79,
+        "exitPrice": 2416.38,
+        "netPnl": -1876.61,
+        "roiPct": -6.26
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2021-07-31",
+        "exitDate": "2021-08-02",
+        "entryPrice": 41531,
+        "exitPrice": 39680.5,
+        "netPnl": -1314.73,
+        "roiPct": -4.53
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-08-01",
+        "exitDate": "2021-08-03",
+        "entryPrice": 2583.99,
+        "exitPrice": 2494.84,
+        "netPnl": -1019.18,
+        "roiPct": -3.53
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2021-08-06",
+        "exitDate": "2021-12-04",
+        "entryPrice": 42237,
+        "exitPrice": 48196.5,
+        "netPnl": 4014.84,
+        "roiPct": 14.01
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-08-04",
+        "exitDate": "2021-12-13",
+        "entryPrice": 2672.78,
+        "exitPrice": 3807.94,
+        "netPnl": 11793.09,
+        "roiPct": 42.37
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-12-16",
+        "exitDate": "2021-12-17",
+        "entryPrice": 4082.6,
+        "exitPrice": 3829.84,
+        "netPnl": -2188.37,
+        "roiPct": -6.27
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-12-18",
+        "exitDate": "2021-12-20",
+        "entryPrice": 3946.15,
+        "exitPrice": 3799.44,
+        "netPnl": -1283.19,
+        "roiPct": -3.79
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2021-12-21",
+        "exitDate": "2021-12-28",
+        "entryPrice": 3979.41,
+        "exitPrice": 3897.69,
+        "netPnl": -706.38,
+        "roiPct": -2.13
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2022-03-22",
+        "exitDate": "2022-04-11",
+        "entryPrice": 42580,
+        "exitPrice": 40559.5,
+        "netPnl": -1580.93,
+        "roiPct": -4.82
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2022-03-24",
+        "exitDate": "2022-04-18",
+        "entryPrice": 3114.02,
+        "exitPrice": 2912.28,
+        "netPnl": -2181.65,
+        "roiPct": -6.55
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2022-04-19",
+        "exitDate": "2022-04-20",
+        "entryPrice": 41460.5,
+        "exitPrice": 41244,
+        "netPnl": -185.41,
+        "roiPct": -0.6
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2022-04-21",
+        "exitDate": "2022-04-22",
+        "entryPrice": 42155.5,
+        "exitPrice": 39411,
+        "netPnl": -2018.99,
+        "roiPct": -6.59
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2022-04-19",
+        "exitDate": "2022-04-25",
+        "entryPrice": 3110.63,
+        "exitPrice": 2866.94,
+        "netPnl": -2436.3,
+        "roiPct": -7.91
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2022-08-06",
+        "exitDate": "2022-08-27",
+        "entryPrice": 1715.28,
+        "exitPrice": 1468.91,
+        "netPnl": -4105.66,
+        "roiPct": -14.43
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2022-08-30",
+        "exitDate": "2022-09-16",
+        "entryPrice": 1523.67,
+        "exitPrice": 1451.39,
+        "netPnl": -1272.45,
+        "roiPct": -4.82
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2022-10-29",
+        "exitDate": "2022-10-30",
+        "entryPrice": 20923.5,
+        "exitPrice": 20679,
+        "netPnl": -328.62,
+        "roiPct": -1.25
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2022-11-04",
+        "exitDate": "2022-11-08",
+        "entryPrice": 20838.5,
+        "exitPrice": 19514,
+        "netPnl": -1678.42,
+        "roiPct": -6.43
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2022-10-26",
+        "exitDate": "2022-11-08",
+        "entryPrice": 1567.57,
+        "exitPrice": 1461.66,
+        "netPnl": -1762.95,
+        "roiPct": -6.83
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2023-01-12",
+        "exitDate": "2023-03-10",
+        "entryPrice": 18083.5,
+        "exitPrice": 19990.5,
+        "netPnl": 2547.15,
+        "roiPct": 10.46
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-01-09",
+        "exitDate": "2023-03-10",
+        "entryPrice": 1335.54,
+        "exitPrice": 1416.63,
+        "netPnl": 1431.27,
+        "roiPct": 5.99
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2023-03-12",
+        "exitDate": "2023-05-24",
+        "entryPrice": 20362.5,
+        "exitPrice": 26298,
+        "netPnl": 7448.78,
+        "roiPct": 29.05
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2023-05-26",
+        "exitDate": "2023-05-27",
+        "entryPrice": 26734,
+        "exitPrice": 26676,
+        "netPnl": -95.86,
+        "roiPct": -0.3
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2023-05-28",
+        "exitDate": "2023-06-05",
+        "entryPrice": 27268.5,
+        "exitPrice": 25977,
+        "netPnl": -1557.31,
+        "roiPct": -4.81
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-03-12",
+        "exitDate": "2023-06-10",
+        "entryPrice": 1456.39,
+        "exitPrice": 1736.45,
+        "netPnl": 4907.07,
+        "roiPct": 19.14
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-06-21",
+        "exitDate": "2023-07-08",
+        "entryPrice": 1849.35,
+        "exitPrice": 1857.92,
+        "netPnl": 117.1,
+        "roiPct": 0.38
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-07-09",
+        "exitDate": "2023-07-24",
+        "entryPrice": 1864.96,
+        "exitPrice": 1841.85,
+        "netPnl": -405.28,
+        "roiPct": -1.32
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-07-26",
+        "exitDate": "2023-08-01",
+        "entryPrice": 1859.42,
+        "exitPrice": 1833.69,
+        "netPnl": -438.14,
+        "roiPct": -1.46
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-08-09",
+        "exitDate": "2023-08-11",
+        "entryPrice": 1852.77,
+        "exitPrice": 1844.55,
+        "netPnl": -156.4,
+        "roiPct": -0.52
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2023-08-12",
+        "exitDate": "2023-08-15",
+        "entryPrice": 1849.63,
+        "exitPrice": 1839.05,
+        "netPnl": -193.15,
+        "roiPct": -0.65
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2023-06-21",
+        "exitDate": "2023-08-17",
+        "entryPrice": 29846.5,
+        "exitPrice": 27920.5,
+        "netPnl": -1995.16,
+        "roiPct": -6.53
+      }
+    ]
+  },
+  "validation": {
+    "splitKey": "validation",
+    "label": "Validation (Out-of-Sample: 2024 - 2025)",
+    "startDate": "2024-01-01",
+    "endDate": "2025-12-31",
+    "days": 731,
+    "tradesCount": 36,
+    "l1ReturnPct": 44.8,
+    "bhReturnPct": 67.31,
+    "l1MaxDdPct": 41.82,
+    "bhMaxDdPct": 41.6,
+    "l1ReturnToDd": 1.07,
+    "bhReturnToDd": 1.62,
+    "ddReductionRatio": 1.01,
+    "totalFees": 297.92,
+    "totalSlippage": 99.31,
+    "totalFunding": 930.43,
+    "totalCosts": 1327.66,
+    "bootstrapCI": {
+      "mean": 3.39,
+      "lower80": 0.06,
+      "upper80": 7.13
+    },
+    "passNetProfit": true,
+    "passDdReduction": false,
+    "passReturnToDd": false,
+    "isPassing": false,
+    "trades": [
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-01-02",
+        "exitDate": "2024-04-16",
+        "entryPrice": 2358.42,
+        "exitPrice": 3007.07,
+        "netPnl": 1369.98,
+        "roiPct": 27.4
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-04-18",
+        "exitDate": "2024-04-30",
+        "entryPrice": 3065.85,
+        "exitPrice": 2991.53,
+        "netPnl": -165.17,
+        "roiPct": -2.5
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-01-02",
+        "exitDate": "2024-05-01",
+        "entryPrice": 45196,
+        "exitPrice": 56843.9,
+        "netPnl": 1283.83,
+        "roiPct": 25.68
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-05-05",
+        "exitDate": "2024-05-06",
+        "entryPrice": 3157.44,
+        "exitPrice": 3087.46,
+        "netPnl": -144.46,
+        "roiPct": -2.29
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-05-03",
+        "exitDate": "2024-05-10",
+        "entryPrice": 61640,
+        "exitPrice": 60882.7,
+        "netPnl": -80.51,
+        "roiPct": -1.31
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-05-13",
+        "exitDate": "2024-05-14",
+        "entryPrice": 62960.4,
+        "exitPrice": 61728.9,
+        "netPnl": -122.98,
+        "roiPct": -2.03
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-05-15",
+        "exitDate": "2024-06-11",
+        "entryPrice": 64677.1,
+        "exitPrice": 66215.4,
+        "netPnl": 137.6,
+        "roiPct": 2.3
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-06-12",
+        "exitDate": "2024-06-13",
+        "entryPrice": 69712.2,
+        "exitPrice": 66447.4,
+        "netPnl": -280.7,
+        "roiPct": -4.76
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-05-21",
+        "exitDate": "2024-06-24",
+        "entryPrice": 3778.15,
+        "exitPrice": 3277.87,
+        "netPnl": -826.66,
+        "roiPct": -13.31
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-06-25",
+        "exitDate": "2024-06-26",
+        "entryPrice": 3418.09,
+        "exitPrice": 3359.83,
+        "netPnl": -97.6,
+        "roiPct": -1.78
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-06-27",
+        "exitDate": "2024-07-03",
+        "entryPrice": 3450,
+        "exitPrice": 3302.44,
+        "netPnl": -236.07,
+        "roiPct": -4.35
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-07-16",
+        "exitDate": "2024-07-18",
+        "entryPrice": 64828.4,
+        "exitPrice": 63500.1,
+        "netPnl": -114.49,
+        "roiPct": -2.13
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-07-15",
+        "exitDate": "2024-07-25",
+        "entryPrice": 3365.29,
+        "exitPrice": 3140.04,
+        "netPnl": -358.59,
+        "roiPct": -6.77
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-07-19",
+        "exitDate": "2024-08-01",
+        "entryPrice": 65788.2,
+        "exitPrice": 62864.5,
+        "netPnl": -239.89,
+        "roiPct": -4.52
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-08-24",
+        "exitDate": "2024-08-26",
+        "entryPrice": 63925,
+        "exitPrice": 63482.4,
+        "netPnl": -38.1,
+        "roiPct": -0.77
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-09-19",
+        "exitDate": "2024-10-03",
+        "entryPrice": 63121.3,
+        "exitPrice": 60614.4,
+        "netPnl": -199.05,
+        "roiPct": -4.05
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-10-04",
+        "exitDate": "2024-10-10",
+        "entryPrice": 61839.2,
+        "exitPrice": 60765.2,
+        "netPnl": -87.3,
+        "roiPct": -1.82
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-10-20",
+        "exitDate": "2024-10-21",
+        "entryPrice": 2706.55,
+        "exitPrice": 2680.17,
+        "netPnl": -52.67,
+        "roiPct": -1.05
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-10-29",
+        "exitDate": "2024-10-31",
+        "entryPrice": 2648.61,
+        "exitPrice": 2563.33,
+        "netPnl": -168.23,
+        "roiPct": -3.3
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2024-11-06",
+        "exitDate": "2025-01-13",
+        "entryPrice": 2634.28,
+        "exitPrice": 3047.25,
+        "netPnl": 791.9,
+        "roiPct": 15.58
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2025-01-14",
+        "exitDate": "2025-01-27",
+        "entryPrice": 3197.86,
+        "exitPrice": 3130.85,
+        "netPnl": -134.6,
+        "roiPct": -2.18
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2025-01-31",
+        "exitDate": "2025-02-01",
+        "entryPrice": 3426.59,
+        "exitPrice": 3249.44,
+        "netPnl": -334.92,
+        "roiPct": -5.25
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2024-10-11",
+        "exitDate": "2025-02-12",
+        "entryPrice": 62238.3,
+        "exitPrice": 95762,
+        "netPnl": 2560.71,
+        "roiPct": 53.76
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-02-15",
+        "exitDate": "2025-02-16",
+        "entryPrice": 97594.4,
+        "exitPrice": 96849.9,
+        "netPnl": -49.81,
+        "roiPct": -0.84
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-02-21",
+        "exitDate": "2025-02-22",
+        "entryPrice": 98056.3,
+        "exitPrice": 96552.6,
+        "netPnl": -94.91,
+        "roiPct": -1.61
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-04-23",
+        "exitDate": "2025-08-26",
+        "entryPrice": 93140.2,
+        "exitPrice": 109636.2,
+        "netPnl": 1026.67,
+        "roiPct": 17.59
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-08-27",
+        "exitDate": "2025-08-29",
+        "entryPrice": 111960.8,
+        "exitPrice": 108335.9,
+        "netPnl": -295.01,
+        "roiPct": -3.31
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-09-03",
+        "exitDate": "2025-09-04",
+        "entryPrice": 112164.4,
+        "exitPrice": 109471,
+        "netPnl": -212.75,
+        "roiPct": -2.48
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-09-08",
+        "exitDate": "2025-09-09",
+        "entryPrice": 112567.4,
+        "exitPrice": 110837,
+        "netPnl": -135.17,
+        "roiPct": -1.62
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-09-10",
+        "exitDate": "2025-09-22",
+        "entryPrice": 113802.9,
+        "exitPrice": 112772.7,
+        "netPnl": -81.95,
+        "roiPct": -0.98
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-09-24",
+        "exitDate": "2025-09-25",
+        "entryPrice": 113294.9,
+        "exitPrice": 111536.3,
+        "netPnl": -131.1,
+        "roiPct": -1.63
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-09-29",
+        "exitDate": "2025-09-30",
+        "entryPrice": 113740.6,
+        "exitPrice": 113052.1,
+        "netPnl": -54.56,
+        "roiPct": -0.68
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-10-01",
+        "exitDate": "2025-10-11",
+        "entryPrice": 117354.6,
+        "exitPrice": 111731.6,
+        "netPnl": -393.57,
+        "roiPct": -4.87
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2025-05-09",
+        "exitDate": "2025-10-11",
+        "entryPrice": 2300.57,
+        "exitPrice": 3822.9,
+        "netPnl": 4047.9,
+        "roiPct": 66.08
+      },
+      {
+        "symbol": "ETHUSDT",
+        "entryDate": "2025-10-13",
+        "exitDate": "2025-10-15",
+        "entryPrice": 4132.63,
+        "exitPrice": 3979.08,
+        "netPnl": -280.78,
+        "roiPct": -3.79
+      },
+      {
+        "symbol": "BTCUSDT",
+        "entryDate": "2025-10-27",
+        "exitDate": "2025-10-28",
+        "entryPrice": 114929.5,
+        "exitPrice": 114582.6,
+        "netPnl": -27.69,
+        "roiPct": -0.38
+      }
+    ]
+  },
+  "forward": null,
+  "holdoutOpened": false,
+  "finalVerdict": "FAIL"
+}
