@@ -20,9 +20,16 @@ Across two pre-registered quantitative research rounds, a total of **22 independ
 | **Round 2** | R2-A (4h Donchian Breakout 55-Bar) | E0, E1 | Equity, Crypto | Dev, Validation | 6 | None |
 | **Round 2** | R2-B (15m Pullback Maker Execution) | E0, E1 | Equity, Crypto | Dev, Validation | 6 | None |
 | **Long-History** | L1 (100d SMA Trend Filter) | 24/7 | BTC + ETH (50/50) | Dev (2019-2023), Val (2024-2025) | 2 | None |
-| **TOTALS** | — | — | — | — | **25 Experimental Runs** | **0 Passed** |
+| **As-Shipped Replay** | S0 (Live StrategyEngine Replay) | 24/7 | Equity (19 Perps) | Dev, Validation | 2 | None |
+| **TOTALS** | — | — | — | — | **27 Experimental Runs** | **0 Passed** |
 
 *(Note: Candidates C3, C4, C5 do not exist; previous text referencing "[C1-E0 through C5-E1]" was an unverified narrative error. Round 1 contained only C0, C1, and C2).*
+
+### Candidate S0 (As-Shipped Live Strategy) Replay Finding
+The as-shipped strategy executed by `StrategyEngine.scanUniverse`, `RiskEngine`, and `PaperExecutionEngine` was evaluated under pre-registered chronological simulation on the 19 equity universe:
+- **Dev:** 348 trades, 40.80% WR, Net P&L -$154.41, PF 0.99, Max DD 19.69%.
+- **Validation:** 34 trades, 23.53% WR, Net P&L -$647.91, PF 0.48, Max DD 25.07%.
+- **Verdict:** **FAIL**. The app as shipped has no demonstrated edge on this data.
 
 ### Round 2 Crypto Data Truncation Notice
 All 4 Round 2 Crypto trials (R2-A Dev [9 trades], R2-A Val [3 trades], R2-B Dev [13 trades], R2-B Val [20 trades]) are marked **NOT EVALUABLE**:
@@ -30,8 +37,9 @@ All 4 Round 2 Crypto trials (R2-A Dev [9 trades], R2-A Val [3 trades], R2-B Dev 
 - **Missing Universe Data:** 8 of the 10 configured crypto symbols (`SOL`, `XRP`, `DOGE`, `SUI`, `PEPE`, `ADA`, `AVAX`, `NEAR`) had 0 bars in `data/history/`. Only `BTCUSDT` had Dev bars, and only `BTCUSDT` and `ETHUSDT` had Validation bars. Consequently, these crypto runs cannot be evaluated as representing the multi-asset crypto universe.
 
 > [!CAUTION]
-> **Definitive Scientific Verdict: NONE of the 25 experimental runs achieved the pre-registered dual-split pass criteria.**
+> **Definitive Scientific Verdict: NONE of the experimental runs achieved the pre-registered dual-split pass criteria.**
 > In strict accordance with the pre-registration protocol, the **Forward Holdout Splits (October 10, 2026 to Present for 5-month, and 2026 to Present for L1) were KEPT STRICTLY CLOSED** to prevent holdout contamination and selective reporting.
+> **The app as shipped has no demonstrated edge on this data.**
 
 ---
 

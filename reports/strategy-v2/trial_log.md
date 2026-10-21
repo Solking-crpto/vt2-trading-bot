@@ -49,3 +49,13 @@ This log immutably records all backtest trials, parameter executions, and outcom
 | 2026-10-20 | L1 (100d SMA) | BTC+ETH (50/50) | 1D | Val (2024-2025) | 36 | +44.80% | +67.31% | 41.82% | 41.60% | 1.07 | 1.62 | FAIL (DD ratio 1.01x > 0.60x) |
 
 **L1 Forward Holdout Status**: KEPT CLOSED (did not pass pre-registered criteria on Dev and Validation)
+
+
+## Candidate S0 Pre-Registered Replay (Trial #35, Commit: 877fa3e81610d9d39883fe2b6f23791b0d2233cb)
+
+| Date | Candidate | Universe | Timeframe | Split | Trades | Win Rate | Net P&L | PF | Max DD | Sens x0 | Sens x1 | Sens x2 | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-21 | S0 (As-Shipped Live Strategy) | Equity (19 Perps) | 15m/4h/5m | Dev | 348 | 40.80% | $-154.41 | 0.99 | 19.69% | $+3,171.88 | $-154.41 | $-2,500.81 | FAIL |
+| 2026-10-21 | S0 (As-Shipped Live Strategy) | Equity (19 Perps) | 15m/4h/5m | Validation | 34 | 23.53% | $-647.91 | 0.48 | 25.07% | $-558.03 | $-647.91 | $-529.64 | FAIL |
+
+**S0 Forward Holdout Status**: KEPT CLOSED (did not pass pre-registered criteria on Dev and Validation).
