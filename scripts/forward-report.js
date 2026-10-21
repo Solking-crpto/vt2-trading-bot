@@ -124,8 +124,10 @@ async function main() {
   reportMd += `- **Position Cap:** Max 3 concurrent positions, 1 correlation group limit.\n`;
   reportMd += `- **Cost-Gating Rule:** Stop distance $\\ge 8 \\times \\text{round-trip cost}$ enforced on new candidate setups.\n`;
 
+  const dailyReportFile = path.join(REPORT_DIR, `daily-${dateStr}.md`);
   fs.writeFileSync(targetReportFile, reportMd, 'utf8');
-  console.log(`Generated daily forward report: ${targetReportFile}`);
+  fs.writeFileSync(dailyReportFile, reportMd, 'utf8');
+  console.log(`Generated daily forward report: ${dailyReportFile}`);
 }
 
 main().catch(err => {

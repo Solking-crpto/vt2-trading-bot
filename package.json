@@ -12,6 +12,9 @@
   "scripts": {
     "start": "node start.js",
     "dev": "node --watch start.js",
+    "service:start": "pm2 start ecosystem.config.cjs",
+    "service:stop": "pm2 stop ecosystem.config.cjs",
+    "service:status": "pm2 status",
     "test": "node --test --test-force-exit --test-timeout=60000",
     "backtest:alpha": "node scripts/run-alpha-backtest.js",
     "backtest:v2": "node scripts/run-v2-backtest.js",

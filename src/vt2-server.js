@@ -50,6 +50,7 @@ import {
   getValidationWarningBlock,
   REQUIRED_VALIDATION_PHRASE,
 } from './strategy/registry.js';
+import { AlertDispatcher } from './service/alert-dispatcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -194,6 +195,9 @@ export class VT2Server {
     this.sseClients = new Set();
     this.tickInterval = null;
     this.ipRateLimits = new Map();
+    this.alertDispatcher = options.alertDispatcher || new AlertDispatcher();
+    this.lastScanTime = null;
+    this.lastError = null;
 
     // Trade Monitor & Automated Trader
     this.tradeMonitor = new TradeMonitor({
@@ -213,6 +217,7 @@ export class VT2Server {
       coordinator: this.coordinator,
       monitor: this.tradeMonitor,
       sseBroadcast: (data) => this.broadcastSse(data),
+      alertDispatcher: this.alertDispatcher,
     });
 
     this.tradeMonitor.autoTrader = this.autoTrader;
@@ -678,6 +683,7 @@ export class VT2Server {
   }
 
   start() {
+    setExecutionMode('PAPER');
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
     this.server.listen(this.port, () => {
       console.log(`[VT2 Core] Verifiable Trading Technology listening on http://localhost:${this.port}`);
@@ -687,12 +693,49 @@ export class VT2Server {
       }
     });
 
-    // Start background market tick simulation for open paper positions only in local full mode
     if (!this.isDemoReadOnly) {
       this.startBackgroundMarketTicker();
+      this.startFeedMonitor();
+
+      // Dispatch startup alert
+      if (this.alertDispatcher) {
+        this.alertDispatcher.dispatchAlert({
+          event: 'SERVER_STARTED',
+          level: 'INFO',
+          message: `VT2 Server started in PAPER mode on port ${this.port}.`,
+        }).catch(() => {});
+      }
+
+      // Check if autoTrader was running in PAPER mode before shutdown
+      try {
+        const wasRunningPaper = this.db.getSetting('autotrader_was_running_paper', false);
+        if (wasRunningPaper && this.autoTrader) {
+          console.log('[VT2 Core] Auto-resuming Paper AutoTrader from previous running session.');
+          this.autoTrader.start();
+        }
+      } catch (_) {}
     }
 
     return this;
+  }
+
+  startFeedMonitor() {
+    this.feedMonitorInterval = setInterval(() => {
+      if (this.isDemoReadOnly || !this.bitget || !this.bitget.wsClient) return;
+      const hb = this.bitget.wsClient.getHeartbeatStatus?.();
+      if (!hb) return;
+      const offline = !hb.isConnected || (hb.dataAgeMs && hb.dataAgeMs > 300000);
+      if (offline && (!this.lastFeedAlertTime || Date.now() - this.lastFeedAlertTime > 600000)) {
+        this.lastFeedAlertTime = Date.now();
+        this.alertDispatcher.dispatchAlert({
+          event: 'FEED_OFFLINE',
+          level: 'CRITICAL',
+          message: 'WebSocket market feed offline (> 5 minutes without message).',
+          details: { dataAgeMs: hb.dataAgeMs, isConnected: hb.isConnected },
+        }).catch(() => {});
+      }
+    }, 60000);
+    if (this.feedMonitorInterval?.unref) this.feedMonitorInterval.unref();
   }
 
   async stop() {
@@ -700,8 +743,18 @@ export class VT2Server {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
+    if (this.feedMonitorInterval) {
+      clearInterval(this.feedMonitorInterval);
+      this.feedMonitorInterval = null;
+    }
     if (this.tradeMonitor) this.tradeMonitor.stop();
-    if (this.autoTrader) this.autoTrader.stop('SERVER_STOP');
+    if (this.autoTrader) {
+      try {
+        const wasRunning = this.autoTrader.status === BOT_STATUS.RUNNING;
+        this.db.saveSetting('autotrader_was_running_paper', wasRunning);
+      } catch (_) {}
+      this.autoTrader.stop('SERVER_STOP');
+    }
     for (const client of this.sseClients) {
       try { client.end(); } catch {}
     }
@@ -943,6 +996,7 @@ export class VT2Server {
         });
 
         const scan = this.strategy.scanUniverse(liveMarkets);
+        this.lastScanTime = Date.now();
         const durationMs = Date.now() - startTime;
         const isLive = Object.values(liveMarkets).some(m => m.isLive);
         const equityCount = Object.values(liveMarkets).filter(m => m.assetClass === 'EQUITY').length;
@@ -991,6 +1045,7 @@ export class VT2Server {
         const marketMode = parsedUrl.searchParams.get('mode') || this.activeMarketMode || 'stocks';
         const liveMarkets = await this.bitget.getLiveUniverseCandles({ limit, minLiquidity, forceFresh: false, marketMode });
         const scan = this.strategy.scanUniverse(liveMarkets);
+        this.lastScanTime = Date.now();
         const isLive = Object.values(liveMarkets).some(m => m.isLive);
         const equityCount = Object.values(liveMarkets).filter(m => m.assetClass === 'EQUITY').length;
         const cryptoCount = Object.values(liveMarkets).filter(m => m.assetClass === 'CRYPTO').length;
@@ -1886,9 +1941,33 @@ export class VT2Server {
       // 20. Comprehensive System Health
       if (pathname === '/api/system/health') {
         const mem = process.memoryUsage();
+        const uptime = Math.floor(process.uptime());
+
+        let wsMessageAgeMs = null;
+        if (this.bitget && this.bitget.wsClient && typeof this.bitget.wsClient.getHeartbeatStatus === 'function') {
+          const hb = this.bitget.wsClient.getHeartbeatStatus();
+          wsMessageAgeMs = hb.dataAgeMs ?? hb.heartbeatAgeMs ?? null;
+        }
+
+        let dbSizeBytes = 0;
+        try {
+          const dbPath = path.resolve('data/vt2.db');
+          if (fs.existsSync(dbPath)) {
+            dbSizeBytes = fs.statSync(dbPath).size;
+          }
+        } catch (_) {}
+
         return this.sendJson(res, 200, {
           status: 'HEALTHY',
-          uptimeSeconds: Math.floor(process.uptime()),
+          uptime,
+          uptimeSeconds: uptime,
+          lastScanTime: this.lastScanTime,
+          lastBotCycle: this.autoTrader?.lastCycleTime ?? null,
+          wsMessageAgeMs,
+          dbSizeBytes,
+          currentMode: getCurrentMode(),
+          armingState: getLiveArmingStatus(),
+          lastError: this.lastError || null,
           nodeVersion: process.version,
           platform: process.platform,
           memoryMb: {

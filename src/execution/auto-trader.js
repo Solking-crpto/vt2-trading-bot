@@ -16,7 +16,7 @@ export const BOT_STATUS = Object.freeze({
  * dual-market candidate walking, account-level gate priority, and de-duplicated activity logging.
  */
 export class AutoTrader {
-  constructor({ db, paperEngine, bitget, strategy, coordinator, monitor, sseBroadcast }) {
+  constructor({ db, paperEngine, bitget, strategy, coordinator, monitor, sseBroadcast, alertDispatcher }) {
     this.db = db;
     this.paperEngine = paperEngine;
     this.bitget = bitget;
@@ -24,11 +24,13 @@ export class AutoTrader {
     this.coordinator = coordinator;
     this.monitor = monitor;
     this.sseBroadcast = sseBroadcast || (() => {});
+    this.alertDispatcher = alertDispatcher || null;
 
     this.status = BOT_STATUS.OFF;
     this.pauseReason = null;
     this.waitingReason = null;
     this.waitingResumesAt = null;
+    this.lastCycleTime = null;
     this.cycleTimer = null;
     this.cycleIntervalMs = 60000; // 1-minute cycle check
 
@@ -173,6 +175,14 @@ export class AutoTrader {
     const closed = this.paperEngine.closeAllPositions('EMERGENCY_KILL_SWITCH');
     this.db.saveAccountState(this.paperEngine.getAccountSummary());
     this.logActivity('KILL_SWITCH_FIRED', 'EMERGENCY', `Master Kill Switch engaged. Bot halted and all positions closed immediately.`);
+    if (this.alertDispatcher) {
+      this.alertDispatcher.dispatchAlert({
+        event: 'KILL_SWITCH',
+        level: 'CRITICAL',
+        message: 'Master Emergency Kill Switch engaged. Bot halted and all positions closed immediately.',
+        details: { killedPositionsCount: closed.length },
+      }).catch(() => {});
+    }
     return {
       status: this.status,
       killedPositionsCount: closed.length,
@@ -191,6 +201,14 @@ export class AutoTrader {
       reason,
       status: this.status,
     });
+    if (this.alertDispatcher) {
+      const isDailyLoss = typeof reason === 'string' && reason.includes('Daily loss');
+      this.alertDispatcher.dispatchAlert({
+        event: isDailyLoss ? 'DAILY_LOSS_LOCKOUT' : 'BOT_HALT',
+        level: isDailyLoss ? 'CRITICAL' : 'WARNING',
+        message: `AutoTrader paused: ${reason}`,
+      }).catch(() => {});
+    }
   }
 
   setWaiting(reason, resumesAtTimestamp = null, stateKey = null) {
@@ -218,6 +236,7 @@ export class AutoTrader {
    * Step 2: Walks ranked candidates for bot market mode, applying symbol-specific filters and skipping rejected symbols.
    */
   async runCycle() {
+    this.lastCycleTime = Date.now();
     if (this.status !== BOT_STATUS.RUNNING && this.status !== BOT_STATUS.WAITING) return;
 
     this.checkDailyReset();
@@ -445,6 +464,7 @@ export class AutoTrader {
       pauseReason: this.pauseReason,
       waitingReason: this.waitingReason,
       waitingResumesAt: this.waitingResumesAt,
+      lastCycleTime: this.lastCycleTime,
       tradesToday: this.tradesToday,
       maxTradesPerDay: Number(this.config.maxTradesPerDay ?? 3),
       maxConcurrentPositions: Number(this.config.maxConcurrentPositions ?? savedSettings.maxConcurrentPositions ?? 1),

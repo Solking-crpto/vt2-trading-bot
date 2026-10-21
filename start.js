@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { VT2Server } from './src/vt2-server.js';
+import { setupDailyLogRotation } from './src/service/log-rotator.js';
 
 export { VT2Server };
 export * from './src/risk-engine.js';
@@ -16,6 +17,25 @@ export * from './src/storage/db.js';
 
 // Launch server if executed as entry point
 if (process.argv[1] && path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1])) {
+  setupDailyLogRotation(14);
   const server = new VT2Server();
   server.start();
+
+  let isShuttingDown = false;
+  const handleShutdown = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`\n[VT2 Service] Received ${signal}. Executing graceful shutdown...`);
+    try {
+      await server.stop();
+      console.log('[VT2 Service] Graceful shutdown complete. Exiting clean.');
+      process.exit(0);
+    } catch (err) {
+      console.error('[VT2 Service] Error during graceful shutdown:', err);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
 }
