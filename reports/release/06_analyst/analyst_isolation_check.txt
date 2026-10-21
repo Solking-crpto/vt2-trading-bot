@@ -1,0 +1,31 @@
+========================================================================
+VT2 STEP 6: ADVISORY AI ANALYST ARCHITECTURAL ISOLATION AUDIT
+========================================================================
+Timestamp: 2026-10-21T23:03:54.223Z
+Target Module: src/ai/analyst.js
+
+1. Static Imports Inspection:
+   - Import: node:crypto
+   - Import: ../environment.js
+   Execution/Order modules imported: 0 (PASSED)
+
+2. Class Prototype Methods:
+   - Method: constructor
+   - Method: getStatus
+   - Method: checkDailyReset
+   - Method: callProvider
+   - Method: generateSetupBrief
+   - Method: generatePostTradeReview
+   - Method: generateDailyBrief
+   Order execution / trade submission methods: 0 (PASSED)
+
+3. Hard Constraints Verification:
+   - Text-only advisory output: VERIFIED (String JSON / Markdown)
+   - Deterministic risk engine veto: VERIFIED (Non-binding advisory)
+   - Prompt secret redaction: VERIFIED (redactSecrets applied)
+   - Untrusted external text block: VERIFIED ([UNTRUSTED_EXTERNAL_DATA])
+   - Hosted mode lockout: VERIFIED (Disabled on DEMO_READONLY / isHosted)
+   - Daily call cap limit: VERIFIED (Default 50 calls/day)
+   - Prompt-hash caching: VERIFIED (Memory & DB)
+   - Standard Disclaimer: "AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules."
+========================================================================

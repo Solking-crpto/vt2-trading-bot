@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "verdict": "CAUTION",
+  "reasons": "High round-trip friction (0.28R) relative to tight stop distance (1.35%). SPY benchmark alignment is positive, but fee drag lowers mathematical expectancy below target edge threshold.",
+  "invalidationConditions": "Price crosses $182.50 stop level or SPY 4h closes below EMA20.",
+  "commentary": "Valid directional trend setup with EMA20/50 alignment, but friction-to-stop ratio warrants caution.",
+  "setupHash": "9f7d5e9b249ef2693057f0e80ac0ed2c5da8e803b60ede274770e615f1ddc363",
+  "promptHash": "cdee98a8dc258c9638cb8b1b86fea8b73bc76ab5458e4fe547bd2fe342d9611e",
+  "model": "gpt-4o-mini",
+  "disclaimer": "AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules."
+}

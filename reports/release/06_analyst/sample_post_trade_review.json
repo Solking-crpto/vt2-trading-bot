@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "review": "Trade closed at take-profit target ($190.15) for +$52.40 (+2.78% ROI) in 48 minutes. Order filled within 0.02% slippage estimate; rule-based trailing stop adhered strictly to plan.",
+  "symbol": "AAPLUSDT",
+  "model": "gpt-4o-mini",
+  "disclaimer": "AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules."
+}

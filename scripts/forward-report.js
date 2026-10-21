@@ -122,7 +122,26 @@ async function main() {
   reportMd += `- **Execution Mode:** PAPER simulation (default).\n`;
   reportMd += `- **Mainnet Protection:** Hard-coded guardrails active; DEMO/LIVE blocked on hosted site.\n`;
   reportMd += `- **Position Cap:** Max 3 concurrent positions, 1 correlation group limit.\n`;
-  reportMd += `- **Cost-Gating Rule:** Stop distance $\\ge 8 \\times \\text{round-trip cost}$ enforced on new candidate setups.\n`;
+  reportMd += `- **Cost-Gating Rule:** Stop distance $\\ge 8 \\times \\text{round-trip cost}$ enforced on new candidate setups.\n\n`;
+
+  // 6. Advisory AI Analyst Evaluation Hook
+  const aiStats = typeof db.getAiAnalystEvaluationStats === 'function'
+    ? db.getAiAnalystEvaluationStats()
+    : { sampleSize: 0, isStatisticallyEvaluated: false, message: 'Sample size too small to evaluate AI performance (0/30)' };
+
+  reportMd += `## 6. Advisory AI Analyst Evaluation\n\n`;
+  reportMd += `- **Disclaimer:** AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules.\n`;
+  reportMd += `- **Evaluation Sample Size:** N=${aiStats.sampleSize} evaluated setups with recorded trade outcomes.\n`;
+  if (!aiStats.isStatisticallyEvaluated) {
+    reportMd += `> [!NOTE]\n`;
+    reportMd += `> ${aiStats.message || `Sample size too small to evaluate AI performance (${aiStats.sampleSize}/30)`}\n\n`;
+  } else {
+    const passPct = aiStats.passWinRate !== null ? `${(aiStats.passWinRate * 100).toFixed(1)}%` : 'N/A';
+    const skipPct = aiStats.skipWinRate !== null ? `${(aiStats.skipWinRate * 100).toFixed(1)}%` : 'N/A';
+    reportMd += `- **PASS Win Rate:** ${passPct} (N=${aiStats.passTradesCount})\n`;
+    reportMd += `- **SKIP Win Rate:** ${skipPct} (N=${aiStats.skipTradesCount})\n`;
+    reportMd += `- **Correlation with Trade P&L:** r = ${aiStats.correlationWithPnl}\n\n`;
+  }
 
   const dailyReportFile = path.join(REPORT_DIR, `daily-${dateStr}.md`);
   fs.writeFileSync(targetReportFile, reportMd, 'utf8');

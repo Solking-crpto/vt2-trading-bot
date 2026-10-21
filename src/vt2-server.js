@@ -51,6 +51,7 @@ import {
   REQUIRED_VALIDATION_PHRASE,
 } from './strategy/registry.js';
 import { AlertDispatcher } from './service/alert-dispatcher.js';
+import { AiAnalyst } from './ai/analyst.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -196,6 +197,7 @@ export class VT2Server {
     this.tickInterval = null;
     this.ipRateLimits = new Map();
     this.alertDispatcher = options.alertDispatcher || new AlertDispatcher();
+    this.aiAnalyst = options.aiAnalyst || new AiAnalyst({ db: this.db });
     this.lastScanTime = null;
     this.lastError = null;
 
@@ -2273,6 +2275,26 @@ export class VT2Server {
         } catch (err) {
           return this.sendJson(res, 500, { error: err.message });
         }
+      }
+
+      // 20j. Advisory AI Analyst Endpoints
+      if (pathname === '/api/ai/status' && req.method === 'GET') {
+        return this.sendJson(res, 200, this.aiAnalyst.getStatus());
+      }
+      if (pathname === '/api/ai/brief' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const brief = await this.aiAnalyst.generateSetupBrief(body);
+        return this.sendJson(res, brief.success ? 200 : 400, brief);
+      }
+      if (pathname === '/api/ai/review' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const review = await this.aiAnalyst.generatePostTradeReview(body);
+        return this.sendJson(res, review.success ? 200 : 400, review);
+      }
+      if (pathname === '/api/ai/daily' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const daily = await this.aiAnalyst.generateDailyBrief(body);
+        return this.sendJson(res, daily.success ? 200 : 400, daily);
       }
 
       // 21. Static File Serving (Frontend)
