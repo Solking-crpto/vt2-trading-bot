@@ -1,0 +1,40 @@
+================================================================================
+BASELINE HEALTH SNAPSHOT: DATA FRESHNESS (5 EQUITY SYMBOLS)
+Captured at: 2026-10-21T22:09:20.276Z
+================================================================================
+
+Symbol: SPYUSDT
+  Total Candles: 60
+  Latest Candle Timestamp: 1792620000000 (2026-10-21T22:00:00.000Z)
+  Close Price: $772.54
+  Data Source: Bitget V2 Market Feed
+  Age from Capture Time: 560s (~9.3 minutes)
+
+Symbol: QQQUSDT
+  Total Candles: 60
+  Latest Candle Timestamp: 1792620538587 (2026-10-21T22:08:58.587Z)
+  Close Price: $64111.3577
+  Data Source: Bitget V2 Market Feed
+  Age from Capture Time: 22s (~0.4 minutes)
+
+Symbol: NVDAUSDT
+  Total Candles: 60
+  Latest Candle Timestamp: 1792620538590 (2026-10-21T22:08:58.590Z)
+  Close Price: $126.1585
+  Data Source: Bitget V2 Market Feed
+  Age from Capture Time: 22s (~0.4 minutes)
+
+Symbol: TSLAUSDT
+  Total Candles: 60
+  Latest Candle Timestamp: 1792620000000 (2026-10-21T22:00:00.000Z)
+  Close Price: $379.04
+  Data Source: Bitget V2 Market Feed
+  Age from Capture Time: 560s (~9.3 minutes)
+
+Symbol: AAPLUSDT
+  Total Candles: 80
+  Latest Candle Timestamp: 1792620000000 (2026-10-21T22:00:00.000Z)
+  Close Price: $343.78
+  Data Source: Bitget V2 Market Feed
+  Age from Capture Time: 560s (~9.3 minutes)
+

@@ -1,0 +1,185 @@
+
+> vt2-trading-bot@0.1.0 test
+> node --test --test-force-exit --test-timeout=60000
+
+✔ zero look-ahead: indicators at bar i are mathematically identical when future data is truncated (5.002ms)
+✔ zero look-ahead: 4h values use strictly closed 4h candles (1.0499ms)
+✔ conservative ambiguous bar resolution: stop loss hit first when both levels breached (1.6601ms)
+✔ deterministic replay: two portfolio backtest runs produce identical metrics (1264.8116ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+✔ risk engine rejects opposite exposure inside correlation group (Long TQQQ + Long SQQQ) (3.3992ms)
+✔ risk engine allows same-direction exposure within correlation group (13.7076ms)
+✔ StockMarketProvider uses contract step rules for fractional orders without whole-share truncation (1.5897ms)
+✔ risk engine enforces equityEntriesWhenUnderlyingClosed policy (0.8938ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.777Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.835Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.841Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.848Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.855Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.885Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.890Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.948Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:28.954Z
+✔ server strictly enforces environment allow-list rejecting all live/mainnet variants with 403 (334.6433ms)
+✔ AutoTrader starts in PAPER mode and halts when maxTradesPerDay is reached (38.5039ms)
+✔ Stop Bot preserves open positions while Stop & Close All closes them (6.6016ms)
+✔ Master Kill Switch engages emergency halt and closes all open positions (2.2877ms)
+✔ runs backtest with chronological walk-forward execution (23.2458ms)
+✔ resolves ambiguous candle conservatively by assuming stop loss hit first (2.551ms)
+✔ throws error if candle series is shorter than minimum warmup (1.0616ms)
+✔ VT2 project baseline is working (2.3ms)
+✔ VT2 starts in paper-trading mode (0.4144ms)
+✔ BitgetAuthenticatedClient reports credential configuration safely without exposing secrets (3.1844ms)
+✔ BitgetAuthenticatedClient generates official HMAC-SHA256 signature matching canonical standard (1.4257ms)
+✔ BitgetAuthenticatedClient throws when generating signature without apiSecret (1.3054ms)
+✔ BitgetAuthenticatedClient rejects requests when credentials are incomplete (0.9314ms)
+✔ assertCandleIntegrity detects and throws on descending or duplicate timestamps (11.3067ms)
+✔ live Bitget candles are strictly ascending, unique, and fresh within one interval (2207.3933ms)
+✔ rejects N+1 position beyond maxConcurrentPositions cap (3.8676ms)
+✔ allows concurrent positions up to maxConcurrentPositions limit (2.9548ms)
+✔ rejects trade when aggregate open risk exceeds aggregate open-risk cap (1.5685ms)
+✔ rejects duplicate position on same symbol (0.4152ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.234Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.239Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.266Z
+✔ VT2Server demo-readonly mode configuration and behavior (196.9108ms)
+✔ Serverless handler in api/index.js and handleRequest respond to mock HTTP objects (16.456ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+✔ 1. Engine exportState() and importState() round-trips (12.5475ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+✔ 2. Stateless /api/demo/order approval and rejection (236.1508ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+✔ 3. Stateless /api/demo/tick position lifecycle and exits (27.0967ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+✔ 4. Stateless /api/demo/bot/cycle candidate evaluation and cooldown (50.467ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+✔ 5. Input validation: tampered or oversized state rejected (38.1216ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.510Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.517Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.522Z
+✔ 6. Security boundaries: zero mainnet bypass and public-feed only (28.8578ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+✔ contracts.js dynamically classifies Bitget tokenized US equities with isRwa YES (2.7205ms)
+✔ StrategyEngine uses SPYUSDT stock benchmark for equities without crypto references (5.3571ms)
+✔ AutoTrader halts immediately on account-level cooldown without iterating candidates (12.3758ms)
+✔ AutoTrader candidate loop walks past failing symbol rules to find passing candidate (5.1021ms)
+✔ MultiAgentCoordinator detects account cooldown and returns accountGateBlocked (9.4691ms)
+✔ VT2Server /api/market/scanner strictly enforces zero crypto in stocks mode and zero equities in crypto mode (221.1686ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+✔ entry allocation parameter accepts 1% to 100% and scales position sizing proportionally (3.9782ms)
+✔ 100% entry allocation NEVER overrides deterministic risk engine equity caps (0.775ms)
+✔ rejects entry allocation outside the valid 1% - 100% boundary (0.6929ms)
+✔ high allocation confirmation policy requires confirmation for >10% and explicit 100% warning (1.0934ms)
+✔ server persists entryAllocationPercent and theme in SQLite settings and restores them across restarts (260.254ms)
+✔ appearance design tokens and styles specify clean plain white light mode and dark mode (2.5815ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.228Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:29.233Z
+✔ VT2 environment defaults to PAPER mode (2.8703ms)
+✔ isMainnetExecutionAllowed strictly returns false (3.7454ms)
+✔ assertMainnetExecutionBlocked throws SafetyViolationError when MAINNET is targeted (3.555ms)
+✔ validateExecutionMode approves valid PAPER orders (0.4834ms)
+✔ validateExecutionMode blocks and rejects MAINNET requests (0.7007ms)
+✔ validateExecutionMode blocks unconfigured TESTNET requests (0.4501ms)
+✔ fixed-trade cost sensitivity: increasing slippage strictly decreases net P&L for every trade (2.2621ms)
+✔ BitgetCryptoProvider reports 24/7 continuous session (1.6132ms)
+✔ StockMarketProvider models US market hours for underlying and 24/7 continuous for perpetuals (36.5514ms)
+✔ StockMarketProvider formats order quantity strictly according to contract rules rather than whole shares (0.5821ms)
+✔ market rescan with modified candle data dynamically alters opportunity rankings (100.5668ms)
+✔ market rescan properly filters and archives disqualified setups with rejection reasons (12.4168ms)
+[CRITICAL GUARANTEE] Stop-loss protection NOT confirmed on exchange for SBTCSUSDT. Triggering EMERGENCY FLATTEN.
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+✔ mode state machine defaults to PAPER mode and is never persisted as LIVE (2.8093ms)
+✔ LIVE arming is refused without LIVE_TRADING_ENABLED=true in environment (1.5678ms)
+✔ LIVE arming is refused when live API credentials are missing (1.2947ms)
+✔ LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRADING" (1.7283ms)
+✔ LIVE arming is refused if preflight check failed (1.0026ms)
+✔ hosted serverless environment strictly locks execution to PAPER mode (0.99ms)
+✔ LIVE mode activates only when armed and auto-disarms on manual trigger or kill switch (1.9547ms)
+✔ validateLiveOrderCaps rejects orders that exceed hard caps with named cap reason (106.4182ms)
+✔ asset class profiles enforce distinct crypto and equity rules (2.8237ms)
+✔ BitgetTradeClient immediately triggers emergency flatten when stop-loss protection is not confirmed (6.7491ms)
+✔ reconciliation mismatch halts execution and disarms LIVE mode (3.1262ms)
+✔ kill switch cancels pending orders, flattens open positions, and disarms (1.9168ms)
+✔ assertNoWithdrawalEndpoint blocks any endpoint with transfer/withdraw keywords (0.3251ms)
+✔ secret scanner scrubs secrets and prevents leakage in logs and responses (1.8569ms)
+✔ demo requests carry paptrading header and demo symbols, live requests never carry it (1.1495ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:30.539Z
+✔ server mode endpoints enforce allow-list, arming, preview, and preflight (187.5319ms)
+✔ submits paper order and deducts simulated fee (2.5306ms)
+✔ triggers stop loss on downward tick for long position (0.9692ms)
+✔ triggers final take profit on upward tick for long position (9.8554ms)
+✔ executes partial take-profit at +1.1% ROI and moves stop to breakeven (2.0655ms)
+✔ activates trailing stop following 5m EMA20 after 10% ROI (0.7081ms)
+✔ executes early exit when RSI reverses (0.8607ms)
+✔ evaluates valid BTCUSDT paper trade with full parameters (5.3208ms)
+✔ rejects consecutive loss limit reached (0.4689ms)
+✔ rejects trade when maximum open positions is reached (0.4265ms)
+✔ rejects trade when cooldown period is still active (0.6133ms)
+✔ allows trade after cooldown period has elapsed (5.5105ms)
+✔ rejects expired signal older than 10 minutes (0.7161ms)
+✔ rejects duplicate pending or open order on same symbol (0.5766ms)
+✔ rejects ineligible contract symbol (1.358ms)
+✔ rejects trade with net reward-to-risk below 1.5 (0.5099ms)
+✔ enforces research stop constraints when active (0.9407ms)
+✔ rounds quantity to contract step size (e.g. SOLUSDT step 0.1) (0.4004ms)
+✔ sizes a valid paper trade at 0.5% risk (6.9851ms)
+✔ rejects a stop loss on the wrong side for a long (1.2245ms)
+✔ rejects a stop loss on the wrong side for a short (0.5123ms)
+✔ rejects a trade when daily loss reaches 2% (3.7785ms)
+✔ rejects invalid equity (0.89ms)
+✔ rejects an unknown trade direction (0.3359ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:30.770Z
+✔ VT2Server launches, handles API routes, and enforces mainnet security denial (190.3269ms)
+✔ PaperExecutionEngine restores state correctly after simulated server restart (7.587ms)
+✔ PaperExecutionEngine preserves daily loss lock status across restarts (1.6681ms)
+✔ in-memory database initializes schema cleanly (6.5613ms)
+✔ persists and retrieves user settings (2.4981ms)
+✔ persists, updates, and fetches active positions (4.9638ms)
+✔ saves and retrieves trade journal entries with parsed JSON structures (2.7304ms)
+✔ saves and retrieves rejected setups archive (2.2425ms)
+✔ calculates SMA correctly with null padding for initial periods (2.7211ms)
+✔ calculates EMA with initial SMA seeding (0.6995ms)
+✔ calculates RSI bounded between 0 and 100 (0.7342ms)
+✔ calculates ATR correctly from candle high/low/close (0.8037ms)
+✔ calculates relative volume and identifies volume spikes (0.6509ms)
+✔ strategy engine scans universe and produces qualified or rejected outputs with explicit reasons (68.7902ms)
+✔ strategy engine rejects setup when candles are insufficient (0.8071ms)
+✔ session-filter: correctly identifies US Regular Trading Hours (09:30 - 16:00 ET) (2.2126ms)
+✔ zero look-ahead: C1 signal at bar T is identical when future bars are truncated (4.6318ms)
+✔ zero look-ahead: closed bars helper uses strictly closed higher-timeframe bars (2.5772ms)
+✔ cost application: fee, slippage, and funding are subtracted correctly (0.6753ms)
+✔ determinism: running replay twice produces identical trades and metrics (427.3123ms)
+✔ TradeMonitor evaluates sentiment correctly as SUPPORTIVE, WEAKENING, and REVERSED (23.2327ms)
+✔ sentiment state change triggers SSE notification in manual mode and market exit in auto mode (47.9452ms)
+✔ feed failure triggers neither notification nor automatic exit (5.2218ms)
+[VT2 Core] Verifiable Trading Technology listening on http://localhost:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-21T22:02:31.040Z
+✔ VT2Server exposes Verification, Monitor, Auto-trading, and Market Mode endpoints (121.8315ms)
+ℹ tests 122
+ℹ suites 0
+ℹ pass 122
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3068.7138

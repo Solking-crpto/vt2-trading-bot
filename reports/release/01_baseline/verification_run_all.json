@@ -1,0 +1,161 @@
+{
+  "timestamp": 1792620563118,
+  "checks": {
+    "walkForwardBacktest": {
+      "name": "Chronological Walk-Forward Backtesting",
+      "description": "Zero look-ahead, realistic slippage/fees, conservative stop-first execution.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 8,
+      "timestamp": 1792620563109,
+      "detail": {
+        "totalTrades": 0,
+        "winRate": "0%",
+        "profitFactor": 0,
+        "netPnl": 0,
+        "ambiguousCandleRule": "Stop loss hit first (conservative assumption verified)",
+        "lookAheadBias": "Strictly zero (chronological walk-forward)"
+      }
+    },
+    "hmacSha256Signature": {
+      "name": "Bitget HMAC-SHA256 Canonical Signature",
+      "description": "Official Bitget UTA v2 SHA256 base64 signature verification without client credentials.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": 1792620563109,
+      "detail": {
+        "scheme": "Bitget UTA v2 Prehash HMAC-SHA256",
+        "prehashFormat": "timestamp + method + requestPath + queryString/body",
+        "encoding": "Base64 Digest",
+        "sampleDigest": "/ZOrdOvMAFnFWdHv...",
+        "credentialExposure": "Zero secrets sent to browser (verified server-side)"
+      }
+    },
+    "mainnetInterception": {
+      "name": "Strict Mainnet Interception & Refusal",
+      "description": "HTTP 403 hard barrier against live mainnet order dispatch and environment tampering.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 1,
+      "timestamp": 1792620563110,
+      "detail": {
+        "environment": "PAPER",
+        "mainnetExecutionAllowed": false,
+        "interceptionCode": "MAINNET_EXECUTION_BLOCKED",
+        "httpResponseStatus": 403,
+        "auditLogging": "Security violation logged with timestamp and origin"
+      }
+    },
+    "paperLifecycle": {
+      "name": "Paper Engine Lifecycle & Protective Orders",
+      "description": "+1.1% partial take-profit scale-out, breakeven fee protection, and EMA trailing stops.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": 1792620563110,
+      "detail": {
+        "engineState": "ACTIVE",
+        "equity": 9969.14,
+        "openPositions": 0,
+        "partialTakeProfitRule": "+1.1% ROI (50% scale-out)",
+        "breakevenRule": "Stop loss moves to entry + 0.14% round-trip fees upon partial TP",
+        "trailingStopRule": "Follows 5m EMA20 with 0.5x ATR buffer after 10% ROI",
+        "stopLossEnforcement": "Strict tick-by-tick stop loss trigger"
+      }
+    },
+    "deterministicRisk": {
+      "name": "Deterministic Risk Checks & Boundary Limits",
+      "description": "Enforces directionality, 0.5%-0.8% stop distance, and 2.0% daily loss lockout.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 1,
+      "timestamp": 1792620563111,
+      "detail": {
+        "directionalityValidation": "PASSED (Wrong stop side rejected)",
+        "researchBoundaryConstraints": "PASSED (0.5% min, 0.8% max stop distance enforced)",
+        "dailyLossHardLockout": "PASSED (2.0% SOD equity hard stop enforced)",
+        "minimumRewardToRisk": "PASSED (1.5 Net R:R minimum required)"
+      }
+    },
+    "entryAllocation": {
+      "name": "Entry Allocation 1% - 100% & Equity Cap",
+      "description": "Scales position sizing while strictly bounding total equity risk to configured cap.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": 1792620563111,
+      "detail": {
+        "allocationRange": "1% to 100% validated",
+        "tenPercentQuantity": 0.013,
+        "hundredPercentQuantity": 0.125,
+        "maxEquityRiskCapEnforced": "0.5% ($50.00 max risk)",
+        "actualRiskAt100Percent": "0.5% of equity"
+      }
+    },
+    "highAllocationConfirmation": {
+      "name": "High Allocation Confirmation Policy",
+      "description": "Mandatory confirmation above 10% and explicit capital consumption warning at 100%.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": 1792620563111,
+      "detail": {
+        "status": "ENFORCED",
+        "policy": {
+          "baselineThresholdPercent": 10,
+          "warningRequiredAbovePercent": 10,
+          "criticalWarningAtPercent": 100,
+          "cancellationBehavior": "Restores previous valid allocation without modifying risk engine state"
+        },
+        "clientModalActive": true,
+        "explicit100PercentNotice": "Total allocation base consumption and leverage compounding warning verified"
+      }
+    },
+    "appearanceTokens": {
+      "name": "Light/Dark Theme Design Tokens & Persistence",
+      "description": "High-contrast dark / plain white light theme switching persisted to SQLite & storage.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 0,
+      "timestamp": 1792620563111,
+      "detail": {
+        "supportedThemes": [
+          "dark",
+          "light"
+        ],
+        "currentTheme": "light",
+        "tokenModel": "Plain white light theme (--bg-main: #ffffff) & high-contrast dark theme (--bg-main: #070a12)",
+        "storagePersistence": "SQLite table settings + browser localStorage roundtrip"
+      }
+    },
+    "sqliteRestoration": {
+      "name": "Native SQLite State Restoration Across Restarts",
+      "description": "Durable Node.js native sqlite persistence for orders, positions, journal, and settings.",
+      "passed": true,
+      "status": "PASSED",
+      "durationMs": 7,
+      "timestamp": 1792620563118,
+      "detail": {
+        "driver": "node:sqlite (Native Node.js built-in)",
+        "databaseFile": "data/vt2.db",
+        "restartDurable": true,
+        "roundtripVerification": "PASSED",
+        "tableRecordCounts": {
+          "settings": 11,
+          "orders": 4,
+          "positions": 4,
+          "trade_journal": 2,
+          "rejected_setups": 565
+        }
+      }
+    }
+  },
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "pending": 0,
+    "allPassed": true
+  }
+}

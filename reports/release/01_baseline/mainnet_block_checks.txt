@@ -1,0 +1,15 @@
+================================================================================
+BASELINE HEALTH SNAPSHOT: MAINNET-BLOCK CHECKS
+Captured at: 2026-10-21T22:09:23.122Z
+================================================================================
+
+1. isMainnetExecutionAllowed(): false (Expected: false)
+2. getCurrentMode(): PAPER (Expected: PAPER)
+3. assertMainnetExecutionBlocked(): Threw=true, Error="CRITICAL SECURITY INTERCEPTION: Live Mainnet execution is strictly disabled. VT2 operates exclusively in verifiable PAPER TRADING mode unless explicitly armed in local LIVE mode."
+4. validateExecutionMode({ environment: 'MAINNET' }):
+   - Threw SafetyViolationError: true
+   - Error Message: "CRITICAL SECURITY INTERCEPTION: Live Mainnet execution is strictly disabled. VT2 operates exclusively in verifiable PAPER TRADING mode unless explicitly armed in local LIVE mode."
+5. POST /api/orders/mainnet HTTP Response:
+   - HTTP Status: 403 (Expected: 403)
+   - Body: {"error":"MAINNET_EXECUTION_BLOCKED","message":"CRITICAL SECURITY INTERCEPTION: Live Mainnet execution is strictly disabled. VT2 operates exclusively in verifiable PAPER TRADING mode unless explicitly armed in local LIVE mode.","securityAlert":true}
+

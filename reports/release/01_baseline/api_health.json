@@ -1,0 +1,12 @@
+{
+  "status": "HEALTHY",
+  "service": "VT2-Trading-Bot",
+  "tagline": "Think. Verify. Trade.",
+  "environment": "PAPER",
+  "deployMode": "LOCAL_FULL",
+  "database": "FILE_SQLITE",
+  "mainnetExecutionAllowed": false,
+  "mainnetKillSwitchDisarmed": false,
+  "timestamp": 1792620538662,
+  "uptime": 0.17851
+}

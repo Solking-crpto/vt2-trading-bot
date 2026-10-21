@@ -1,0 +1,16 @@
+{
+  "status": "HEALTHY",
+  "uptimeSeconds": 0,
+  "nodeVersion": "v26.9.0",
+  "platform": "win32",
+  "memoryMb": {
+    "heapUsed": "11.6",
+    "heapTotal": "14.2",
+    "rss": "62.3"
+  },
+  "databaseRecords": {
+    "positions": 2,
+    "tradeHistory": 0
+  },
+  "feedStatus": "INITIALIZING"
+}
