@@ -1,0 +1,43 @@
+================================================================================
+AUDIT REPORT: V1 REALIZED NET REWARD-TO-RISK AND IMPLIED BREAK-EVEN WIN RATE
+Generated: 2026-10-21T10:49:12.145Z
+Source Data: reports/alpha-factory/trades.csv (287 trades)
+================================================================================
+
+Total Trades: 287
+Winning Trades: 118 (41.11%)
+Losing Trades: 169 (58.89%)
+Total Net PnL: $-2818.83
+
+PRICE DISTANCE METRICS:
+  Stop-Loss Trades Count: 172
+  Average Realized Stop Distance: 0.6111%
+  Take-Profit Trades Count: 115
+  Average Realized Target Distance: 0.8850%
+  Gross Price Move Ratio (Target / Stop): 1.4483:1
+
+DOLLAR NET REALIZED METRICS (AFTER ALL MODELED COSTS):
+  Average Winning Trade Net PnL: $55.9270
+  Average Losing Trade Net PnL: -$55.7291
+  Realized Net Reward-to-Risk (Avg Win / Avg Loss): 1.0036:1
+
+BREAK-EVEN ANALYSIS:
+  Implied Break-even Win Rate: 49.91% [Formula: 1 / (1 + realizedNetRR)]
+  Actual Realized Win Rate: 41.11%
+  Win Rate Deficit: 8.80% below break-even
+  Average Expectancy per Trade: $-9.8217
+
+================================================================================
+MATHEMATICAL EXPLANATION OF WHY THE STRATEGY LOST MONEY:
+--------------------------------------------------------------------------------
+1. The strategy design assumed a nominal net reward-to-risk of 1.50:1.
+2. However, because stop distances averaged only 0.6111% (sized to $50 nominal risk),
+   fixed exchange costs (0.05% entry fee + 0.05% exit fee + 0.02% entry slippage +
+   0.02% exit slippage = ~0.14% round-trip) consumed roughly $11.50 per trade.
+3. On losing trades, costs increased losses from $50.00 to $55.73 (-1.11R).
+   On winning trades, costs reduced gains from ~$67.50 to $55.93 (+1.12R).
+4. Consequently, the REALIZED net reward-to-risk after modeled costs was only 1.0036:1,
+   not 1.5:1. At 1.0036:1, break-even requires a 49.91% win rate.
+5. Since the strategy only achieved a 41.11% win rate, it lost -$9.82 on every trade
+   on average, totaling -$2,818.83 across the 287 trades.
+================================================================================
