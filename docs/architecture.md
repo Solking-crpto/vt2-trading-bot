@@ -1,87 +1,45 @@
-# VT2 Architecture Overview
+# VT2 System Architecture
 
-**Tagline:** Think. Verify. Trade.
+This document describes the architectural components and data flow of the VT2 trading bot and research terminal.
 
-VT2 (Verifiable Trading Technology) is a high-performance quantitative trading terminal built with deterministic risk controls, multi-agent AI deliberation, and strict execution isolation.
+## 1. Components
 
-```mermaid
-flowchart TD
-    subgraph UI ["User Terminal (Responsive Web & PWA)"]
-        Overview["Overview & Health"]
-        Scanner["Market Scanner"]
-        Chart["Canvas Chart & Analysis"]
-        Agents["AI Deliberation Panel"]
-        RiskDash["Risk Dashboard"]
-        Positions["Simulated Positions"]
-        Journal["Trade Journal"]
-        Backtest["Backtesting Engine"]
-    end
+### Market Data Ingestion Adapter (`src/adapters/bitget-adapter.js`, `src/adapters/bitget-ws.js`)
+The market data adapter interacts strictly with Bitget's public V2 REST and WebSocket endpoints. It dynamically discovers tokenized US equity perpetual contracts at launch (`isRwa === "YES"`), enforces strict ascending chronological candle sorting via `assertCandleIntegrity` to eliminate look-ahead timestamp corruption, and streams real-time ticker prices with sub-second latency and automated heartbeat age tracking.
 
-    subgraph Server ["Backend Application Server (Node.js)"]
-        REST["REST API & Static Server"]
-        SSE["Server-Sent Events (SSE) Stream"]
-        Guard["Environment & Security Guard (Mainnet Denied)"]
-    end
+### Quantitative Strategy Engine (`src/strategy/engine.js`, `src/strategy/registry.js`)
+The strategy engine calculates multi-timeframe moving averages (EMA20/50/200), RSI momentum filters, and volume expansion ratios across 4-hour, 15-minute, and 5-minute intervals. Equity setups are strictly gated by the closed 4-hour trend of the S&P 500 ETF (`SPYUSDT`) to ensure directional macro alignment, and the strategy registry immutably maintains empirical validation statuses (such as S0's unvalidated replay status).
 
-    subgraph Core ["Core Quantitative & AI Engines"]
-        Adapter["Bitget Adapter (V2/UTA Public REST)"]
-        Strategy["Strategy Engine (Multi-Timeframe 4h/15m/5m)"]
-        Indicators["Indicators (EMA, RSI, ATR, RVOL)"]
-        Coord["Multi-Agent AI Coordinator"]
-        Intel["Market Intelligence Agent"]
-        Adv["Adversarial Review Agent"]
-        Risk["Deterministic Risk Engine (Veto Authority)"]
-        Paper["Paper Execution Engine (Lifecycle & Automations)"]
-        BT["Backtest Engine (Zero Lookahead)"]
-    end
+### Multi-Agent Deliberation Pipeline (`src/agents/index.js`)
+The deliberation pipeline coordinates three deterministic, rules-based agents without unconstrained neural-network hallucination. The *Market Intelligence Agent* formulates mathematical directional theses; the *Adversarial Review Agent* stress-tests setups against spread decay, taker fees, and benchmark divergence; and the *Execution Coordinator* enforces strict gating and entry sizing bounds.
 
-    subgraph DB ["Persistence Layer (Native SQLite)"]
-        SQLite[("data/vt2.db")]
-    end
+### Deterministic Risk Engine (`src/risk-engine.js`, `config/live-limits.json`)
+The risk engine enforces mathematical risk guardrails with absolute veto power over all proposed orders. It sizes positions to exactly configured equity risk (default 0.5% in paper, bounded by min(strategy, 0.25%) in live), locks entries upon reaching the daily loss limit (2% paper, $10.00 live), enforces 3 consecutive loss circuit pauses, requires a 30-minute cooldown, and prevents conflicting directional exposure inside correlation groups.
 
-    UI --> REST
-    UI --> SSE
-    REST --> Guard
-    Guard --> Adapter
-    Guard --> Strategy
-    Guard --> Coord
-    Guard --> Paper
-    Guard --> BT
-    Coord --> Intel
-    Coord --> Adv
-    Coord --> Risk
-    Strategy --> Indicators
-    Paper --> Risk
-    Paper --> DB
-    BT --> DB
-    REST --> DB
+### Execution Engine & Mode State Machine (`src/environment.js`, `src/execution/paper-engine.js`, `src/execution/bitget-trade-client.js`)
+The execution system manages a strict three-tier execution hierarchy: PAPER (internal simulation, default), DEMO (Bitget official paptrading for crypto), and LIVE (strictly local, multi-factor armed). Orders are quantized according to exchange contract step rules (`minTradeNum`, `sizeMultiplier`), and all live/demo executions mandate exchange-side stop loss verification before fill confirmation.
+
+### Data Persistence & State Store (`src/storage/db.js`)
+Persistence is powered by Node.js native SQLite (`node:sqlite`) for local operation (`data/vt2.db`) and an in-memory database fallback for serverless deployments. It manages ACID-compliant transactional persistence for orders, position lifecycles, user settings, trade journal archives, and rejected candidate setup telemetry.
+
+### Unattended Service & Monitoring Suite (`src/service/`, `src/monitor/trade-monitor.js`)
+The service layer enables reliable unattended operation through PM2 ecosystem integration, automated crash-loop backoff protection, date-stamped log management with 14-day automated retention, background position sentiment monitoring, and optional secret-redacted webhook/Telegram alert dispatching.
+
+## 2. End-to-End Data Flow
+
+```
+[Bitget Public Feeds] ──> [Market Data Ingestion] ──> [Strategy Engine & SPY Filter]
+                                                               │
+                                                               ▼
+[Persistent SQLite DB] <── [Risk Engine & Limits] <── [Multi-Agent Deliberation]
+           │                         │
+           ▼                         ▼
+[Web UI / SSE Stream] <── [Execution Engine] (PAPER / DEMO / LIVE)
 ```
 
-## System Components
-
-1. **Frontend Terminal (`public/`)**:
-   - Zero-build modern ES modules.
-   - High-DPI interactive Canvas candlestick and indicators chart.
-   - Real-time updates via Server-Sent Events (`/api/stream`).
-   - PWA installable manifest and service worker shell.
-
-2. **Backend Server (`src/vt2-server.js`)**:
-   - Modular HTTP server using Node.js native runtime.
-   - Strict mainnet interception guard denying live order attempts.
-   - Background ticker simulating realistic order fills and stop tracking.
-
-3. **Bitget Market Data Adapter (`src/adapters/bitget-adapter.js`)**:
-   - Official Bitget UTA / V2 REST endpoints for contracts, tickers, and candles.
-   - Verified fallback mode with transparent labeling when live external feeds are unreachable or restricted.
-
-4. **Deterministic Risk Engine (`src/risk-engine.js`)**:
-   - Sole authority over paper trade permissions.
-   - Absolute veto power over all AI agent trade recommendations.
-
-5. **Multi-Agent Deliberation Coordinator (`src/agents/index.js`)**:
-   - 3-tier synthesis: Market Intelligence -> Adversarial Review -> Risk Engine.
-   - Rules-only fallback mode when no external LLM API key is present.
-
-6. **Durable Persistence (`src/storage/db.js`)**:
-   - Built on Node.js v26 native `node:sqlite` (`DatabaseSync`).
-   - Durable file-based SQLite database (`data/vt2.db`) surviving application restarts.
+1. **Ingestion:** Public market feeds stream live candles and ticker prices into memory, where candle integrity is validated.
+2. **Signal Scanning:** The strategy engine scans active universe symbols, evaluating multi-timeframe moving averages and SPY benchmark alignment.
+3. **Deliberation:** Passing candidates are evaluated by the Market Intelligence and Adversarial Review agents, testing counter-theses and slippage.
+4. **Risk Gate:** The Execution Coordinator passes the setup to the Deterministic Risk Engine, which computes position size from stop distance and enforces hard loss and concurrency caps.
+5. **Execution:** Upon risk approval, the order is routed to the active execution engine (PAPER simulation, DEMO paptrading, or armed LIVE exchange adapter).
+6. **State & Broadcast:** Orders and fills are flushed to SQLite and broadcast via Server-Sent Events (SSE) to the interactive terminal.
