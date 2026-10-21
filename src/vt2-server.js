@@ -44,6 +44,12 @@ import { BitgetTradeClient } from './execution/bitget-trade-client.js';
 import { loadProfiles, getProfileForSymbol, getUnderlyingMarketStatus } from './config/profiles.js';
 import { loadLiveLimits, validateLiveOrderCaps } from './config/live-limits.js';
 import { DEFAULT_MARKET_FIXTURES, generateCandleSeries } from './data/market-fixtures.js';
+import {
+  getActiveStrategy,
+  getStrategyValidationStatus,
+  getValidationWarningBlock,
+  REQUIRED_VALIDATION_PHRASE,
+} from './strategy/registry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -865,8 +871,19 @@ export class VT2Server {
           database: this.isDemoReadOnly ? 'IN_MEMORY_SQLITE' : 'FILE_SQLITE',
           mainnetExecutionAllowed: isMainnetExecutionAllowed(),
           mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
+          strategyStatus: getStrategyValidationStatus(),
+          strategy: getActiveStrategy(),
           timestamp: Date.now(),
           uptime: process.uptime(),
+        });
+      }
+
+      // 2b. Strategy Validation Status
+      if (pathname === '/api/strategy/status' && req.method === 'GET') {
+        return this.sendJson(res, 200, {
+          status: getStrategyValidationStatus(),
+          strategy: getActiveStrategy(),
+          warning: getValidationWarningBlock(),
         });
       }
 
@@ -1048,7 +1065,11 @@ export class VT2Server {
           } catch {}
         }
 
-        return this.sendJson(res, 200, result);
+        return this.sendJson(res, 200, {
+          ...result,
+          strategyStatus: getStrategyValidationStatus(),
+          validationWarning: getValidationWarningBlock(),
+        });
       }
 
       // 8. Account Summary
@@ -1475,6 +1496,9 @@ export class VT2Server {
             mainnetAllowed: isMainnetExecutionAllowed(),
             mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
             credentialsConfigured: getDemoCredentialStatus().isConfigured || getLiveCredentialStatus().isConfigured,
+            strategyStatus: getStrategyValidationStatus(),
+            strategy: getActiveStrategy(),
+            validationWarning: getValidationWarningBlock(),
           });
         }
 
@@ -1678,6 +1702,8 @@ export class VT2Server {
           underlyingStatus,
           capCheck,
           requiresManualConfirm: capCheck.requiresManualConfirm,
+          strategyStatus: getStrategyValidationStatus(),
+          validationWarning: getValidationWarningBlock(),
         });
       }
 

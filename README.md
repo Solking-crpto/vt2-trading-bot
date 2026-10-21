@@ -9,6 +9,19 @@
 
 ---
 
+## ⚠️ Status and Limits
+
+### What Is Validated
+- **Infrastructure & Plumbed Safety:** 122 automated unit and integration tests passing (0 failures), verifying contract specifications, candle integrity checks, Node.js SQLite persistence, and Bitget V2 REST/WebSocket feeds.
+- **Deterministic Risk Controls:** Hard risk boundaries (0.5% risk per trade), daily loss circuit breakers (2% paper, $10.00 live), 3 consecutive loss pause, 30-minute cooldown, and 1-position concurrency caps.
+- **Security & Mode Perimeter:** Default PAPER mode, DEMO mode (Bitget paptrading for crypto contracts), and LIVE mode (strictly local, multi-factor arming, $50 max order notional, withdrawal endpoint blocking).
+
+### What Is NOT Validated
+- **No Profitable Edge:** The as-shipped strategy (**S0**) **failed its pre-registered replay (trial 35)**. In audited replay, S0 produced Dev net -$154.41 (PF 0.99, 348 trades) and Validation net -$647.91 (PF 0.48, 34 trades). No tested strategy candidate demonstrated an edge after taker fees and slippage.
+- **Forward Performance:** Forward holdout data remains un-opened. VT2 makes **zero claims of profitability or alpha**.
+
+---
+
 ## 🌐 Try the Live Hosted Demo
 
 Judges can open and explore VT2 immediately without installing anything:
@@ -79,7 +92,7 @@ The interface operates in strictly verified **PAPER** mode connected directly to
 
 ## 📖 What is VT2?
 
-**VT2** is an institutional-grade quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.
+**VT2** is an experimental quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.
 
 VT2 was engineered specifically to solve the execution and risk realities of trading tokenized equities 24/7: accounting for underlying TradFi exchange hours, adverse funding carry, taker fee drag, and order quantity step-size quantization without endangering real capital.
 

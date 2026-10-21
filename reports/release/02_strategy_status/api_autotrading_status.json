@@ -1,0 +1,35 @@
+{
+  "status": "OFF",
+  "strategyStatus": "UNVALIDATED: failed pre-registered replay (trial 35)",
+  "validationWarning": {
+    "status": "UNVALIDATED: failed pre-registered replay (trial 35)",
+    "isValidated": false,
+    "trial": 35,
+    "verdict": "FAIL",
+    "message": "UNVALIDATED: failed pre-registered replay (trial 35). S0 produced -$154.41 (PF 0.99) on Dev and -$647.91 (PF 0.48) on Validation. No tested candidate demonstrated an edge after costs.",
+    "conclusion": "The app as shipped has no demonstrated edge on this data.",
+    "requiredAcknowledgment": "I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION"
+  },
+  "pauseReason": null,
+  "waitingReason": null,
+  "waitingResumesAt": null,
+  "tradesToday": 0,
+  "maxTradesPerDay": 3,
+  "maxConcurrentPositions": 2,
+  "openPositionsCount": 2,
+  "dailyLoss": 35.69,
+  "dailyLossLimit": 200,
+  "isDailyLossLocked": false,
+  "config": {
+    "botMarketMode": "both",
+    "botCandidateOrder": "equities_first",
+    "maxTradesPerDay": 3,
+    "maxConcurrentPositions": 2,
+    "minScore": 70,
+    "minNetRR": 1.5,
+    "entryAllocationPercent": 10,
+    "candidateSkipMinutes": 5,
+    "cooldownAfterManualClose": true
+  },
+  "recentActivity": []
+}

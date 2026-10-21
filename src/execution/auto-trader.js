@@ -1,5 +1,6 @@
 import { CURRENT_ENVIRONMENT, isMainnetExecutionAllowed } from '../environment.js';
 import { isEquityContract, isCryptoContract } from '../config/contracts.js';
+import { getStrategyValidationStatus, getValidationWarningBlock } from '../strategy/registry.js';
 
 export const BOT_STATUS = Object.freeze({
   OFF: 'OFF',
@@ -439,6 +440,8 @@ export class AutoTrader {
     const savedSettings = this.db.getAllSettings();
     return {
       status: this.status,
+      strategyStatus: getStrategyValidationStatus(),
+      validationWarning: getValidationWarningBlock(),
       pauseReason: this.pauseReason,
       waitingReason: this.waitingReason,
       waitingResumesAt: this.waitingResumesAt,

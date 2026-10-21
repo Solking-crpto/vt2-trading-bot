@@ -422,20 +422,8 @@ function setupExecutionModeToggle() {
       alert('Hosted deployments operate exclusively in PAPER mode.');
       return;
     }
-    try {
-      const res = await fetch('/api/mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'DEMO' }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.message || data.error || 'Failed to switch to DEMO mode.');
-      }
-      await refreshExecutionMode();
-    } catch (err) {
-      alert(`Error setting mode: ${friendlyError(err)}`);
-    }
+    if (state.activeMode === 'DEMO') return;
+    openDemoArmingModal();
   });
 
   document.getElementById('modeToggleLive')?.addEventListener('click', async () => {
@@ -457,8 +445,9 @@ function setupExecutionModeToggle() {
     }
   });
 
-  // Modal setup
+  // Live Modal setup
   const phraseInput = document.getElementById('liveArmingPhraseInput');
+  const validPhraseInput = document.getElementById('liveValidationPhraseInput');
   const attestCheck = document.getElementById('liveAttestationCheck');
   const armBtn = document.getElementById('confirmLiveArmingBtn');
   const cancelBtn = document.getElementById('cancelLiveArmingBtn');
@@ -466,11 +455,13 @@ function setupExecutionModeToggle() {
 
   const checkArmReady = () => {
     const phraseOk = phraseInput?.value.trim() === 'ENABLE LIVE TRADING';
+    const validOk = validPhraseInput?.value.trim() === 'I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION';
     const checkOk = Boolean(attestCheck?.checked);
-    if (armBtn) armBtn.disabled = !(phraseOk && checkOk);
+    if (armBtn) armBtn.disabled = !(phraseOk && validOk && checkOk);
   };
 
   phraseInput?.addEventListener('input', checkArmReady);
+  validPhraseInput?.addEventListener('input', checkArmReady);
   attestCheck?.addEventListener('change', checkArmReady);
 
   cancelBtn?.addEventListener('click', () => {
@@ -485,6 +476,7 @@ function setupExecutionModeToggle() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           confirmationPhrase: phraseInput.value.trim(),
+          validationAcknowledgment: validPhraseInput?.value.trim(),
           attestationChecked: attestCheck.checked,
         }),
       });
@@ -500,6 +492,45 @@ function setupExecutionModeToggle() {
       alert(`Arming error: ${friendlyError(err)}`);
     } finally {
       armBtn.disabled = false;
+    }
+  });
+
+  // Demo Modal setup
+  const demoModal = document.getElementById('demoArmingModal');
+  const demoPhraseInput = document.getElementById('demoValidationPhraseInput');
+  const demoConfirmBtn = document.getElementById('confirmDemoArmingBtn');
+  const demoCancelBtn = document.getElementById('cancelDemoArmingBtn');
+
+  demoPhraseInput?.addEventListener('input', () => {
+    const ok = demoPhraseInput.value.trim() === 'I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION';
+    if (demoConfirmBtn) demoConfirmBtn.disabled = !ok;
+  });
+
+  demoCancelBtn?.addEventListener('click', () => {
+    demoModal?.classList.remove('open');
+  });
+
+  demoConfirmBtn?.addEventListener('click', async () => {
+    demoConfirmBtn.disabled = true;
+    try {
+      const res = await fetch('/api/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'DEMO',
+          validationAcknowledgment: demoPhraseInput.value.trim(),
+        }),
+      });
+      const data = await res.json();
+      demoModal?.classList.remove('open');
+      if (!res.ok) {
+        alert(data.message || data.error || 'Failed to switch to DEMO mode.');
+      }
+      await refreshExecutionMode();
+    } catch (err) {
+      alert(`Error setting mode: ${friendlyError(err)}`);
+    } finally {
+      demoConfirmBtn.disabled = false;
     }
   });
 
@@ -527,10 +558,12 @@ async function openLiveArmingModal() {
   const modal = document.getElementById('liveArmingModal');
   const statusBox = document.getElementById('livePreflightStatus');
   const phraseInput = document.getElementById('liveArmingPhraseInput');
+  const validPhraseInput = document.getElementById('liveValidationPhraseInput');
   const attestCheck = document.getElementById('liveAttestationCheck');
   const armBtn = document.getElementById('confirmLiveArmingBtn');
 
   if (phraseInput) phraseInput.value = '';
+  if (validPhraseInput) validPhraseInput.value = '';
   if (attestCheck) attestCheck.checked = false;
   if (armBtn) armBtn.disabled = true;
   if (statusBox) statusBox.innerHTML = 'Running live preflight checks...';
@@ -558,6 +591,15 @@ async function openLiveArmingModal() {
   } catch (err) {
     if (statusBox) statusBox.innerHTML = `<span style="color: var(--color-danger);">Preflight request failed: ${err.message}</span>`;
   }
+}
+
+function openDemoArmingModal() {
+  const modal = document.getElementById('demoArmingModal');
+  const phraseInput = document.getElementById('demoValidationPhraseInput');
+  const confirmBtn = document.getElementById('confirmDemoArmingBtn');
+  if (phraseInput) phraseInput.value = '';
+  if (confirmBtn) confirmBtn.disabled = true;
+  modal?.classList.add('open');
 }
 
 // PWA Service Worker Registration
@@ -1028,7 +1070,7 @@ function showAllocationWarning(targetValue) {
         </div>
         <ul style="font-size: 13px; line-height: 1.6; padding-left: 20px; color: var(--text-main);">
           <li><strong>Concentration Risk:</strong> Higher allocation factors scale up proposed position notional size, which can accelerate portfolio drawdowns during adverse volatility.</li>
-          <li><strong>Capital Availability:</strong> Consuming more of the allocation base reduces available margin buffer for subsequent high-probability setups.</li>
+          <li><strong>Capital Availability:</strong> Consuming more of the allocation base reduces available margin buffer for subsequent candidate setups.</li>
           <li><strong>Leverage & Fees:</strong> Increased position size amplifies the impact of taker fees, funding costs, and execution slippage.</li>
           <li><strong>Deterministic Risk Budget Intact:</strong> The deterministic risk engine still bounds maximum dollar loss to your configured risk-per-trade limit (default 0.50% equity).</li>
         </ul>
@@ -2154,6 +2196,13 @@ function showOrderPreviewModal(previewData, orderPayload, submitUrl) {
       <div style="font-size: 20px; font-weight: 800; color: var(--color-danger);" class="mono-num">-$${maxLoss}</div>
       <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
         Exchange-side stop loss verified before fill confirmation. Hard daily loss lockout: $10.00 max.
+      </div>
+    </div>
+
+    <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 11px; line-height: 1.4;">
+      <div style="font-weight: 700; color: var(--color-warning); margin-bottom: 3px;">⚠️ Strategy Status: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+      <div style="color: var(--text-secondary);">
+        The underlying strategy (S0) failed pre-registered replay (Dev -$154.41, Validation -$647.91). No tested candidate demonstrated an edge after transaction costs.
       </div>
     </div>
 
