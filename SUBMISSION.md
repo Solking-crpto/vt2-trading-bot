@@ -7,6 +7,13 @@
 **Operating Mode:** Strictly `PAPER` (Mainnet and Live Execution Architecturally Blocked)  
 **Verified Test Suite:** **100 Tests Passing (0 Failures)**  
 
+> [!NOTE]
+> **Research Audit & Methodology Corrections (October 2026)**  
+> An empirical audit of the submission codebase revealed differences between published narrative claims and the actual execution code (see [docs/ERRATA.md](file:///docs/ERRATA.md) for full line-by-line verification):
+> 1. **Filters Applied in Submission Backtest:** The v1 backtest engine (`AlphaPortfolioEngine`) strictly applied the SPY 4h benchmark filter, 15m RSI corridor (42–68 Long / 32–58 Short), dual-EMA alignment (`ema20 > ema50 && close > ema50`), 30m cooldown, and [0.5%, 0.8%] stop bounds. However, 5m confirmation, EMA200 stack, and volume spike filters were **not** evaluated during entry qualification in the backtest replay.
+> 2. **Realized Net Reward-to-Risk:** While nominal targets were set at 1.575x stop distance, the average stop distance was 0.6111%; after exchange fees and slippage (~0.14% round-trip), realized net reward-to-risk collapsed to **~1.0036:1** (rather than 1.5:1), requiring a 49.91% break-even win rate against the realized 41.11% win rate.
+> 3. **Live Scanner Rules:** The rules executed by the live application scanner (`StrategyEngine.scanUniverse`) use ATR-based targets and single EMA checks, which were **not** backtested in the submission report. When evaluated under identical chronological replay (Candidate S0), the as-shipped strategy demonstrated no edge on this dataset.
+
 ---
 
 ## Hosted Demo (Zero Installation for Judges)
