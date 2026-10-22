@@ -628,7 +628,7 @@ test('server mode endpoints enforce allow-list, arming, preview, and preflight',
     // 2. POST /api/mode with lowercase or un-armed live returns 403
     const liveFail = await fetch(`${baseUrl}/api/mode`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-control-token': server.controlToken },
       body: JSON.stringify({ mode: 'live' }),
     });
     assert.equal(liveFail.status, 403);
@@ -638,7 +638,7 @@ test('server mode endpoints enforce allow-list, arming, preview, and preflight',
     // 3. POST /api/mode/arm-live without flag returns 403
     const armFail = await fetch(`${baseUrl}/api/mode/arm-live`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-control-token': server.controlToken },
       body: JSON.stringify({ confirmationPhrase: 'ENABLE LIVE TRADING' }),
     });
     assert.equal(armFail.status, 403);

@@ -1,0 +1,435 @@
+{
+  "qualified": [
+    {
+      "symbol": "PUMPUSDT",
+      "underlyingTicker": "PUMP",
+      "assetClass": "CRYPTO",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": false,
+      "underlyingSession": "24/7 Continuous",
+      "qualified": true,
+      "side": "LONG",
+      "score": 119.5,
+      "entryPrice": 0.005138,
+      "stopLoss": 0.0051,
+      "takeProfit": 0.0053,
+      "partialTakeProfitPrice": 0.0052,
+      "rewardRisk": {
+        "grossRR": 4.2632,
+        "netRR": 3.4254,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628619200,
+      "indicators": {
+        "price": 0.005138,
+        "ema20_4h": 0.004739,
+        "ema50_15m": 0.004985,
+        "rsi_15m": 56.5,
+        "atr_15m": 0.000063,
+        "atr_4h": 0.000206,
+        "rvol_5m": 0.33,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "LONG trend aligned across 4h and 15m timeframes",
+        "Bitcoin macro context is BULLISH",
+        "Net Reward-to-Risk is 3.4254:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "IRYSUSDT",
+      "underlyingTicker": "IRYS",
+      "assetClass": "CRYPTO",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": false,
+      "underlyingSession": "24/7 Continuous",
+      "qualified": true,
+      "side": "LONG",
+      "score": 103.1,
+      "entryPrice": 0.01879,
+      "stopLoss": 0.0186,
+      "takeProfit": 0.0194,
+      "partialTakeProfitPrice": 0.019,
+      "rewardRisk": {
+        "grossRR": 3.2105,
+        "netRR": 2.6985,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628619200,
+      "indicators": {
+        "price": 0.01879,
+        "ema20_4h": 0.015062,
+        "ema50_15m": 0.018423,
+        "rsi_15m": 45.78,
+        "atr_15m": 0.000963,
+        "atr_4h": 0.001449,
+        "rvol_5m": 0.74,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "LONG trend aligned across 4h and 15m timeframes",
+        "Bitcoin macro context is BULLISH",
+        "Net Reward-to-Risk is 2.6985:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "QNTUSDT",
+      "underlyingTicker": "QNT",
+      "assetClass": "CRYPTO",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": false,
+      "underlyingSession": "24/7 Continuous",
+      "qualified": true,
+      "side": "LONG",
+      "score": 74.1,
+      "entryPrice": 206.85,
+      "stopLoss": 205.1952,
+      "takeProfit": 210.7155,
+      "partialTakeProfitPrice": 209.1253,
+      "rewardRisk": {
+        "grossRR": 2.3359,
+        "netRR": 1.8391,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628619200,
+      "indicators": {
+        "price": 206.85,
+        "ema20_4h": 199.370066,
+        "ema50_15m": 203.099942,
+        "rsi_15m": 52.08,
+        "atr_15m": 2.147488,
+        "atr_4h": 7.285703,
+        "rvol_5m": 0.73,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "LONG trend aligned across 4h and 15m timeframes",
+        "Bitcoin macro context is BULLISH",
+        "Net Reward-to-Risk is 1.8391:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "DOGEUSDT",
+      "underlyingTicker": "DOGE",
+      "assetClass": "CRYPTO",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": false,
+      "underlyingSession": "24/7 Continuous",
+      "qualified": true,
+      "side": "LONG",
+      "score": 73.9,
+      "entryPrice": 0.1307,
+      "stopLoss": 0.1297,
+      "takeProfit": 0.1331,
+      "partialTakeProfitPrice": 0.1321,
+      "rewardRisk": {
+        "grossRR": 2.4,
+        "netRR": 1.8741,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628619200,
+      "indicators": {
+        "price": 0.1307,
+        "ema20_4h": 0.081168,
+        "ema50_15m": 0.129047,
+        "rsi_15m": 54.7,
+        "atr_15m": 0.001309,
+        "atr_4h": 0.001297,
+        "rvol_5m": 0.83,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "LONG trend aligned across 4h and 15m timeframes",
+        "Bitcoin macro context is BULLISH",
+        "Net Reward-to-Risk is 1.8741:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "ZECUSDT",
+      "underlyingTicker": "ZEC",
+      "assetClass": "CRYPTO",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": false,
+      "underlyingSession": "24/7 Continuous",
+      "qualified": true,
+      "side": "LONG",
+      "score": 68.6,
+      "entryPrice": 1325.6,
+      "stopLoss": 1314.9952,
+      "takeProfit": 1346.4285,
+      "partialTakeProfitPrice": 1340.1816,
+      "rewardRisk": {
+        "grossRR": 1.9641,
+        "netRR": 1.5226,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628619200,
+      "indicators": {
+        "price": 1325.6,
+        "ema20_4h": 1238.636077,
+        "ema50_15m": 1325.441809,
+        "rsi_15m": 44.12,
+        "atr_15m": 11.571376,
+        "atr_4h": 45.375906,
+        "rvol_5m": 0.39,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "LONG trend aligned across 4h and 15m timeframes",
+        "Bitcoin macro context is BULLISH",
+        "Net Reward-to-Risk is 1.5226:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "symbol": "PEPEUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "BTCUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "NEARUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "SOLUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "ETHUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "IOSTUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BEAR) conflicts with 15m trend (BULL)."
+    },
+    {
+      "symbol": "HYPEUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "XRPUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "DOODUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "JCTUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "ENAUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "STRKUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "LINKUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "ALTUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "SUIUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "UNIUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "ADAUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "BTWUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BEAR) conflicts with 15m trend (BULL)."
+    },
+    {
+      "symbol": "WLDUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.0661) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "ARBUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "MACRO_BTC_DIVERGENCE",
+      "explanation": "Cannot take Short crypto setup while Bitcoin macro trend is BULLISH."
+    },
+    {
+      "symbol": "XMRUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "AKEUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "TRUMPUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "ONDOUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "FILUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "_meta",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INELIGIBLE_CONTRACT",
+      "explanation": "_meta is not on the verified eligible perpetual contract list."
+    }
+  ],
+  "btcContext": {
+    "trend": "BULLISH",
+    "btcPrice": 84181.1,
+    "ema50": 82629.781459,
+    "ema200": null,
+    "reason": "BTC 4h price $84,181.1 vs EMA50 $82629.78"
+  },
+  "stockContext": {
+    "trend": "BULLISH",
+    "benchmarkPrice": 0,
+    "ema50": 0,
+    "benchmark": "SPY",
+    "reason": "S&P 500 benchmark standing baseline"
+  },
+  "timestamp": 1792628619329,
+  "dataSource": "BITGET_V2_LIVE",
+  "isLive": true,
+  "durationMs": 4501,
+  "marketMode": "crypto",
+  "partial": false,
+  "meta": {
+    "isPartial": false,
+    "scannedCount": 30,
+    "targetCount": 30,
+    "durationMs": 2453
+  },
+  "counts": {
+    "total": 30,
+    "equity": 0,
+    "crypto": 30
+  },
+  "scannedCount": 30
+}

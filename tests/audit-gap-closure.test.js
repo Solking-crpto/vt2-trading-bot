@@ -121,7 +121,7 @@ test('risk engine enforces equityEntriesWhenUnderlyingClosed policy', () => {
 });
 
 test('server strictly enforces environment allow-list rejecting all live/mainnet variants with 403', async () => {
-  const server = new VT2Server({ port: 0, forceFixtureMode: true });
+  const server = new VT2Server({ port: 0, dbPath: ':memory:', forceFixtureMode: true });
   await server.start();
   const address = server.server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
@@ -153,7 +153,7 @@ test('server strictly enforces environment allow-list rejecting all live/mainnet
     // PAPER environment is accepted
     const paperRes = await fetch(`${baseUrl}/api/environment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-control-token': server.controlToken },
       body: JSON.stringify({ environment: 'PAPER' }),
     });
     assert.equal(paperRes.status, 200);

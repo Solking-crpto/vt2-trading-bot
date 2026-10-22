@@ -1,13 +1,13 @@
 ================================================================================
 BASELINE HEALTH SNAPSHOT: WEBSOCKET STATUS & HEARTBEAT AGE
-Captured at: 2026-10-21T22:09:23.100Z
+Captured at: 2026-10-22T00:23:50.567Z
 ================================================================================
 
 {
   "status": "ONLINE",
-  "latencyMs": 959,
-  "lastCheckedAt": 1792620563099,
-  "lastDataTimestamp": 1792620563099,
+  "latencyMs": 903,
+  "lastCheckedAt": 1792628630566,
+  "lastDataTimestamp": 1792628630566,
   "isLive": true,
   "wsConnected": false,
   "note": "Official Bitget V2 market-data feed connected via REST.",

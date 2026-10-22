@@ -30,6 +30,43 @@ npm run service:status
 npx pm2 logs vt2-trading-bot
 ```
 
+#### Windows Reboot Persistence Note:
+> [!IMPORTANT]
+> **PM2 does not auto-start after a Windows reboot.**
+> On Linux, `pm2 startup` generates a `systemd` service script. On Windows, `pm2 startup` is not natively supported. If Windows restarts or the machine reboots, PM2 daemons will terminate and will NOT automatically launch on reboot without an explicit Windows service wrapper or scheduler task.
+>
+> **Recommended Solutions for Windows Auto-Start on Reboot:**
+>
+> 1. **Option 1: Windows Task Scheduler (Built-in, zero dependencies)**:
+>    - Open **Task Scheduler** (`taskschd.msc`).
+>    - Create a task named `VT2-Trading-Bot-AutoStart`.
+>    - **Trigger**: "At log on" or "At startup".
+>    - **Action**: Start a program `cmd.exe` with arguments:
+>      `/c "cd /d C:\Users\DELL\Hackathon\VT2-Trading-Bot && npm run service:start"`
+>    - **Conditions**: Check "Start only if the following network connection is available: Any connection".
+>    - Set "Run whether user is logged on or not" with highest privileges.
+>
+> 2. **Option 2: `pm2-windows-service`**:
+>    Install the Windows service wrapper:
+>    ```cmd
+>    npm install -g pm2-windows-service
+>    pm2-service-install -n PM2
+>    ```
+>    Save the active process list so it restores on boot:
+>    ```cmd
+>    npm run service:start
+>    pm2 save
+>    ```
+>
+> 3. **Option 3: NSSM (Non-Sucking Service Manager)**:
+>    Use NSSM to install VT2 as a Windows background service:
+>    ```cmd
+>    nssm install VT2TradingBot "C:\Program Files\nodejs\node.exe" "C:\Users\DELL\Hackathon\VT2-Trading-Bot\start.js"
+>    nssm set VT2TradingBot AppDirectory "C:\Users\DELL\Hackathon\VT2-Trading-Bot"
+>    nssm start VT2TradingBot
+>    ```
+
+
 ---
 
 ## 2. Stopping the Terminal

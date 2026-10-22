@@ -1,4 +1,6 @@
 {
+  "note": "generated from a mocked provider response, not a real model",
+  "MOCK": true,
   "success": true,
   "verdict": "CAUTION",
   "reasons": "High round-trip friction (0.28R) relative to tight stop distance (1.35%). SPY benchmark alignment is positive, but fee drag lowers mathematical expectancy below target edge threshold.",

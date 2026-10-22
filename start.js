@@ -15,8 +15,10 @@ export * from './src/execution/paper-engine.js';
 export * from './src/backtest/engine.js';
 export * from './src/storage/db.js';
 
-// Launch server if executed as entry point
-if (process.argv[1] && path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1])) {
+// Launch server if executed as entry point or managed by PM2
+const isDirectEntry = Boolean(process.argv[1] && path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]));
+const isPm2Entry = typeof process.env.pm_id !== 'undefined';
+if (isDirectEntry || isPm2Entry) {
   setupDailyLogRotation(14);
   const server = new VT2Server();
   server.start();

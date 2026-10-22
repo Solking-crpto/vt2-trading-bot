@@ -158,6 +158,9 @@ export class VT2Server {
   constructor(options = {}) {
     this.isDemoReadOnly = process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL) || Boolean(options.demoReadOnly);
     this.port = options.port !== undefined ? options.port : (process.env.PORT || 3000);
+    this.host = options.host || process.env.HOST || '127.0.0.1';
+    this.controlToken = options.controlToken || crypto.randomBytes(24).toString('hex');
+    this.requireControlTokenEnabled = options.requireControlToken !== false;
     const dbPath = options.dbPath || (this.isDemoReadOnly ? ':memory:' : 'data/vt2.db');
     this.db = new Database(dbPath).init();
     this.bitget = new BitgetAdapter({
@@ -684,15 +687,51 @@ export class VT2Server {
     return entry.count <= 180;
   }
 
+  validateControlToken(req, body = null) {
+    if (this.isDemoReadOnly) return true;
+    if (!this.requireControlTokenEnabled) return true;
+
+    const headerToken = req.headers['x-control-token'] ||
+                        req.headers['x-vt2-control-token'] ||
+                        (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7).trim() : null);
+    if (headerToken && headerToken === this.controlToken) {
+      return true;
+    }
+    if (body && body.controlToken && body.controlToken === this.controlToken) {
+      return true;
+    }
+    const cookies = req.headers['cookie'] || '';
+    const match = cookies.match(/vt2_control_token=([a-zA-Z0-9_-]+)/);
+    if (match && match[1] === this.controlToken) {
+      return true;
+    }
+    return false;
+  }
+
+  assertControlToken(req, res, body = null) {
+    if (!this.validateControlToken(req, body)) {
+      this.sendJson(res, 401, {
+        error: 'UNAUTHORIZED',
+        message: 'Local control token required for this action.',
+      });
+      return false;
+    }
+    return true;
+  }
+
   start() {
     setExecutionMode('PAPER');
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
-    this.server.listen(this.port, () => {
-      console.log(`[VT2 Core] Verifiable Trading Technology listening on http://localhost:${this.port}`);
-      console.log(`[VT2 Core] Operating Environment: ${CURRENT_ENVIRONMENT} (Mainnet Strictly Blocked)`);
-      if (this.isDemoReadOnly) {
-        console.log(`[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)`);
-      }
+    const listenPromise = new Promise((resolve) => {
+      this.server.listen(this.port, this.host, () => {
+        console.log(`[VT2 Core] Verifiable Trading Technology listening on http://${this.host}:${this.port}`);
+        console.log(`[VT2 Core] Operating Environment: ${CURRENT_ENVIRONMENT} (Mainnet Strictly Blocked)`);
+        console.log(`[VT2 Security] Local Control Token: ${this.controlToken}`);
+        if (this.isDemoReadOnly) {
+          console.log(`[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)`);
+        }
+        resolve(this);
+      });
     });
 
     if (!this.isDemoReadOnly) {
@@ -718,7 +757,7 @@ export class VT2Server {
       } catch (_) {}
     }
 
-    return this;
+    return listenPromise;
   }
 
   startFeedMonitor() {
@@ -1372,6 +1411,7 @@ export class VT2Server {
       // 11. Submit Paper Order
       if (pathname === '/api/orders/paper' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         validateExecutionMode({ environment: 'PAPER' });
         if (this.isDemoReadOnly) {
           if (body?.state) return this.handleDemoOrder(body, res);
@@ -1389,6 +1429,7 @@ export class VT2Server {
       // 11a. Stateless Demo API: Place Order
       if (pathname === '/api/demo/order' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoOrder(body, res);
       }
 
@@ -1401,12 +1442,14 @@ export class VT2Server {
       // 11c. Stateless Demo API: Close Position
       if (pathname === '/api/demo/close' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoClose(body, res);
       }
 
       // 11d. Stateless Demo API: Close All Positions
       if (pathname === '/api/demo/close-all' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoCloseAll(body, res);
       }
 
@@ -1611,6 +1654,8 @@ export class VT2Server {
             return this.sendJson(res, 200, { success: true, mode: 'PAPER', environment: 'PAPER' });
           }
 
+          if (!this.assertControlToken(req, res, body)) return;
+
           // Determine requested mode (must be exactly 'PAPER', 'DEMO', or 'LIVE')
           let targetMode = body.mode || body.targetEnvironment || body.environment || body.target || body.env;
           if (typeof targetMode !== 'string') {
@@ -1653,6 +1698,8 @@ export class VT2Server {
 
       // 15b. LIVE Arming Endpoint
       if (pathname === '/api/mode/arm-live' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         if (isHosted()) {
           return this.sendJson(res, 403, { error: 'HOSTED_LIVE_PROHIBITED', message: 'Hosted deployment cannot arm live trading.' });
         }
@@ -1663,7 +1710,6 @@ export class VT2Server {
           });
         }
 
-        const body = await this.parseJsonBody(req).catch(() => ({}));
         if (body.confirmationPhrase !== 'ENABLE LIVE TRADING') {
           return this.sendJson(res, 400, {
             error: 'INVALID_ARMING_PHRASE',
@@ -1697,6 +1743,8 @@ export class VT2Server {
 
       // 15c. LIVE Disarm Endpoint
       if (pathname === '/api/mode/disarm-live' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         const resDisarm = disarmLive('USER_MANUAL_DISARM');
         return this.sendJson(res, 200, { success: true, mode: 'PAPER', disarmed: true });
       }
@@ -1707,6 +1755,7 @@ export class VT2Server {
           return this.sendJson(res, 403, { error: 'HOSTED_PREFLIGHT_PROHIBITED', message: 'Hosted site cannot execute exchange preflight.' });
         }
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         const targetMode = body.mode === 'LIVE' ? 'LIVE' : 'DEMO';
         try {
           const client = new BitgetTradeClient(targetMode, { allowUnarmedForTesting: true });
@@ -1959,6 +2008,16 @@ export class VT2Server {
           }
         } catch (_) {}
 
+        let feedStatus = this.bitget?.lastHealthCheck?.status;
+        if (!feedStatus || feedStatus === 'INITIALIZING') {
+          try {
+            const health = await this.bitget.checkHealth();
+            feedStatus = health?.status || 'INITIALIZING';
+          } catch (_) {
+            feedStatus = this.bitget?.lastHealthCheck?.status || 'INITIALIZING';
+          }
+        }
+
         return this.sendJson(res, 200, {
           status: 'HEALTHY',
           uptime,
@@ -1981,7 +2040,7 @@ export class VT2Server {
             positions: this.paperEngine.positions.length,
             tradeHistory: this.paperEngine.tradeHistory.length,
           },
-          feedStatus: this.bitget.lastHealthCheck?.status || 'INITIALIZING',
+          feedStatus: feedStatus || 'INITIALIZING',
         });
       }
 
@@ -2198,6 +2257,7 @@ export class VT2Server {
       }
       if (pathname === '/api/autotrading/stop-and-close-all' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         if (this.isDemoReadOnly) {
           if (body?.state) {
             return this.handleDemoCloseAll({ ...body, exitReason: 'AUTOTRADING_STOP_CLOSE_ALL' }, res);
@@ -2214,6 +2274,7 @@ export class VT2Server {
       }
       if (pathname === '/api/autotrading/kill-switch' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         if (this.isDemoReadOnly) {
           if (body?.state) {
             return this.handleDemoCloseAll({ ...body, exitReason: 'KILL_SWITCH_TRIGGERED' }, res);
@@ -2283,18 +2344,38 @@ export class VT2Server {
       }
       if (pathname === '/api/ai/brief' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         const brief = await this.aiAnalyst.generateSetupBrief(body);
         return this.sendJson(res, brief.success ? 200 : 400, brief);
       }
       if (pathname === '/api/ai/review' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         const review = await this.aiAnalyst.generatePostTradeReview(body);
         return this.sendJson(res, review.success ? 200 : 400, review);
       }
       if (pathname === '/api/ai/daily' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         const daily = await this.aiAnalyst.generateDailyBrief(body);
         return this.sendJson(res, daily.success ? 200 : 400, daily);
+      }
+
+      // 20k. Local Control Token Query Endpoint (Loopback only)
+      if (pathname === '/api/control/token' && req.method === 'GET') {
+        const remote = req.socket?.remoteAddress || '';
+        const isLoopback = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1' || remote.includes('127.0.0.1');
+        if (!isLoopback) {
+          return this.sendJson(res, 403, {
+            error: 'FORBIDDEN',
+            message: 'Control token retrieval is restricted exclusively to local loopback interface.',
+          });
+        }
+        return this.sendJson(res, 200, {
+          controlToken: this.controlToken,
+          host: this.host,
+          port: this.port,
+        });
       }
 
       // 21. Static File Serving (Frontend)
@@ -2338,6 +2419,28 @@ export class VT2Server {
     }
 
     const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.html') {
+      try {
+        let html = fs.readFileSync(filePath, 'utf8');
+        const injection = `<script>window.VT2_CONTROL_TOKEN = "${this.controlToken}";</script>`;
+        if (html.includes('<head>')) {
+          html = html.replace('<head>', `<head>\n  ${injection}`);
+        } else {
+          html = `${injection}\n${html}`;
+        }
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Set-Cookie': `vt2_control_token=${this.controlToken}; Path=/; SameSite=Strict`,
+        });
+        res.end(html);
+        return;
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Error loading HTML');
+        return;
+      }
+    }
+
     const mimeTypes = {
       '.html': 'text/html; charset=utf-8',
       '.css': 'text/css; charset=utf-8',

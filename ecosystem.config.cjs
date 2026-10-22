@@ -1,6 +1,10 @@
 /**
  * PM2 Application Configuration for VT2 Unattended Service Operation
  * Includes auto-restart, exponential backoff crash-loop guard, and date-formatted logging.
+ *
+ * NOTE FOR WINDOWS: PM2 does not automatically restart across Windows reboots without
+ * a service wrapper (e.g., pm2-windows-service, NSSM) or a Windows Task Scheduler task.
+ * See docs/RUNBOOK.md for auto-start setup instructions.
  */
 
 module.exports = {
@@ -9,6 +13,7 @@ module.exports = {
       name: 'vt2-trading-bot',
       script: './start.js',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       max_memory_restart: '500M',

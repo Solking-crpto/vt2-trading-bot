@@ -1,8 +1,51 @@
 {
   "qualified": [
     {
-      "symbol": "XAUUSDT",
-      "underlyingTicker": "XAU",
+      "symbol": "SOXLUSDT",
+      "underlyingTicker": "SOXL",
+      "assetClass": "EQUITY",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": true,
+        "label": "3x Leveraged Long",
+        "direction": "LONG",
+        "leverage": 3,
+        "groupId": "SEMICONDUCTOR"
+      },
+      "underlyingMarketClosed": true,
+      "underlyingSession": "After-Hours Session",
+      "qualified": true,
+      "side": "SHORT",
+      "score": 73.6,
+      "entryPrice": 99.38,
+      "stopLoss": 100.175,
+      "takeProfit": 97.3979,
+      "partialTakeProfitPrice": 98.2868,
+      "rewardRisk": {
+        "grossRR": 2.4932,
+        "netRR": 1.9729,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628614560,
+      "indicators": {
+        "price": 99.38,
+        "ema20_4h": 100.607267,
+        "ema50_15m": 101.6669,
+        "rsi_15m": 38.88,
+        "atr_15m": 1.101145,
+        "atr_4h": 4.399919,
+        "rvol_5m": 0.82,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "SHORT trend aligned across 4h and 15m timeframes",
+        "S&P 500 macro benchmark (SPY) context is BEARISH",
+        "Net Reward-to-Risk is 1.9729:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "XAUTUSDT",
+      "underlyingTicker": "XAUT",
       "assetClass": "EQUITY",
       "leveragedInfo": {
         "isLeveragedOrInverse": false,
@@ -14,92 +57,43 @@
       "underlyingMarketClosed": true,
       "underlyingSession": "After-Hours Session",
       "qualified": true,
-      "side": "LONG",
-      "score": 77.1,
-      "entryPrice": 4145.34,
-      "stopLoss": 4124.6133,
-      "takeProfit": 4190.9387,
-      "partialTakeProfitPrice": 4190.9387,
+      "side": "SHORT",
+      "score": 56.7,
+      "entryPrice": 4118.33,
+      "stopLoss": 4138.9216,
+      "takeProfit": 4073.0284,
+      "partialTakeProfitPrice": 4073.0284,
       "rewardRisk": {
         "grossRR": 2.2,
         "netRR": 1.5,
         "totalCostPercent": 0.0014
       },
-      "timestamp": 1792620547857,
+      "timestamp": 1792628614560,
       "indicators": {
-        "price": 4145.34,
-        "ema20_4h": 61818.112906,
-        "ema50_15m": 4138.890804,
-        "rsi_15m": 55.76,
-        "atr_15m": 5.162165,
-        "atr_4h": 1016.651963,
-        "rvol_5m": 2.98,
-        "isVolumeSpike": true
+        "price": 4118.33,
+        "ema20_4h": 4133.120813,
+        "ema50_15m": 4129.492618,
+        "rsi_15m": 33.42,
+        "atr_15m": 4.401655,
+        "atr_4h": 19.188356,
+        "rvol_5m": 0.36,
+        "isVolumeSpike": false
       },
       "reasons": [
-        "LONG trend aligned across 4h and 15m timeframes",
-        "S&P 500 macro benchmark (SPY) context is BULLISH",
+        "SHORT trend aligned across 4h and 15m timeframes",
+        "S&P 500 macro benchmark (SPY) context is BEARISH",
         "Net Reward-to-Risk is 1.5:1 after modeled exchange fees and slippage",
-        "Volume spike confirmed on 5m timeframe"
+        "Standard volume condition"
       ]
     }
   ],
   "rejected": [
     {
-      "symbol": "SKHYNIXUSDT",
+      "symbol": "KORUUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
       "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
       "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
-    },
-    {
-      "symbol": "SOXSUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
-      "explanation": "4h trend (BEAR) conflicts with 15m trend (BULL)."
-    },
-    {
-      "symbol": "CLUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
-      "explanation": "4h trend (BEAR) conflicts with 15m trend (BULL)."
-    },
-    {
-      "symbol": "SPCXUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "MUUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "SNDKUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
-      "explanation": "Cannot take Short equity setup while S&P 500 macro benchmark (SPY) is BULLISH."
-    },
-    {
-      "symbol": "KORUUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
-      "explanation": "Cannot take Short equity setup while S&P 500 macro benchmark (SPY) is BULLISH."
-    },
-    {
-      "symbol": "MSTRUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
     },
     {
       "symbol": "SPYUSDT",
@@ -109,6 +103,55 @@
       "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
     },
     {
+      "symbol": "SPCXUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "MSTRUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "SNDKUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "CLUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BEAR) conflicts with 15m trend (BULL)."
+    },
+    {
+      "symbol": "XAUUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SKHYNIXUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "MUUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1693) is below minimum requirement (1.5)."
+    },
+    {
       "symbol": "SKHYUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
@@ -116,25 +159,11 @@
       "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
     },
     {
-      "symbol": "SOXLUSDT",
+      "symbol": "SOXSUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
       "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
-      "explanation": "Cannot take Short equity setup while S&P 500 macro benchmark (SPY) is BULLISH."
-    },
-    {
-      "symbol": "BZUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "SNXXUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "TSLAUSDT",
@@ -144,116 +173,123 @@
       "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
     },
     {
+      "symbol": "SNXXUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "BZUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
       "symbol": "XAGUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "NBISUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "DRAMUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "SAMSUNGUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "CRCLUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "XAUTUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "INTCUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "NVDAUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.4352) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "SAMSUNGUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "INTCUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "NBISUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "METAUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "GOOGLUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "AMDUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "QQQUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "GOOGLUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "DRAMUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "NATGASUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "CRCLUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "ZHIPUUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "OPENAIUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
     },
     {
       "symbol": "AAOIUSDT",
       "assetClass": "EQUITY",
       "qualified": false,
       "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
-    },
-    {
-      "symbol": "LITEUSDT",
-      "assetClass": "EQUITY",
-      "qualified": false,
-      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
-      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+      "explanation": "Proposed setup net R:R (1.235) is below minimum requirement (1.5)."
     },
     {
       "symbol": "_meta",
@@ -271,23 +307,23 @@
     "reason": "INSUFFICIENT_BTC_CANDLES"
   },
   "stockContext": {
-    "trend": "BULLISH",
-    "benchmarkPrice": 772.54,
-    "ema50": 771.497228,
+    "trend": "BEARISH",
+    "benchmarkPrice": 771.16,
+    "ema50": 771.321012,
     "benchmark": "SPY",
-    "reason": "S&P 500 (SPY) 4h price $772.54 vs EMA $771.50"
+    "reason": "S&P 500 (SPY) 4h price $771.16 vs EMA $771.32"
   },
-  "timestamp": 1792620548029,
+  "timestamp": 1792628614705,
   "dataSource": "BITGET_V2_LIVE",
   "isLive": true,
-  "durationMs": 9224,
+  "durationMs": 5391,
   "marketMode": "stocks",
   "partial": false,
   "meta": {
     "isPartial": false,
     "scannedCount": 31,
     "targetCount": 31,
-    "durationMs": 1425
+    "durationMs": 3371
   },
   "counts": {
     "total": 31,

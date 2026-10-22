@@ -10,8 +10,17 @@ import {
 } from '../src/environment.js';
 
 const OUT_DIR = path.resolve('reports/release/01_baseline');
+const OUT_DIR_FIXUP = path.resolve('reports/release/08_fixups/baseline_online');
 if (!fs.existsSync(OUT_DIR)) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
+}
+if (!fs.existsSync(OUT_DIR_FIXUP)) {
+  fs.mkdirSync(OUT_DIR_FIXUP, { recursive: true });
+}
+
+function saveFile(filename, content) {
+  fs.writeFileSync(path.join(OUT_DIR, filename), content, 'utf8');
+  fs.writeFileSync(path.join(OUT_DIR_FIXUP, filename), content, 'utf8');
 }
 
 function fetchJson(port, path, options = {}) {
@@ -54,30 +63,34 @@ function fetchJson(port, path, options = {}) {
 
 async function main() {
   console.log('--- Step 1: Starting VT2Server for Baseline Snapshot ---');
-  const server = new VT2Server({ isDemoReadOnly: false });
-  // Start on ephemeral port
-  server.server = http.createServer((req, res) => server.handleRequest(req, res));
-  
-  await new Promise((resolve) => {
-    server.server.listen(0, '127.0.0.1', () => {
-      server.port = server.server.address().port;
-      console.log(`VT2Server running on port ${server.port}`);
-      resolve();
-    });
-  });
-
-  const port = server.port;
+  const server = new VT2Server({ port: 0, isDemoReadOnly: false });
+  await server.start();
+  const port = server.server.address().port;
+  console.log(`VT2Server running on port ${port}`);
 
   try {
+    // Wait for Bitget feed status to reach ONLINE
+    console.log('Waiting for Bitget feed status to reach ONLINE...');
+    for (let i = 0; i < 30; i++) {
+      const statusRes = await fetchJson(port, '/api/market/status');
+      const sysHealth = await fetchJson(port, '/api/system/health');
+      console.log(`Probe ${i+1}: feedStatus = ${sysHealth.data?.feedStatus}, wsConnected = ${statusRes.data?.wsConnected}`);
+      if (sysHealth.data?.feedStatus === 'ONLINE') {
+        console.log('Bitget feed is confirmed ONLINE!');
+        break;
+      }
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
     // 1. /api/health
     console.log('Capturing /api/health...');
     const healthRes = await fetchJson(port, '/api/health');
-    fs.writeFileSync(path.join(OUT_DIR, 'api_health.json'), JSON.stringify(healthRes.data, null, 2), 'utf8');
+    saveFile('api_health.json', JSON.stringify(healthRes.data, null, 2));
 
     // 2. /api/system/health
     console.log('Capturing /api/system/health...');
     const sysHealthRes = await fetchJson(port, '/api/system/health');
-    fs.writeFileSync(path.join(OUT_DIR, 'api_system_health.json'), JSON.stringify(sysHealthRes.data, null, 2), 'utf8');
+    saveFile('api_system_health.json', JSON.stringify(sysHealthRes.data, null, 2));
 
     // 3. Market Scans: Stocks, Crypto, Both
     console.log('Capturing Stocks Scan...');
@@ -87,7 +100,7 @@ async function main() {
       body: { marketMode: 'stocks' },
     });
     const durStocks = Date.now() - t0Stocks;
-    fs.writeFileSync(path.join(OUT_DIR, 'scans_stocks.json'), JSON.stringify(scanStocks.data, null, 2), 'utf8');
+    saveFile('scans_stocks.json', JSON.stringify(scanStocks.data, null, 2));
 
     console.log('Capturing Crypto Scan...');
     const t0Crypto = Date.now();
@@ -96,7 +109,7 @@ async function main() {
       body: { marketMode: 'crypto' },
     });
     const durCrypto = Date.now() - t0Crypto;
-    fs.writeFileSync(path.join(OUT_DIR, 'scans_crypto.json'), JSON.stringify(scanCrypto.data, null, 2), 'utf8');
+    saveFile('scans_crypto.json', JSON.stringify(scanCrypto.data, null, 2));
 
     console.log('Capturing Both Scan...');
     const t0Both = Date.now();
@@ -105,7 +118,7 @@ async function main() {
       body: { marketMode: 'both' },
     });
     const durBoth = Date.now() - t0Both;
-    fs.writeFileSync(path.join(OUT_DIR, 'scans_both.json'), JSON.stringify(scanBoth.data, null, 2), 'utf8');
+    saveFile('scans_both.json', JSON.stringify(scanBoth.data, null, 2));
 
     // Analyze asset-class purity (filter out internal '_meta' entry)
     const stocksQualified = (scanStocks.data.qualified || scanStocks.data.opportunities || []).filter(o => o.symbol !== '_meta');
@@ -143,7 +156,7 @@ async function main() {
     scanSummary += `   - Rejected Count: ${bothRejected.length}\n`;
     scanSummary += `   - Composition: ${bothQualified.filter(o => o.assetClass === 'EQUITY').length} Equities, ${bothQualified.filter(o => o.assetClass === 'CRYPTO').length} Crypto in Qualified\n\n`;
 
-    fs.writeFileSync(path.join(OUT_DIR, 'market_scans_summary.txt'), scanSummary, 'utf8');
+    saveFile('market_scans_summary.txt', scanSummary);
 
     // 4. Data freshness for 5 equity symbols
     console.log('Capturing Data Freshness for 5 Equity Symbols...');
@@ -171,7 +184,7 @@ async function main() {
       freshnessLog += `  Data Source: ${cRes.data.dataSource || 'Bitget V2 Market Feed'}\n`;
       freshnessLog += `  Age from Capture Time: ${ageSec}s (~${ageMin} minutes)\n\n`;
     }
-    fs.writeFileSync(path.join(OUT_DIR, 'data_freshness_5_equities.txt'), freshnessLog, 'utf8');
+    saveFile('data_freshness_5_equities.txt', freshnessLog);
 
     // 5. WebSocket heartbeat age
     console.log('Capturing WebSocket status and heartbeat...');
@@ -182,12 +195,12 @@ async function main() {
     wsLog += 'Captured at: ' + new Date().toISOString() + '\n';
     wsLog += '================================================================================\n\n';
     wsLog += JSON.stringify(wsStatusRes.data, null, 2) + '\n';
-    fs.writeFileSync(path.join(OUT_DIR, 'websocket_heartbeat.txt'), wsLog, 'utf8');
+    saveFile('websocket_heartbeat.txt', wsLog);
 
     // 6. Verification Suite run-all
     console.log('Running Verification Suite run-all...');
     const verifRes = await fetchJson(port, '/api/verification/run-all', { method: 'POST' });
-    fs.writeFileSync(path.join(OUT_DIR, 'verification_run_all.json'), JSON.stringify(verifRes.data, null, 2), 'utf8');
+    saveFile('verification_run_all.json', JSON.stringify(verifRes.data, null, 2));
 
     // 7. Mainnet-block checks
     console.log('Running Mainnet-Block Checks...');
@@ -231,11 +244,11 @@ async function main() {
     mainnetLog += `   - HTTP Status: ${mainnetOrderRes.status} (Expected: 403)\n`;
     mainnetLog += `   - Body: ${JSON.stringify(mainnetOrderRes.data)}\n\n`;
 
-    fs.writeFileSync(path.join(OUT_DIR, 'mainnet_block_checks.txt'), mainnetLog, 'utf8');
+    saveFile('mainnet_block_checks.txt', mainnetLog);
 
     console.log('--- Step 1: Baseline Snapshot Complete! ---');
   } finally {
-    server.stop();
+    await server.stop();
   }
 }
 

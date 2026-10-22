@@ -1,13 +1,13 @@
 {
-  "timestamp": 1792620563118,
+  "timestamp": 1792628630582,
   "checks": {
     "walkForwardBacktest": {
       "name": "Chronological Walk-Forward Backtesting",
       "description": "Zero look-ahead, realistic slippage/fees, conservative stop-first execution.",
       "passed": true,
       "status": "PASSED",
-      "durationMs": 8,
-      "timestamp": 1792620563109,
+      "durationMs": 5,
+      "timestamp": 1792628630574,
       "detail": {
         "totalTrades": 0,
         "winRate": "0%",
@@ -23,7 +23,7 @@
       "passed": true,
       "status": "PASSED",
       "durationMs": 0,
-      "timestamp": 1792620563109,
+      "timestamp": 1792628630574,
       "detail": {
         "scheme": "Bitget UTA v2 Prehash HMAC-SHA256",
         "prehashFormat": "timestamp + method + requestPath + queryString/body",
@@ -38,7 +38,7 @@
       "passed": true,
       "status": "PASSED",
       "durationMs": 1,
-      "timestamp": 1792620563110,
+      "timestamp": 1792628630575,
       "detail": {
         "environment": "PAPER",
         "mainnetExecutionAllowed": false,
@@ -53,10 +53,10 @@
       "passed": true,
       "status": "PASSED",
       "durationMs": 0,
-      "timestamp": 1792620563110,
+      "timestamp": 1792628630575,
       "detail": {
         "engineState": "ACTIVE",
-        "equity": 9969.14,
+        "equity": 11006.93,
         "openPositions": 0,
         "partialTakeProfitRule": "+1.1% ROI (50% scale-out)",
         "breakevenRule": "Stop loss moves to entry + 0.14% round-trip fees upon partial TP",
@@ -69,8 +69,8 @@
       "description": "Enforces directionality, 0.5%-0.8% stop distance, and 2.0% daily loss lockout.",
       "passed": true,
       "status": "PASSED",
-      "durationMs": 1,
-      "timestamp": 1792620563111,
+      "durationMs": 0,
+      "timestamp": 1792628630575,
       "detail": {
         "directionalityValidation": "PASSED (Wrong stop side rejected)",
         "researchBoundaryConstraints": "PASSED (0.5% min, 0.8% max stop distance enforced)",
@@ -83,8 +83,8 @@
       "description": "Scales position sizing while strictly bounding total equity risk to configured cap.",
       "passed": true,
       "status": "PASSED",
-      "durationMs": 0,
-      "timestamp": 1792620563111,
+      "durationMs": 1,
+      "timestamp": 1792628630576,
       "detail": {
         "allocationRange": "1% to 100% validated",
         "tenPercentQuantity": 0.013,
@@ -99,7 +99,7 @@
       "passed": true,
       "status": "PASSED",
       "durationMs": 0,
-      "timestamp": 1792620563111,
+      "timestamp": 1792628630576,
       "detail": {
         "status": "ENFORCED",
         "policy": {
@@ -118,7 +118,7 @@
       "passed": true,
       "status": "PASSED",
       "durationMs": 0,
-      "timestamp": 1792620563111,
+      "timestamp": 1792628630576,
       "detail": {
         "supportedThemes": [
           "dark",
@@ -134,19 +134,19 @@
       "description": "Durable Node.js native sqlite persistence for orders, positions, journal, and settings.",
       "passed": true,
       "status": "PASSED",
-      "durationMs": 7,
-      "timestamp": 1792620563118,
+      "durationMs": 6,
+      "timestamp": 1792628630582,
       "detail": {
         "driver": "node:sqlite (Native Node.js built-in)",
         "databaseFile": "data/vt2.db",
         "restartDurable": true,
         "roundtripVerification": "PASSED",
         "tableRecordCounts": {
-          "settings": 11,
-          "orders": 4,
-          "positions": 4,
-          "trade_journal": 2,
-          "rejected_setups": 565
+          "settings": 13,
+          "orders": 18,
+          "positions": 18,
+          "trade_journal": 17,
+          "rejected_setups": 651
         }
       }
     }

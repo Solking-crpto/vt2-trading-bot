@@ -32,5 +32,8 @@
   "author": "VT2 Engineering Team",
   "license": "ISC",
   "type": "module",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "pm2": "^7.1.0"
+  }
 }

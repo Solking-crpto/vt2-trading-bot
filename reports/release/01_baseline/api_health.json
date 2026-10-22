@@ -7,6 +7,40 @@
   "database": "FILE_SQLITE",
   "mainnetExecutionAllowed": false,
   "mainnetKillSwitchDisarmed": false,
-  "timestamp": 1792620538662,
-  "uptime": 0.17851
+  "strategyStatus": "UNVALIDATED: failed pre-registered replay (trial 35)",
+  "strategy": {
+    "id": "S0",
+    "code": "S0",
+    "name": "VT2 As-Shipped Strategy (S0)",
+    "description": "Multi-timeframe momentum and trend-pullback scanner with ATR targets, 0.5%-0.8% stops, and SPY macro gating.",
+    "status": "UNVALIDATED: failed pre-registered replay (trial 35)",
+    "isValidated": false,
+    "trialNumber": 35,
+    "verdict": "FAIL",
+    "conclusionStatement": "The app as shipped has no demonstrated edge on this data.",
+    "metrics": {
+      "dev": {
+        "window": "2026-05-11 to 2026-09-11",
+        "trades": 348,
+        "winRate": "40.80%",
+        "netPnl": -154.41,
+        "profitFactor": 0.99,
+        "maxDrawdown": "19.69%",
+        "realizedNetRR": "1.4305:1"
+      },
+      "validation": {
+        "window": "2026-09-11 to 2026-10-10",
+        "trades": 34,
+        "winRate": "23.53%",
+        "netPnl": -647.91,
+        "profitFactor": 0.48,
+        "maxDrawdown": "25.07%",
+        "realizedNetRR": "1.5597:1"
+      }
+    },
+    "advisoryNotice": "UNVALIDATED: failed pre-registered replay (trial 35). S0 produced -$154.41 (PF 0.99) on Dev and -$647.91 (PF 0.48) on Validation. No tested candidate demonstrated an edge after costs.",
+    "requiresValidationAcknowledgment": true
+  },
+  "timestamp": 1792628609171,
+  "uptime": 3.3839311
 }

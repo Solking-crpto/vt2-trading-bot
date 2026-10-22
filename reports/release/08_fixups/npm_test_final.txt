@@ -1,0 +1,264 @@
+﻿
+> vt2-trading-bot@0.1.0 test
+> node --test --test-force-exit --test-timeout=60000
+
+Γ£ö Advisory AI Analyst - Disabled without API Key (3.4786ms)
+Γ£ö Advisory AI Analyst - Disabled in Hosted / DEMO_READONLY Mode (0.9904ms)
+Γ£ö Advisory AI Analyst - Architectural Isolation & Zero Order Execution Capabilities (1.6509ms)
+Γ£ö Advisory AI Analyst - Untrusted External Text Sanitization & Injection Defense (1.243ms)
+Γ£ö Advisory AI Analyst - Mock Setup Brief Generation & Hash Caching (3.3964ms)
+Γ£ö Advisory AI Analyst - Daily Call Cap Enforcement (1.3713ms)
+Γ£ö Advisory AI Analyst - Evaluation Statistics & Sample Size Safeguard (< 30) (10.1237ms)
+Γ£ö zero look-ahead: indicators at bar i are mathematically identical when future data is truncated (3.4635ms)
+Γ£ö zero look-ahead: 4h values use strictly closed 4h candles (0.5587ms)
+Γ£ö conservative ambiguous bar resolution: stop loss hit first when both levels breached (8.2474ms)
+Γ£ö deterministic replay: two portfolio backtest runs produce identical metrics (872.562ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 3779f0d0071b26894c4ab6c956564e6cc7c9766949824cbf
+Γ£ö risk engine rejects opposite exposure inside correlation group (Long TQQQ + Long SQQQ) (2.7273ms)
+Γ£ö risk engine allows same-direction exposure within correlation group (1.0929ms)
+Γ£ö StockMarketProvider uses contract step rules for fractional orders without whole-share truncation (0.5512ms)
+Γ£ö risk engine enforces equityEntriesWhenUnderlyingClosed policy (0.5114ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.152Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.175Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.180Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.185Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.190Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.198Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.202Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.206Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.219Z
+Γ£ö server strictly enforces environment allow-list rejecting all live/mainnet variants with 403 (189.5876ms)
+Γ£ö AutoTrader starts in PAPER mode and halts when maxTradesPerDay is reached (16.5158ms)
+Γ£ö Stop Bot preserves open positions while Stop & Close All closes them (4.6456ms)
+Γ£ö Master Kill Switch engages emergency halt and closes all open positions (4.7532ms)
+Γ£ö runs backtest with chronological walk-forward execution (34.2532ms)
+Γ£ö resolves ambiguous candle conservatively by assuming stop loss hit first (5.5236ms)
+Γ£ö throws error if candle series is shorter than minimum warmup (3.2313ms)
+Γ£ö VT2 project baseline is working (1.5599ms)
+Γ£ö VT2 starts in paper-trading mode (0.4785ms)
+Γ£ö BitgetAuthenticatedClient reports credential configuration safely without exposing secrets (3.0485ms)
+Γ£ö BitgetAuthenticatedClient generates official HMAC-SHA256 signature matching canonical standard (1.7381ms)
+Γ£ö BitgetAuthenticatedClient throws when generating signature without apiSecret (1.46ms)
+Γ£ö BitgetAuthenticatedClient rejects requests when credentials are incomplete (1.1606ms)
+Γ£ö assertCandleIntegrity detects and throws on descending or duplicate timestamps (2.4592ms)
+Γ£ö live Bitget candles are strictly ascending, unique, and fresh within one interval (10984.328ms)
+Γ£ö rejects N+1 position beyond maxConcurrentPositions cap (2.1888ms)
+Γ£ö allows concurrent positions up to maxConcurrentPositions limit (1.0086ms)
+Γ£ö rejects trade when aggregate open risk exceeds aggregate open-risk cap (0.4333ms)
+Γ£ö rejects duplicate position on same symbol (0.2693ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: c4d153f7f271b9d9b227e4fdd76b41e1b410308796908e90
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 4987fb43fb1588c019ad74ffbf4e81fb67d0f38dfb049529
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: d05c1a892acbcdf00f1d022b085d25150a7e89184e7ba318
+Γ£ö Host Binding & Local Control Token - Default 127.0.0.1 Binding (143.1575ms)
+Γ£ö Host Binding & Local Control Token - HOST Env Override (39.8218ms)
+Γ£ö Host Binding & Local Control Token - Random Token Generation & Console Log (18.7267ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 4711e996a1c06251056f4497ac8dd33a6692bce38bc593a9
+Γ£ö Host Binding & Local Control Token - Protected Endpoints Reject Without Token (401) (125.9486ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 73d70adc906035c0905baccb240354a0bc3886896e4687a8
+Γ£ö Host Binding & Local Control Token - Protected Endpoints Accept With Token (83.3203ms)
+Γ£ö Host Binding & Local Control Token - Browser UI Injected Script & Loopback Retrieval (59.4853ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 2b6de5323d78c7aa14c7ae55684690258f50498c41b318f2
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.468Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.476Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.503Z
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+Γ£ö VT2Server demo-readonly mode configuration and behavior (208.8651ms)
+Γ£ö Serverless handler in api/index.js and handleRequest respond to mock HTTP objects (13.7752ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: c0d2d0a9e4cffcc5f4f1e58cf19ba0fdf7d709398ed831e2
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+Γ£ö 1. Engine exportState() and importState() round-trips (9.1709ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 5c08d7d57e06ea8378ea86f39f705fee4b6d1cd072f20132
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+Γ£ö 2. Stateless /api/demo/order approval and rejection (161.7793ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: e9eda86eb71041e7ec6aa0f0ed20c1b3a6d2238539f3b572
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+Γ£ö 3. Stateless /api/demo/tick position lifecycle and exits (50.2956ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 83cca90e6a3f3fe26a94cc91b07a1656475144b39cf44ad3
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+Γ£ö 4. Stateless /api/demo/bot/cycle candidate evaluation and cooldown (72.7734ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: ea285d3bac3d9bdc8b2f9e61fbe9edaabb90e244dc94a05c
+[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)
+Γ£ö 5. Input validation: tampered or oversized state rejected (40.3805ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.781Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.788Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.791Z
+Γ£ö 6. Security boundaries: zero mainnet bypass and public-feed only (35.6758ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 5657ffb0e96b2c7e73ba1b8689670f168f5a01c5006ebafc
+Γ£ö contracts.js dynamically classifies Bitget tokenized US equities with isRwa YES (2.5396ms)
+Γ£ö StrategyEngine uses SPYUSDT stock benchmark for equities without crypto references (7.1342ms)
+Γ£ö AutoTrader halts immediately on account-level cooldown without iterating candidates (6.7976ms)
+Γ£ö AutoTrader candidate loop walks past failing symbol rules to find passing candidate (6.0038ms)
+Γ£ö MultiAgentCoordinator detects account cooldown and returns accountGateBlocked (6.223ms)
+Γ£ö VT2Server /api/market/scanner strictly enforces zero crypto in stocks mode and zero equities in crypto mode (211.6988ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: e9dae501e9f78eeca3530de24c3a14ad26b22247052adeaf
+Γ£ö entry allocation parameter accepts 1% to 100% and scales position sizing proportionally (5.009ms)
+Γ£ö 100% entry allocation NEVER overrides deterministic risk engine equity caps (0.6583ms)
+Γ£ö rejects entry allocation outside the valid 1% - 100% boundary (0.5184ms)
+Γ£ö high allocation confirmation policy requires confirmation for >10% and explicit 100% warning (0.6782ms)
+Γ£ö server persists entryAllocationPercent and theme in SQLite settings and restores them across restarts (165.1449ms)
+Γ£ö appearance design tokens and styles specify clean plain white light mode and dark mode (3.0066ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.846Z
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:45.850Z
+Γ£ö VT2 environment defaults to PAPER mode (1.9822ms)
+Γ£ö isMainnetExecutionAllowed strictly returns false (2.0547ms)
+Γ£ö assertMainnetExecutionBlocked throws SafetyViolationError when MAINNET is targeted (3.1694ms)
+Γ£ö validateExecutionMode approves valid PAPER orders (0.4597ms)
+Γ£ö validateExecutionMode blocks and rejects MAINNET requests (0.4446ms)
+Γ£ö validateExecutionMode blocks unconfigured TESTNET requests (0.3324ms)
+Γ£ö fixed-trade cost sensitivity: increasing slippage strictly decreases net P&L for every trade (3.8651ms)
+Γ£ö BitgetCryptoProvider reports 24/7 continuous session (1.3587ms)
+Γ£ö StockMarketProvider models US market hours for underlying and 24/7 continuous for perpetuals (34.9162ms)
+Γ£ö StockMarketProvider formats order quantity strictly according to contract rules rather than whole shares (0.4804ms)
+Γ£ö market rescan with modified candle data dynamically alters opportunity rankings (69.4537ms)
+Γ£ö market rescan properly filters and archives disqualified setups with rejection reasons (10.9522ms)
+[CRITICAL GUARANTEE] Stop-loss protection NOT confirmed on exchange for SBTCSUSDT. Triggering EMERGENCY FLATTEN.
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: eda5efdfcdda02d973466aff03bd7a459b3eea450a204663
+Γ£ö mode state machine defaults to PAPER mode and is never persisted as LIVE (2.8256ms)
+Γ£ö LIVE arming is refused without LIVE_TRADING_ENABLED=true in environment (1.4355ms)
+Γ£ö LIVE arming is refused when live API credentials are missing (0.8989ms)
+Γ£ö LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRADING" (2.8179ms)
+Γ£ö LIVE arming is refused if preflight check failed (2.4955ms)
+Γ£ö hosted serverless environment strictly locks execution to PAPER mode (1.1182ms)
+Γ£ö LIVE mode activates only when armed and auto-disarms on manual trigger or kill switch (1.8377ms)
+Γ£ö validateLiveOrderCaps rejects orders that exceed hard caps with named cap reason (6.2626ms)
+Γ£ö asset class profiles enforce distinct crypto and equity rules (0.6746ms)
+Γ£ö BitgetTradeClient immediately triggers emergency flatten when stop-loss protection is not confirmed (5.2644ms)
+Γ£ö reconciliation mismatch halts execution and disarms LIVE mode (2.0406ms)
+Γ£ö kill switch cancels pending orders, flattens open positions, and disarms (2.1763ms)
+Γ£ö assertNoWithdrawalEndpoint blocks any endpoint with transfer/withdraw keywords (0.4401ms)
+Γ£ö secret scanner scrubs secrets and prevents leakage in logs and responses (1.3842ms)
+Γ£ö demo requests carry paptrading header and demo symbols, live requests never carry it (0.6449ms)
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:46.319Z
+Γ£ö server mode endpoints enforce allow-list, arming, preview, and preflight (158.7527ms)
+Γ£ö submits paper order and deducts simulated fee (2.6593ms)
+Γ£ö triggers stop loss on downward tick for long position (0.8781ms)
+Γ£ö triggers final take profit on upward tick for long position (0.3863ms)
+Γ£ö executes partial take-profit at +1.1% ROI and moves stop to breakeven (0.4774ms)
+Γ£ö activates trailing stop following 5m EMA20 after 10% ROI (0.3531ms)
+Γ£ö executes early exit when RSI reverses (0.3145ms)
+Γ£ö evaluates valid BTCUSDT paper trade with full parameters (3.4982ms)
+Γ£ö rejects consecutive loss limit reached (0.4304ms)
+Γ£ö rejects trade when maximum open positions is reached (0.408ms)
+Γ£ö rejects trade when cooldown period is still active (0.377ms)
+Γ£ö allows trade after cooldown period has elapsed (0.669ms)
+Γ£ö rejects expired signal older than 10 minutes (0.5069ms)
+Γ£ö rejects duplicate pending or open order on same symbol (0.4223ms)
+Γ£ö rejects ineligible contract symbol (0.3849ms)
+Γ£ö rejects trade with net reward-to-risk below 1.5 (0.4829ms)
+Γ£ö enforces research stop constraints when active (1.2985ms)
+Γ£ö rounds quantity to contract step size (e.g. SOLUSDT step 0.1) (1.8534ms)
+Γ£ö sizes a valid paper trade at 0.5% risk (3.279ms)
+Γ£ö rejects a stop loss on the wrong side for a long (0.3885ms)
+Γ£ö rejects a stop loss on the wrong side for a short (0.3831ms)
+Γ£ö rejects a trade when daily loss reaches 2% (0.3562ms)
+Γ£ö rejects invalid equity (0.3614ms)
+Γ£ö rejects an unknown trade direction (0.568ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: f851e91fa56edee67a4e5f789157e4ace8e1103856a14b35
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:46.545Z
+Γ£ö VT2Server launches, handles API routes, and enforces mainnet security denial (194.0104ms)
+Γ£ö PaperExecutionEngine restores state correctly after simulated server restart (7.8933ms)
+Γ£ö PaperExecutionEngine preserves daily loss lock status across restarts (2.049ms)
+Γ£ö in-memory database initializes schema cleanly (5.209ms)
+Γ£ö persists and retrieves user settings (2.4939ms)
+Γ£ö persists, updates, and fetches active positions (2.751ms)
+Γ£ö saves and retrieves trade journal entries with parsed JSON structures (2.6594ms)
+Γ£ö saves and retrieves rejected setups archive (2.2242ms)
+Γ£ö calculates SMA correctly with null padding for initial periods (1.9037ms)
+Γ£ö calculates EMA with initial SMA seeding (0.6545ms)
+Γ£ö calculates RSI bounded between 0 and 100 (0.6535ms)
+Γ£ö calculates ATR correctly from candle high/low/close (0.8237ms)
+Γ£ö calculates relative volume and identifies volume spikes (0.8219ms)
+Γ£ö strategy engine scans universe and produces qualified or rejected outputs with explicit reasons (68.2584ms)
+Γ£ö strategy engine rejects setup when candles are insufficient (6.1953ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 587f7b919c67f15ba50ccd5c143393d508a7057251854b7e
+Γ£ö Strategy Registry - S0 metadata and unvalidated status (2.2618ms)
+Γ£ö Strategy Registry - Status string and warning block helpers (0.3473ms)
+Γ£ö Strategy Registry - Server API endpoints expose validation status (180.7825ms)
+Γ£ö session-filter: correctly identifies US Regular Trading Hours (09:30 - 16:00 ET) (2.9419ms)
+Γ£ö zero look-ahead: C1 signal at bar T is identical when future bars are truncated (5.6588ms)
+Γ£ö zero look-ahead: closed bars helper uses strictly closed higher-timeframe bars (0.4203ms)
+Γ£ö cost application: fee, slippage, and funding are subtracted correctly (0.6633ms)
+Γ£ö determinism: running replay twice produces identical trades and metrics (675.1197ms)
+Γ£ö TradeMonitor evaluates sentiment correctly as SUPPORTIVE, WEAKENING, and REVERSED (5.8002ms)
+Γ£ö sentiment state change triggers SSE notification in manual mode and market exit in auto mode (51.3389ms)
+Γ£ö feed failure triggers neither notification nor automatic exit (2.5819ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: c3f4dc12b50d3425cadf89d30ee6f0804571d7557d1ba1fc
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: ce06334c16b47f078a23bf4c3a815730a21292d7f0316e94
+Γ£ö Step 3: Extended /api/system/health endpoint (3627.7375ms)
+Γ£ö Step 3: AlertDispatcher functionality and safety guarantees (1.0146ms)
+Γ£ö Step 3: LogRotator creates date-stamped logs and handles retention (0.772ms)
+Γ£ö Step 3: Unattended restart guarantees mode is always reset to PAPER (10.6173ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 4544ee2c11abfc43989510fb6872f3968e6e27c638e40eee
+[SECURITY AUDIT] Blocked attempted MAINNET order execution at 2026-10-22T00:24:47.059Z
+Γ£ö VT2Server exposes Verification, Monitor, Auto-trading, and Market Mode endpoints (212.8693ms)
+Γä╣ tests 142
+Γä╣ suites 0
+Γä╣ pass 142
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 11420.8785

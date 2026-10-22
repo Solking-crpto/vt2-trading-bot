@@ -1,23 +1,23 @@
 ================================================================================
 BASELINE HEALTH SNAPSHOT: MARKET SCANS (STOCKS / CRYPTO / BOTH)
-Captured at: 2026-10-21T22:09:20.276Z
+Captured at: 2026-10-22T00:23:47.565Z
 ================================================================================
 
 1. STOCKS MODE SCAN:
-   - Duration: 9360 ms
-   - Qualified Count: 1
-   - Rejected Count: 30
+   - Duration: 5530 ms
+   - Qualified Count: 2
+   - Rejected Count: 29
    - Asset-Class Purity: PASS (100% Equity, 0 Crypto)
 
 2. CRYPTO MODE SCAN:
-   - Duration: 5047 ms
-   - Qualified Count: 8
-   - Rejected Count: 22
+   - Duration: 4619 ms
+   - Qualified Count: 5
+   - Rejected Count: 25
    - Asset-Class Purity: PASS (100% Crypto, 0 Equity)
 
 3. BOTH MODE SCAN:
-   - Duration: 7197 ms
-   - Qualified Count: 5
-   - Rejected Count: 26
-   - Composition: 0 Equities, 5 Crypto in Qualified
+   - Duration: 8231 ms
+   - Qualified Count: 2
+   - Rejected Count: 29
+   - Composition: 2 Equities, 0 Crypto in Qualified
 

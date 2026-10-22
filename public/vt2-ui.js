@@ -1,5 +1,32 @@
 import { VT2Chart } from './chart.js';
 
+// Local Control Token Interceptor for Browser UI
+if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+  const _origFetch = window.fetch;
+  window.fetch = function(url, init = {}) {
+    try {
+      const token = window.VT2_CONTROL_TOKEN ||
+        (typeof document !== 'undefined' && (document.cookie.match(/vt2_control_token=([a-zA-Z0-9_-]+)/) || [])[1]);
+      if (token) {
+        init = init || {};
+        init.headers = init.headers || {};
+        if (init.headers instanceof Headers) {
+          if (!init.headers.has('x-control-token')) init.headers.set('x-control-token', token);
+        } else if (Array.isArray(init.headers)) {
+          if (!init.headers.some(([k]) => k.toLowerCase() === 'x-control-token')) {
+            init.headers.push(['x-control-token', token]);
+          }
+        } else {
+          if (!init.headers['x-control-token'] && !init.headers['X-Control-Token']) {
+            init.headers['x-control-token'] = token;
+          }
+        }
+      }
+    } catch (_) {}
+    return _origFetch.call(this, url, init);
+  };
+}
+
 export const EQUITY_SYMBOLS = [
   'SPYUSDT', 'QQQUSDT', 'NVDAUSDT', 'TSLAUSDT', 'AAPLUSDT', 'MSFTUSDT',
   'AMZNUSDT', 'MSTRUSDT', 'PLTRUSDT', 'SOXLUSDT', 'SOXSUSDT', 'TQQQUSDT',
