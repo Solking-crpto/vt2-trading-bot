@@ -688,7 +688,7 @@ export class VT2Server {
   }
 
   validateControlToken(req, body = null) {
-    if (this.isDemoReadOnly) return true;
+    if (this.isDemoReadOnly || isHosted()) return true;
     if (!this.requireControlTokenEnabled) return true;
 
     const headerToken = req.headers['x-control-token'] ||
