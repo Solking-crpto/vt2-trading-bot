@@ -357,6 +357,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupChart();
   setupEventListeners();
   setupExecutionModeToggle();
+  setupRiskSelector();
   applyTheme(state.theme, false);
   updateAllocationUi(state.entryAllocationPercent);
   registerServiceWorker();
@@ -918,6 +919,7 @@ async function setupMarketMode() {
     await refreshEquityUniverse();
     await loadChartData();
     try { await refreshJournal(); } catch (e) {}
+    try { updateEffectiveRiskDisplay(); } catch (e) {}
   };
 
   stocksBtn?.addEventListener('click', () => applyModeChange('stocks'));
@@ -3310,6 +3312,239 @@ function updateStrategyAuditCard(model) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Task 3: Risk Selector & Effective Risk Readout (PAPER & DEMO)
+// ---------------------------------------------------------------------------
+let prevRiskPreset = '0.5';
+let prevCustomVal = '0.5';
+
+export function calculateEffectiveRiskUi({
+  balance = 10000,
+  riskPercent = 0.5,
+  stopDistancePercent = 0.006,
+  assetClass = 'crypto',
+  selectedLeverage = 3,
+  mode = 'PAPER',
+} = {}) {
+  const normClass = (assetClass || 'crypto').toLowerCase() === 'equity' ? 'equity' : 'crypto';
+  const profileCap = normClass === 'equity' ? 3 : 5;
+  const effectiveLev = Math.min(Math.max(1, Number(selectedLeverage) || profileCap), profileCap);
+
+  const cleanBal = Math.max(0, Number(balance) || 0);
+  const cleanRisk = Math.max(0, Number(riskPercent) || 0.5);
+  const cleanStop = Math.max(0.0001, Number(stopDistancePercent) || 0.006);
+
+  const targetRiskDollars = cleanBal * (cleanRisk / 100);
+  const rawNotional = targetRiskDollars / cleanStop;
+
+  const maxNotionalLev = cleanBal * effectiveLev;
+  const maxNotionalMargin = 0.90 * cleanBal * effectiveLev;
+
+  let cappedNotional = rawNotional;
+  let bindingCap = null;
+
+  if (cappedNotional > maxNotionalLev) {
+    cappedNotional = maxNotionalLev;
+    bindingCap = `leverage ${effectiveLev}x`;
+  }
+  if (cappedNotional > maxNotionalMargin) {
+    cappedNotional = maxNotionalMargin;
+    bindingCap = `leverage ${effectiveLev}x, margin 90%`;
+  }
+
+  if (mode === 'DEMO' || mode === 'LIVE') {
+    // Live limits: $50 max notional, 0.25% max risk
+    if (cappedNotional > 50) {
+      cappedNotional = 50;
+      bindingCap = 'live-limits notional $50';
+    }
+    const maxLiveRiskNotional = (cleanBal * 0.0025) / cleanStop;
+    if (cappedNotional > maxLiveRiskNotional) {
+      cappedNotional = maxLiveRiskNotional;
+      bindingCap = 'live-limits risk 0.25%';
+    }
+  }
+
+  const effectiveRiskDollars = cappedNotional * cleanStop;
+  const effectiveRiskPercent = cleanBal > 0
+    ? Number(((effectiveRiskDollars / cleanBal) * 100).toFixed(2))
+    : 0;
+
+  const stopStr = `${(cleanStop * 100).toFixed(1)}%`;
+  let readout = '';
+  const isCapped = cappedNotional < rawNotional - 0.001;
+  if (isCapped) {
+    readout = `Selected ${cleanRisk}% -> effective ${effectiveRiskPercent}% (capped by ${bindingCap}, stop ${stopStr})`;
+  } else {
+    readout = `Selected ${cleanRisk}% -> effective ${effectiveRiskPercent}% (uncapped, stop ${stopStr})`;
+  }
+
+  return {
+    selectedRiskPercent: cleanRisk,
+    effectiveRiskPercent,
+    effectiveRiskDollars: Number(effectiveRiskDollars.toFixed(2)),
+    cappedNotional: Number(cappedNotional.toFixed(2)),
+    isCapped,
+    bindingCap,
+    effectiveLev,
+    profileCap,
+    readout,
+  };
+}
+
+export function updateEffectiveRiskDisplay() {
+  const presetSel = document.getElementById('cfgRiskPresetSelect');
+  const customIn = document.getElementById('cfgCustomRiskInput');
+  const levSel = document.getElementById('cfgLeverageSelect');
+  const readoutBox = document.getElementById('effectiveRiskReadoutBox');
+  const readoutText = document.getElementById('effectiveRiskText');
+  const badge = document.getElementById('currentRiskPresetBadge');
+  const capBadge = document.getElementById('cfgLeverageCapBadge');
+  const hiddenInput = document.getElementById('cfgRiskPerTrade');
+
+  if (!presetSel) return;
+
+  const assetClass = (state.activeMarketMode === 'stocks') ? 'equity' : 'crypto';
+  const profileCap = assetClass === 'equity' ? 3 : 5;
+
+  // Adjust leverage options for active asset class
+  if (capBadge) capBadge.textContent = `Max ${profileCap}x`;
+  if (levSel) {
+    const opt5 = levSel.querySelector('option[value="5"]');
+    if (opt5) {
+      if (assetClass === 'equity') {
+        opt5.disabled = true;
+        opt5.textContent = '5x (Crypto only)';
+        if (levSel.value === '5') levSel.value = '3';
+      } else {
+        opt5.disabled = false;
+        opt5.textContent = '5x';
+      }
+    }
+  }
+
+  let selectedRisk = 0.5;
+  if (presetSel.value === 'custom') {
+    selectedRisk = parseFloat(customIn?.value || '0.5');
+    if (isNaN(selectedRisk) || selectedRisk <= 0) selectedRisk = 0.5;
+  } else {
+    selectedRisk = parseFloat(presetSel.value || '0.5');
+  }
+
+  if (badge) {
+    badge.textContent = `${selectedRisk}% ${selectedRisk === 0.5 ? 'Default' : (selectedRisk > 10 ? 'High Risk' : '')}`;
+    badge.className = selectedRisk > 10 ? 'badge badge-danger mono-num' : (selectedRisk === 0.5 ? 'badge badge-neutral mono-num' : 'badge badge-primary mono-num');
+  }
+
+  if (hiddenInput) {
+    hiddenInput.value = (selectedRisk / 100).toFixed(4);
+  }
+
+  const selectedLev = parseInt(levSel?.value || String(profileCap), 10);
+  const balance = state.account?.equity || 10000;
+  const mode = state.activeMode || 'PAPER';
+
+  const result = calculateEffectiveRiskUi({
+    balance,
+    riskPercent: selectedRisk,
+    stopDistancePercent: 0.006,
+    assetClass,
+    selectedLeverage: selectedLev,
+    mode,
+  });
+
+  if (readoutText) readoutText.textContent = result.readout;
+  if (readoutBox) {
+    readoutBox.classList.toggle('is-capped', result.isCapped);
+  }
+}
+
+export function setupRiskSelector() {
+  const presetSel = document.getElementById('cfgRiskPresetSelect');
+  const customIn = document.getElementById('cfgCustomRiskInput');
+  const levSel = document.getElementById('cfgLeverageSelect');
+  const modal = document.getElementById('highRiskWarningModal');
+  const modalVal = document.getElementById('highRiskModalValue');
+  const confirmBtn = document.getElementById('confirmHighRiskBtn');
+  const cancelBtn = document.getElementById('cancelHighRiskBtn');
+
+  if (!presetSel) return;
+
+  const showHighRiskWarning = (val) => {
+    if (modalVal) modalVal.textContent = `${val}%`;
+    modal?.classList.add('open');
+  };
+
+  presetSel.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+      if (customIn) {
+        customIn.style.display = 'inline-block';
+        customIn.value = prevCustomVal || '15';
+        customIn.focus();
+      }
+      return;
+    }
+
+    if (customIn) customIn.style.display = 'none';
+
+    const num = parseFloat(val);
+    if (num > 10) {
+      showHighRiskWarning(num);
+    } else {
+      prevRiskPreset = val;
+      updateEffectiveRiskDisplay();
+    }
+  });
+
+  customIn?.addEventListener('change', (e) => {
+    let val = parseFloat(e.target.value);
+    if (isNaN(val) || val <= 0) {
+      alert('Risk percentage must be a positive number.');
+      e.target.value = prevCustomVal || '0.5';
+      return;
+    }
+    if (val > 100) {
+      alert('Risk percentage cannot exceed 100% of account equity. Clamping to 100%.');
+      val = 100;
+      e.target.value = '100';
+    }
+    prevCustomVal = String(val);
+
+    if (val > 10) {
+      showHighRiskWarning(val);
+    } else {
+      updateEffectiveRiskDisplay();
+    }
+  });
+
+  levSel?.addEventListener('change', () => {
+    updateEffectiveRiskDisplay();
+  });
+
+  cancelBtn?.addEventListener('click', () => {
+    modal?.classList.remove('open');
+    if (presetSel.value === 'custom') {
+      if (customIn) customIn.value = prevRiskPreset;
+      presetSel.value = prevRiskPreset;
+      if (customIn) customIn.style.display = 'none';
+    } else {
+      presetSel.value = prevRiskPreset;
+    }
+    updateEffectiveRiskDisplay();
+  });
+
+  confirmBtn?.addEventListener('click', () => {
+    modal?.classList.remove('open');
+    if (presetSel.value !== 'custom') {
+      prevRiskPreset = presetSel.value;
+    }
+    updateEffectiveRiskDisplay();
+  });
+
+  updateEffectiveRiskDisplay();
+}
+
 // Settings Loading & Saving
 async function loadSettings() {
   try {
@@ -3336,7 +3571,31 @@ async function loadSettings() {
       updateStrategyAuditCard(savedModel);
     }
 
-    if (s.riskPerTrade !== undefined) document.getElementById('cfgRiskPerTrade').value = s.riskPerTrade;
+    if (s.riskPerTrade !== undefined) {
+      const riskPct = Number((s.riskPerTrade * 100).toFixed(2));
+      const presetSel = document.getElementById('cfgRiskPresetSelect');
+      const customIn = document.getElementById('cfgCustomRiskInput');
+      const hiddenInput = document.getElementById('cfgRiskPerTrade');
+      if (hiddenInput) hiddenInput.value = s.riskPerTrade;
+
+      if (['0.5', '1', '5', '10', '25', '50', '100'].includes(String(riskPct))) {
+        if (presetSel) presetSel.value = String(riskPct);
+        if (customIn) customIn.style.display = 'none';
+        prevRiskPreset = String(riskPct);
+      } else {
+        if (presetSel) presetSel.value = 'custom';
+        if (customIn) {
+          customIn.style.display = 'inline-block';
+          customIn.value = String(riskPct);
+          prevCustomVal = String(riskPct);
+        }
+      }
+      if (s.leverage && document.getElementById('cfgLeverageSelect')) {
+        document.getElementById('cfgLeverageSelect').value = String(s.leverage);
+      }
+      updateEffectiveRiskDisplay();
+    }
+
     if (s.maxDailyLoss !== undefined) document.getElementById('cfgMaxDailyLoss').value = s.maxDailyLoss;
     if (s.maxConsecutiveLosses !== undefined) document.getElementById('cfgMaxLosses').value = s.maxConsecutiveLosses;
     if (s.cooldownMinutes !== undefined) document.getElementById('cfgCooldownMinutes').value = s.cooldownMinutes;
@@ -3388,8 +3647,20 @@ async function saveSettings() {
   if (document.getElementById('contractXRP')?.checked) eligibleContracts.push('XRPUSDT');
   if (document.getElementById('contractDOGE')?.checked) eligibleContracts.push('DOGEUSDT');
 
+  const presetSel = document.getElementById('cfgRiskPresetSelect');
+  const customIn = document.getElementById('cfgCustomRiskInput');
+  let chosenRiskPct = 0.5;
+  if (presetSel?.value === 'custom') {
+    chosenRiskPct = parseFloat(customIn?.value || '0.5');
+  } else {
+    chosenRiskPct = parseFloat(presetSel?.value || '0.5');
+  }
+  const riskPerTrade = Number((chosenRiskPct / 100).toFixed(4));
+  const leverage = parseInt(document.getElementById('cfgLeverageSelect')?.value || '3', 10);
+
   const payload = {
-    riskPerTrade: parseFloat(document.getElementById('cfgRiskPerTrade').value),
+    riskPerTrade,
+    leverage,
     maxDailyLoss: parseFloat(document.getElementById('cfgMaxDailyLoss').value),
     maxConsecutiveLosses: parseInt(document.getElementById('cfgMaxLosses').value, 10),
     cooldownMinutes: parseInt(document.getElementById('cfgCooldownMinutes').value, 10),

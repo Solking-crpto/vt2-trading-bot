@@ -252,6 +252,32 @@ async function run() {
   })()`);
   results.push({ item: 'Mode Control: Dropdown & Banner', pass: !!modeDropdownCheck?.pass, note: modeDropdownCheck?.note });
 
+  // Task 3: Risk Selector Dropdown & Effective Risk Readout Test
+  const riskSelectorCheck = await evalInPage(`(() => {
+    const sTab = document.querySelector('.nav-item[data-tab="settings"]');
+    if (sTab) sTab.click();
+
+    const presetSel = document.getElementById('cfgRiskPresetSelect');
+    const levSel = document.getElementById('cfgLeverageSelect');
+    const readoutText = document.getElementById('effectiveRiskText');
+
+    if (!presetSel) return { pass: false, note: 'cfgRiskPresetSelect not found' };
+    if (!levSel) return { pass: false, note: 'cfgLeverageSelect not found' };
+    if (!readoutText) return { pass: false, note: 'effectiveRiskText not found' };
+
+    const hasDefault = presetSel.value === '0.5';
+    const hasReadout = readoutText.textContent.includes('effective');
+    const presetsPresent = ['0.5', '1', '5', '10', '25', '50', '100', 'custom'].every(val =>
+      Array.from(presetSel.options).some(o => o.value === val)
+    );
+
+    return {
+      pass: hasDefault && hasReadout && presetsPresent,
+      note: 'Default 0.5%=' + hasDefault + ', presets=' + presetsPresent + ', text=' + readoutText.textContent
+    };
+  })()`);
+  results.push({ item: 'Risk Selector: Dropdown & Readout', pass: !!riskSelectorCheck?.pass, note: riskSelectorCheck?.note });
+
 
   // Rescan Button Test
   const rescanCheck = await evalInPage(`(() => {

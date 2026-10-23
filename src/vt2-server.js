@@ -52,6 +52,7 @@ import {
 } from './strategy/registry.js';
 import { AlertDispatcher } from './service/alert-dispatcher.js';
 import { AiAnalyst } from './ai/analyst.js';
+import { calculateEffectiveRisk, validateCustomRisk, RISK_PRESETS, DEFAULT_RISK_PERCENT } from './risk/effective-risk.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2177,6 +2178,45 @@ export class VT2Server {
           dollarRisk: result.riskAmount ? Number(result.riskAmount.toFixed(2)) : undefined,
           input: tradeInput,
           result,
+        });
+      }
+
+      // 20c-2. Task 3: Effective Risk Calculator & Clamping Endpoint
+      if (pathname === '/api/risk/effective-risk' && (req.method === 'GET' || req.method === 'POST')) {
+        let params = {};
+        if (req.method === 'GET') {
+          const parsedUrl = new URL(req.url, 'http://127.0.0.1');
+          params = Object.fromEntries(parsedUrl.searchParams.entries());
+        } else {
+          params = await this.parseJsonBody(req).catch(() => ({}));
+        }
+
+        const account = this.paperEngine.getAccountSummary();
+        const balance = params.balance !== undefined ? Number(params.balance) : (account.equity || 10000);
+        const riskPercent = params.riskPercent !== undefined ? Number(params.riskPercent) : DEFAULT_RISK_PERCENT;
+        const stopDistancePercent = params.stopDistancePercent !== undefined
+          ? Number(params.stopDistancePercent)
+          : (params.stopDistance !== undefined ? Number(params.stopDistance) : 0.006);
+        const assetClass = params.assetClass || (params.symbol ? (params.symbol.startsWith('S') ? 'crypto' : 'equity') : 'crypto');
+        const selectedLeverage = params.leverage ? Number(params.leverage) : undefined;
+        const currentMode = getCurrentMode();
+
+        const calculation = calculateEffectiveRisk({
+          balance,
+          riskPercent,
+          stopDistancePercent,
+          assetClass,
+          selectedLeverage,
+          mode: currentMode,
+        });
+
+        const validation = validateCustomRisk(riskPercent, currentMode);
+
+        return this.sendJson(res, 200, {
+          ...calculation,
+          validation,
+          mode: currentMode,
+          presets: RISK_PRESETS,
         });
       }
 
