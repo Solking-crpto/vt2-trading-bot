@@ -259,12 +259,18 @@ async function run() {
     if (!testBtn) return { pass: false, note: 'quickTestTradeBtn not found' };
     testBtn.click();
 
-    // Wait for trade processing
-    await new Promise(r => setTimeout(r, 3500));
+    // Wait for trade processing (poll up to 8s)
+    const t0 = Date.now();
+    let posCount = 0;
+    let hasRow = false;
+    while (Date.now() - t0 < 8000) {
+      await new Promise(r => setTimeout(r, 400));
+      posCount = parseInt(document.getElementById('positionsCount')?.textContent || '0', 10);
+      const tbody = document.getElementById('positionsTableBody');
+      hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions') && tbody.querySelectorAll('tr').length > 0;
+      if (posCount > 0 && hasRow) break;
+    }
 
-    const posCount = parseInt(document.getElementById('positionsCount')?.textContent || '0', 10);
-    const tbody = document.getElementById('positionsTableBody');
-    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions');
     const pass = posCount > 0 && hasRow;
     return { pass, note: 'Position count: ' + posCount + ', hasActiveRow: ' + hasRow };
   })()`);
@@ -273,7 +279,7 @@ async function run() {
   // Confirm position appears with live data
   const posLiveCheck = await evalInPage(`(() => {
     const tbody = document.getElementById('positionsTableBody');
-    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions');
+    const hasRow = tbody && !tbody.textContent.includes('No open simulated paper positions') && !tbody.textContent.includes('No active simulated paper positions') && tbody.querySelectorAll('tr').length > 0;
     return { pass: !!hasRow, note: hasRow ? 'Position row visible in table' : 'No active row' };
   })()`);
   results.push({ item: 'Demo: Position Appears with P&L', pass: !!posLiveCheck?.pass, note: posLiveCheck?.note });
@@ -282,22 +288,28 @@ async function run() {
   const closeCheck = await evalInPage(`(async () => {
     const closeBtn = document.querySelector('#positionsTableBody button') || document.getElementById('closeAllPositionsBtn');
     if (closeBtn) closeBtn.click();
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 1000));
 
     // Switch to journal tab
     const jTab = document.querySelector('.nav-item[data-tab="journal"]');
     if (jTab) jTab.click();
-    await new Promise(r => setTimeout(r, 800));
 
-    const jBody = document.getElementById('journalTableBody');
-    const hasJournal = jBody && !jBody.textContent.includes('No closed paper trades in journal yet');
+    // Poll up to 6s for journal entry
+    const t0 = Date.now();
+    let hasJournal = false;
+    while (Date.now() - t0 < 6000) {
+      await new Promise(r => setTimeout(r, 400));
+      const jBody = document.getElementById('journalTableBody');
+      hasJournal = jBody && !jBody.textContent.includes('No closed paper trades in journal yet') && jBody.querySelectorAll('tr').length > 0;
+      if (hasJournal) break;
+    }
     return { pass: !!hasJournal, note: hasJournal ? 'Journal entry recorded' : 'Journal empty' };
   })()`);
   results.push({ item: 'Demo: Close Position & Journal', pass: !!closeCheck?.pass, note: closeCheck?.note });
 
   // 6. Reload page and confirm state persisted in localStorage
   await send('Page.reload');
-  await new Promise(r => setTimeout(r, 3000));
+  await new Promise(r => setTimeout(r, 4500));
   await evalInPage(`(() => {
     window.confirm = () => true;
     window.alert = () => {};
@@ -306,10 +318,16 @@ async function run() {
   const persistCheck = await evalInPage(`(async () => {
     const jTab = document.querySelector('.nav-item[data-tab="journal"]');
     if (jTab) jTab.click();
-    await new Promise(r => setTimeout(r, 600));
 
-    const jBody = document.getElementById('journalTableBody');
-    const persisted = jBody && !jBody.textContent.includes('No closed paper trades in journal yet');
+    // Poll up to 6s for journal table to populate
+    const t0 = Date.now();
+    let persisted = false;
+    while (Date.now() - t0 < 6000) {
+      await new Promise(r => setTimeout(r, 400));
+      const jBody = document.getElementById('journalTableBody');
+      persisted = jBody && !jBody.textContent.includes('No closed paper trades in journal yet') && jBody.querySelectorAll('tr').length > 0;
+      if (persisted) break;
+    }
     return { pass: !!persisted, note: persisted ? 'Account history persisted in localStorage' : 'Storage reset' };
   })()`);
   results.push({ item: 'Demo: Persistence Across Reload', pass: !!persistCheck?.pass, note: persistCheck?.note });
@@ -318,12 +336,18 @@ async function run() {
   const botCheck = await evalInPage(`(async () => {
     const autoTab = document.querySelector('.nav-item[data-tab="autotrading"]');
     if (autoTab) autoTab.click();
-    await new Promise(r => setTimeout(r, 600));
 
-    const startBtn = document.getElementById('autoStartBtn');
+    // Poll for startBtn
+    const t0 = Date.now();
+    let startBtn = null;
+    while (Date.now() - t0 < 5000) {
+      startBtn = document.getElementById('autoStartBtn');
+      if (startBtn) break;
+      await new Promise(r => setTimeout(r, 300));
+    }
     if (!startBtn) return { pass: false, note: 'autoStartBtn not found' };
     startBtn.click();
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r, 3000));
 
     const metric = document.getElementById('autoStatusMetric')?.textContent || '';
     const badge = document.getElementById('autoStatusBadge')?.textContent || '';

@@ -157,3 +157,34 @@ npm run forward:report
 3. **Active Open Positions:** Displays current symbols, entry price, current mark price, stop-loss, take-profit, and unrealized P&L.
 4. **Trade Journal:** Chronological record of closed positions with entry/exit timestamps, strategy identifier, realized P&L, ROI %, holding duration, and explicit exit reasons (`TAKE_PROFIT_FINAL`, `STOP_LOSS`, `RSI_EXIT`).
 5. **Safety Bounds:** Confirms hard risk limits (daily loss lockout, position caps, correlation rules).
+
+---
+
+## 6. Hosted Production Deployment & Instant Rollback
+
+The public hosted demo runs on Vercel (`https://vt2-trading-bot.vercel.app`) in `DEMO_READONLY` mode (pure simulated paper trading, zero real funds, zero live/demo order routing).
+
+### Production Smoke Testing
+After every push to `main`, run the UI smoke test against the production URL:
+```bash
+node scripts/ui-smoke.js https://vt2-trading-bot.vercel.app
+```
+
+### Emergency Rollback Procedures
+If the production site experiences a regression or fails smoke testing, use one of the following two rollback mechanisms immediately:
+
+1. **Vercel Dashboard Instant Rollback (Zero-Downtime, Immediate)**:
+   - Navigate to the Vercel project dashboard at `vercel.com`.
+   - Go to the **Deployments** tab.
+   - Find the previous known healthy deployment (e.g. the deployment preceding the latest merge).
+   - Click the three dots menu `...` on that deployment and select **Instant Rollback** (or **Promote to Production**).
+   - This immediately routes 100% of production traffic to the previous deployment within seconds without waiting for a rebuild.
+
+2. **Git Revert on `main`**:
+   - Revert the merge commit:
+     ```bash
+     git revert -m 1 <merge-commit-hash>
+     git push origin main
+     ```
+   - Wait for Vercel's automated git-push deployment to build and deploy.
+   - Re-run `node scripts/ui-smoke.js https://vt2-trading-bot.vercel.app` to confirm recovery.

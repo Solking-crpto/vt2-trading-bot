@@ -1,8 +1,8 @@
-﻿
+
 > vt2-trading-bot@0.1.0 service:start
 > pm2 start ecosystem.config.cjs
 
-[PM2] Spawning PM2 daemon with pm2_home=C:\Users\DELL\.pm2
+[PM2] Spawning PM2 daemon with pm2_home=<user_home>/.pm2
 [PM2] PM2 Successfully daemonized
 [PM2][WARN] Applications vt2-trading-bot not running, starting...
 [PM2] App [vt2-trading-bot] launched (1 instances)
