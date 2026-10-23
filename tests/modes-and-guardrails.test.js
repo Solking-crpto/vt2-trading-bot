@@ -33,6 +33,7 @@ function resetEnv(customEnv = {}) {
   delete process.env.VERCEL;
   delete process.env.AWS_LAMBDA_FUNCTION_NAME;
   delete process.env.LIVE_TRADING_ENABLED;
+  delete process.env.I_UNDERSTAND_LIVE_RISK;
   delete process.env.BITGET_DEMO_API_KEY;
   delete process.env.BITGET_DEMO_API_SECRET;
   delete process.env.BITGET_DEMO_PASSPHRASE;
@@ -75,9 +76,24 @@ test('LIVE arming is refused without LIVE_TRADING_ENABLED=true in environment', 
   );
 });
 
+test('LIVE arming is refused without I_UNDERSTAND_LIVE_RISK=true even if LIVE_TRADING_ENABLED=true', () => {
+  resetEnv({
+    LIVE_TRADING_ENABLED: 'true',
+    BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
+    BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
+    BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
+  });
+
+  assert.throws(
+    () => armLiveTrading('ENABLE LIVE TRADING'),
+    (err) => err instanceof SafetyViolationError && err.code === 'LIVE_TRADING_FLAG_DISABLED'
+  );
+});
+
 test('LIVE arming is refused when live API credentials are missing', () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     // Missing live keys
   });
 
@@ -90,6 +106,7 @@ test('LIVE arming is refused when live API credentials are missing', () => {
 test('LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRADING"', () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
     BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
     BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
@@ -114,6 +131,7 @@ test('LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRAD
 test('LIVE arming is refused if preflight check failed', () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
     BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
     BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
@@ -169,6 +187,7 @@ test('hosted serverless environment strictly locks execution to PAPER mode', () 
 test('LIVE mode activates only when armed and auto-disarms on manual trigger or kill switch', () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
     BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
     BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
@@ -396,6 +415,7 @@ test('BitgetTradeClient immediately triggers emergency flatten when stop-loss pr
 test('reconciliation mismatch halts execution and disarms LIVE mode', async () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
     BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
     BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
@@ -451,6 +471,7 @@ test('reconciliation mismatch halts execution and disarms LIVE mode', async () =
 test('kill switch cancels pending orders, flattens open positions, and disarms', async () => {
   resetEnv({
     LIVE_TRADING_ENABLED: 'true',
+    I_UNDERSTAND_LIVE_RISK: 'true',
     BITGET_LIVE_API_KEY: 'mock-live-key-12345678',
     BITGET_LIVE_API_SECRET: 'mock-live-secret-12345678',
     BITGET_LIVE_API_PASSPHRASE: 'mock-pass-1234',
@@ -673,3 +694,196 @@ test('server mode endpoints enforce allow-list, arming, preview, and preflight',
     resetEnv();
   }
 });
+
+// ---------------------------------------------------------------------------
+// 14. Task 2: Mode Switching Blocked Unless Flat & Journal Isolation
+// ---------------------------------------------------------------------------
+test('Task 2: mode switching is blocked when open positions exist in current mode', async () => {
+  resetEnv();
+  const server = new VT2Server({ port: 0 });
+  await server.start();
+  const port = server.server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    // 1. Submit paper test position so position is open
+    const orderRes = await fetch(`${baseUrl}/api/orders/paper-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: 'BTCUSDT', side: 'LONG', quantity: 0.05 }),
+    });
+    assert.ok(orderRes.status === 200 || orderRes.status === 201);
+    assert.equal(server.paperEngine.positions.length > 0, true);
+
+    // 2. Attempt to switch to DEMO while positions open must be refused with 400
+    const switchRes = await fetch(`${baseUrl}/api/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-control-token': server.controlToken },
+      body: JSON.stringify({ mode: 'DEMO' }),
+    });
+    assert.equal(switchRes.status, 400);
+    const switchData = await switchRes.json();
+    assert.equal(switchData.error, 'CANNOT_SWITCH_MODE_WHILE_POSITIONS_OPEN');
+
+    // 3. Close positions, then switch succeeds
+    server.paperEngine.closeAllPositions();
+    assert.equal(server.paperEngine.positions.length, 0);
+
+    const switchOk = await fetch(`${baseUrl}/api/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-control-token': server.controlToken },
+      body: JSON.stringify({ mode: 'DEMO' }),
+    });
+    assert.equal(switchOk.status, 200);
+    const switchOkData = await switchOk.json();
+    assert.equal(switchOkData.mode, 'DEMO');
+
+  } finally {
+    await server.stop();
+    resetEnv();
+  }
+});
+
+test('Task 2: /api/journal and database support isolated filtering by mode and assetClass', async () => {
+  resetEnv();
+  const server = new VT2Server({ port: 0 });
+  await server.start();
+  const port = server.server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  const nonce = Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const idPaperCrypto = `t2-paper-c-${nonce}`;
+  const idPaperEquity = `t2-paper-e-${nonce}`;
+  const idDemoCrypto = `t2-demo-c-${nonce}`;
+
+  try {
+    // Save trade entries across different modes and asset classes
+    server.db.saveJournalEntry({
+      id: idPaperCrypto,
+      positionId: 'pos-1-' + nonce,
+      timestamp: Date.now() - 3000,
+      environment: 'PAPER',
+      mode: 'PAPER',
+      symbol: 'BTCUSDT',
+      side: 'LONG',
+      entryPrice: 60000,
+      exitPrice: 61000,
+      quantity: 0.1,
+      realizedPnl: 100,
+      roiPercent: 1.6,
+      holdingTimeMs: 60000,
+      feesPaid: 1.2,
+      exitReason: 'TAKE_PROFIT',
+    });
+
+    server.db.saveJournalEntry({
+      id: idPaperEquity,
+      positionId: 'pos-2-' + nonce,
+      timestamp: Date.now() - 2000,
+      environment: 'PAPER',
+      mode: 'PAPER',
+      symbol: 'SPYUSDT',
+      assetClass: 'equity',
+      side: 'LONG',
+      entryPrice: 500,
+      exitPrice: 505,
+      quantity: 2,
+      realizedPnl: 10,
+      roiPercent: 1.0,
+      holdingTimeMs: 120000,
+      feesPaid: 0.4,
+      exitReason: 'TAKE_PROFIT',
+    });
+
+    server.db.saveJournalEntry({
+      id: idDemoCrypto,
+      positionId: 'pos-3-' + nonce,
+      timestamp: Date.now() - 1000,
+      environment: 'DEMO',
+      mode: 'DEMO',
+      symbol: 'SBTCSUSDT',
+      side: 'LONG',
+      entryPrice: 62000,
+      exitPrice: 63000,
+      quantity: 0.05,
+      realizedPnl: 50,
+      roiPercent: 1.6,
+      holdingTimeMs: 90000,
+      feesPaid: 0.6,
+      exitReason: 'TAKE_PROFIT',
+    });
+
+    // 1. Fetch PAPER journal: only returns PAPER trades
+    const paperRes = await fetch(`${baseUrl}/api/journal?mode=PAPER`);
+    assert.equal(paperRes.status, 200);
+    const paperData = await paperRes.json();
+    assert.ok(paperData.entries.every(e => e.mode === 'PAPER' || e.environment === 'PAPER'));
+    assert.ok(paperData.entries.some(e => e.id === idPaperCrypto));
+    assert.ok(paperData.entries.some(e => e.id === idPaperEquity));
+    assert.ok(!paperData.entries.some(e => e.id === idDemoCrypto));
+
+    // 2. Fetch DEMO journal: only returns DEMO trades
+    const demoRes = await fetch(`${baseUrl}/api/journal?mode=DEMO`);
+    assert.equal(demoRes.status, 200);
+    const demoData = await demoRes.json();
+    assert.ok(demoData.entries.every(e => e.mode === 'DEMO' || e.environment === 'DEMO'));
+    assert.ok(demoData.entries.some(e => e.id === idDemoCrypto));
+    assert.ok(!demoData.entries.some(e => e.id === idPaperCrypto));
+
+    // 3. Fetch PAPER + equity: only returns paper equity trades
+    const equityRes = await fetch(`${baseUrl}/api/journal?mode=PAPER&assetClass=equity`);
+    assert.equal(equityRes.status, 200);
+    const equityData = await equityRes.json();
+    assert.ok(equityData.entries.every(e => (e.assetClass || e.asset_class) === 'equity'));
+    assert.ok(equityData.entries.some(e => e.id === idPaperEquity));
+    assert.ok(!equityData.entries.some(e => e.id === idPaperCrypto));
+
+  } finally {
+    await server.stop();
+    resetEnv();
+  }
+});
+
+test('Task 2: hosted mode cannot switch to DEMO or LIVE even by calling API directly', async () => {
+  resetEnv({
+    VERCEL: '1',
+    DEPLOY_MODE: 'DEMO_READONLY',
+  });
+  const server = new VT2Server({ port: 0, isDemoReadOnly: true });
+  await server.start();
+  const port = server.server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    // 1. Direct call to switch to DEMO in hosted mode returns 403
+    const demoRes = await fetch(`${baseUrl}/api/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'DEMO' }),
+    });
+    assert.equal(demoRes.status, 403);
+    const demoData = await demoRes.json();
+    assert.equal(demoData.error, 'SERVERLESS_MODE_LOCKED');
+
+    // 2. Direct call to switch to LIVE in hosted mode returns 403
+    const liveRes = await fetch(`${baseUrl}/api/mode`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'LIVE' }),
+    });
+    assert.equal(liveRes.status, 403);
+    const liveData = await liveRes.json();
+    assert.ok(['SERVERLESS_MODE_LOCKED', 'MAINNET_EXECUTION_BLOCKED'].includes(liveData.error));
+
+    // 3. Status remains PAPER
+    const statusRes = await fetch(`${baseUrl}/api/mode`);
+    assert.equal(statusRes.status, 200);
+    const statusData = await statusRes.json();
+    assert.equal(statusData.mode, 'PAPER');
+    assert.equal(statusData.isHosted, true);
+  } finally {
+    await server.stop();
+    resetEnv();
+  }
+});
+

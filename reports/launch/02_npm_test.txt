@@ -1,0 +1,38 @@
+TAP version 13
+# Subtest: tests/modes-and-guardrails.test.js
+ok 1 - mode state machine defaults to PAPER mode and is never persisted as LIVE
+ok 2 - LIVE arming is refused without LIVE_TRADING_ENABLED=true in environment
+ok 3 - LIVE arming is refused without I_UNDERSTAND_LIVE_RISK=true even if LIVE_TRADING_ENABLED=true
+ok 4 - LIVE arming is refused when live API credentials are missing
+ok 5 - LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRADING"
+ok 6 - LIVE arming is refused if preflight check failed
+ok 7 - hosted serverless environment strictly locks execution to PAPER mode
+ok 8 - LIVE mode activates only when armed and auto-disarms on manual trigger or kill switch
+ok 9 - validateLiveOrderCaps rejects orders that exceed hard caps with named cap reason
+ok 10 - asset class profiles enforce distinct crypto and equity rules
+ok 11 - BitgetTradeClient immediately triggers emergency flatten when stop-loss protection is not confirmed
+ok 12 - reconciliation mismatch halts execution and disarms LIVE mode
+ok 13 - kill switch cancels pending orders, flattens open positions, and disarms
+ok 14 - assertNoWithdrawalEndpoint blocks any endpoint with transfer/withdraw keywords
+ok 15 - secret scanner scrubs secrets and prevents leakage in logs and responses
+ok 16 - demo requests carry paptrading header and demo symbols, live requests never carry it
+ok 17 - server mode endpoints enforce allow-list, arming, preview, and preflight
+ok 18 - Task 2: mode switching is blocked when open positions exist in current mode
+ok 19 - Task 2: /api/journal and database support isolated filtering by mode and assetClass
+ok 20 - Task 2: hosted mode cannot switch to DEMO or LIVE even by calling API directly
+# Subtest: tests/serverless-regression-guard.test.js
+ok 21 - Task 0.3 Serverless Regression Guard: isHosted() detects VERCEL=1
+ok 22 - Task 0.3 Serverless Regression Guard: stateless /api/demo/* never returns 401
+ok 23 - Task 0.3 Serverless Regression Guard: /api/mode refuses DEMO and LIVE in serverless
+ok 24 - Task 0.3 Serverless Regression Guard: AI endpoints report disabled in serverless
+ok 25 - Task 0.3 Serverless Regression Guard: /api/orders/live and non-PAPER /api/environment return 403
+ok 26 - Task 0.3 Serverless Regression Guard: HOST and 127.0.0.1 do not affect serverless build
+# Subtest: full suite
+ℹ tests 152
+ℹ suites 0
+ℹ pass 152
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5672.238

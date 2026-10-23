@@ -381,6 +381,41 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Execution Mode Management (PAPER, DEMO, LIVE)
+function updateModeSelectColor(mode) {
+  const sel = document.getElementById('executionModeSelect');
+  if (!sel) return;
+  sel.classList.remove('mode-color-paper', 'mode-color-demo', 'mode-color-live');
+  if (mode === 'LIVE') {
+    sel.classList.add('mode-color-live');
+  } else if (mode === 'DEMO') {
+    sel.classList.add('mode-color-demo');
+  } else {
+    sel.classList.add('mode-color-paper');
+  }
+}
+
+function updatePersistentModeBanner(mode) {
+  const banner = document.getElementById('persistentModeBanner');
+  const textEl = document.getElementById('persistentModeText');
+  const subtextEl = document.getElementById('persistentModeSubtext');
+  if (!banner) return;
+
+  banner.classList.remove('banner-paper', 'banner-demo', 'banner-live');
+  if (mode === 'LIVE') {
+    banner.classList.add('banner-live');
+    if (textEl) textEl.innerHTML = '<strong>LIVE (real money):</strong> Committing real capital on Bitget mainnet under hard caps. All trades require preflight confirmation.';
+    if (subtextEl) subtextEl.textContent = 'Armed but paused until manual bot start. Emergency kill switch active.';
+  } else if (mode === 'DEMO') {
+    banner.classList.add('banner-demo');
+    if (textEl) textEl.innerHTML = '<strong>DEMO (Bitget demo funds):</strong> Trading Bitget simulated demo contracts (SBTCSUSDT, SETHSUSDT, SXRPSUSDT).';
+    if (subtextEl) subtextEl.textContent = 'Equities: PAPER only: no Bitget demo contracts.';
+  } else {
+    banner.classList.add('banner-paper');
+    if (textEl) textEl.innerHTML = '<strong>PAPER (simulated):</strong> Pure simulated paper execution. Zero real capital risk.';
+    if (subtextEl) subtextEl.textContent = 'Safe deterministic paper engine.';
+  }
+}
+
 async function refreshExecutionMode() {
   try {
     const res = await fetch('/api/mode');
@@ -389,6 +424,13 @@ async function refreshExecutionMode() {
     state.activeMode = data.mode || 'PAPER';
     state.isHosted = Boolean(data.isHosted);
     state.liveArmed = Boolean(data.isLiveArmed);
+
+    const modeSelect = document.getElementById('executionModeSelect');
+    if (modeSelect) {
+      modeSelect.value = state.activeMode;
+      updateModeSelectColor(state.activeMode);
+    }
+    updatePersistentModeBanner(state.activeMode);
 
     const paperBtn = document.getElementById('modeTogglePaper');
     const demoBtn = document.getElementById('modeToggleDemo');
@@ -399,8 +441,20 @@ async function refreshExecutionMode() {
 
     if (envBadgeText) envBadgeText.textContent = state.activeMode;
 
-    // In hosted/serverless mode: permanently lock to PAPER
+    // In hosted/serverless mode: lock dropdown and buttons to PAPER
     if (state.isHosted) {
+      const optDemo = document.getElementById('optModeDemo');
+      const optLive = document.getElementById('optModeLive');
+      if (optDemo) {
+        optDemo.disabled = true;
+        optDemo.textContent = 'DEMO (local app only)';
+        optDemo.title = 'Needs your own Bitget keys. The hosted demo is paper-only by design.';
+      }
+      if (optLive) {
+        optLive.disabled = true;
+        optLive.textContent = 'LIVE (local app only)';
+        optLive.title = 'Needs your own Bitget keys. The hosted demo is paper-only by design.';
+      }
       if (demoBtn) { demoBtn.disabled = true; demoBtn.title = 'Demo mode disabled in hosted serverless deployment'; }
       if (liveBtn) { liveBtn.disabled = true; liveBtn.title = 'Live trading disabled in hosted serverless deployment'; }
     }
@@ -431,42 +485,139 @@ async function refreshExecutionMode() {
 }
 
 function setupExecutionModeToggle() {
+  const modeSelect = document.getElementById('executionModeSelect');
+
+  const revertModeSelect = (reason) => {
+    if (modeSelect) {
+      modeSelect.value = state.activeMode;
+      updateModeSelectColor(state.activeMode);
+    }
+    if (reason) {
+      console.warn('[Mode Switch Blocked/Cancelled]', reason);
+    }
+  };
+
+  modeSelect?.addEventListener('change', async (e) => {
+    const targetMode = e.target.value;
+    if (targetMode === state.activeMode) return;
+
+    if (state.isHosted) {
+      alert('Needs your own Bitget keys. The hosted demo is paper-only by design.');
+      revertModeSelect('Hosted mode is locked to PAPER');
+      return;
+    }
+
+    if (targetMode === 'PAPER') {
+      try {
+        const res = await fetch('/api/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'PAPER' }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const reason = data.message || data.error || 'Cannot switch mode while open positions exist.';
+          alert(`Mode switch blocked: ${reason}`);
+          revertModeSelect(reason);
+          return;
+        }
+        await refreshExecutionMode();
+        await refreshJournal();
+      } catch (err) {
+        alert(`Error setting mode: ${friendlyError(err)}`);
+        revertModeSelect(err.message);
+      }
+      return;
+    }
+
+    if (targetMode === 'DEMO') {
+      openDemoArmingModal();
+      return;
+    }
+
+    if (targetMode === 'LIVE') {
+      if (state.liveArmed) {
+        try {
+          const res = await fetch('/api/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'LIVE' }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const reason = data.message || data.error || 'Cannot switch to LIVE while positions open or not armed.';
+            alert(`Mode switch blocked: ${reason}`);
+            revertModeSelect(reason);
+            return;
+          }
+          await refreshExecutionMode();
+          await refreshJournal();
+        } catch (err) {
+          alert(`Error setting mode: ${friendlyError(err)}`);
+          revertModeSelect(err.message);
+        }
+      } else {
+        openLiveArmingModal();
+      }
+      return;
+    }
+  });
+
   document.getElementById('modeTogglePaper')?.addEventListener('click', async () => {
     try {
-      await fetch('/api/mode', {
+      const res = await fetch('/api/mode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'PAPER' }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Mode switch blocked: ${data.message || data.error}`);
+        revertModeSelect(data.message || data.error);
+        return;
+      }
       await refreshExecutionMode();
+      await refreshJournal();
     } catch (err) {
       alert(`Error setting mode: ${friendlyError(err)}`);
+      revertModeSelect(err.message);
     }
   });
 
   document.getElementById('modeToggleDemo')?.addEventListener('click', async () => {
     if (state.isHosted) {
-      alert('Hosted deployments operate exclusively in PAPER mode.');
+      alert('Needs your own Bitget keys. The hosted demo is paper-only by design.');
       return;
     }
     if (state.activeMode === 'DEMO') return;
+    if (modeSelect) modeSelect.value = 'DEMO';
     openDemoArmingModal();
   });
 
   document.getElementById('modeToggleLive')?.addEventListener('click', async () => {
     if (state.isHosted) {
-      alert('Hosted deployments operate exclusively in PAPER mode. Live trading is strictly prohibited.');
+      alert('Needs your own Bitget keys. The hosted demo is paper-only by design.');
       return;
     }
+    if (modeSelect) modeSelect.value = 'LIVE';
     if (state.liveArmed) {
       try {
-        await fetch('/api/mode', {
+        const res = await fetch('/api/mode', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mode: 'LIVE' }),
         });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(`Mode switch blocked: ${data.message || data.error}`);
+          revertModeSelect(data.message || data.error);
+          return;
+        }
         await refreshExecutionMode();
-      } catch (e) {}
+        await refreshJournal();
+      } catch (e) {
+        revertModeSelect(e.message);
+      }
     } else {
       openLiveArmingModal();
     }
@@ -493,6 +644,7 @@ function setupExecutionModeToggle() {
 
   cancelBtn?.addEventListener('click', () => {
     modal?.classList.remove('open');
+    revertModeSelect('Live arming cancelled by user');
   });
 
   armBtn?.addEventListener('click', async () => {
@@ -509,14 +661,32 @@ function setupExecutionModeToggle() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(`Arming failed: ${data.message || data.error}`);
+        const reason = data.message || data.error || 'Arming failed';
+        alert(`Arming failed: ${reason}`);
+        revertModeSelect(reason);
         return;
       }
       modal?.classList.remove('open');
+
+      // Auto-switch to LIVE once armed
+      try {
+        const swRes = await fetch('/api/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'LIVE' }),
+        });
+        const swData = await swRes.json();
+        if (!swRes.ok) {
+          alert(`Armed, but switch to LIVE blocked: ${swData.message || swData.error}`);
+        }
+      } catch (err) {}
+
       await refreshExecutionMode();
-      alert('LIVE TRADING ARMED. All orders placed will commit real capital under hard caps.');
+      await refreshJournal();
+      alert('LIVE TRADING ARMED & ACTIVATED (PAUSED). Autotrader is paused until manual start.');
     } catch (err) {
       alert(`Arming error: ${friendlyError(err)}`);
+      revertModeSelect(err.message);
     } finally {
       armBtn.disabled = false;
     }
@@ -535,6 +705,7 @@ function setupExecutionModeToggle() {
 
   demoCancelBtn?.addEventListener('click', () => {
     demoModal?.classList.remove('open');
+    revertModeSelect('Demo switch cancelled by user');
   });
 
   demoConfirmBtn?.addEventListener('click', async () => {
@@ -551,11 +722,16 @@ function setupExecutionModeToggle() {
       const data = await res.json();
       demoModal?.classList.remove('open');
       if (!res.ok) {
-        alert(data.message || data.error || 'Failed to switch to DEMO mode.');
+        const reason = data.message || data.error || 'Failed to switch to DEMO mode.';
+        alert(`Cannot switch to DEMO: ${reason}`);
+        revertModeSelect(reason);
+        return;
       }
       await refreshExecutionMode();
+      await refreshJournal();
     } catch (err) {
       alert(`Error setting mode: ${friendlyError(err)}`);
+      revertModeSelect(err.message);
     } finally {
       demoConfirmBtn.disabled = false;
     }
@@ -741,6 +917,7 @@ async function setupMarketMode() {
     await refreshScanner(true);
     await refreshEquityUniverse();
     await loadChartData();
+    try { await refreshJournal(); } catch (e) {}
   };
 
   stocksBtn?.addEventListener('click', () => applyModeChange('stocks'));
@@ -2321,10 +2498,26 @@ async function loadChartData() {
 async function refreshJournal() {
   try {
     let entries = [];
+    const activeMode = state.activeMode || 'PAPER';
+    const activeMarket = state.activeMarketMode || state.marketMode || 'both';
+    const assetClassParam = (activeMarket === 'stocks') ? 'equity' : (activeMarket === 'crypto' ? 'crypto' : '');
+
     if (state.isDemoReadOnly) {
-      entries = DemoStore.getState().journal || DemoStore.getState().tradeHistory || [];
+      const allEntries = DemoStore.getState().journal || DemoStore.getState().tradeHistory || [];
+      entries = allEntries.filter(e => {
+        const itemMode = e.mode || e.environment || 'PAPER';
+        if (itemMode !== activeMode) return false;
+        if (assetClassParam) {
+          const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(e.symbol?.toUpperCase());
+          const itemClass = e.assetClass || e.asset_class || (isCrypto ? 'crypto' : 'equity');
+          if (itemClass !== assetClassParam) return false;
+        }
+        return true;
+      });
     } else {
-      const res = await fetch('/api/journal');
+      let url = `/api/journal?mode=${encodeURIComponent(activeMode)}`;
+      if (assetClassParam) url += `&assetClass=${encodeURIComponent(assetClassParam)}`;
+      const res = await fetch(url);
       const data = await res.json();
       entries = data.entries || [];
     }
@@ -2332,7 +2525,8 @@ async function refreshJournal() {
     if (!tbody) return;
 
     if (entries.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 24px;">No closed trades in journal yet.</td></tr>`;
+      const filterDesc = `${activeMode} mode${assetClassParam ? ` (${assetClassParam})` : ''}`;
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 24px;">No closed trades in journal yet for ${filterDesc}.</td></tr>`;
       return;
     }
 
@@ -2371,14 +2565,21 @@ async function refreshJournal() {
 }
 
 function exportJournalJson() {
-  fetch('/api/journal')
+  const activeMode = state.activeMode || 'PAPER';
+  const activeMarket = state.activeMarketMode || state.marketMode || 'both';
+  const assetClassParam = (activeMarket === 'stocks') ? 'equity' : (activeMarket === 'crypto' ? 'crypto' : '');
+
+  let url = `/api/journal?mode=${encodeURIComponent(activeMode)}`;
+  if (assetClassParam) url += `&assetClass=${encodeURIComponent(assetClassParam)}`;
+
+  fetch(url)
     .then(r => r.json())
     .then(data => {
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      const dlUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `vt2-paper-journal-${Date.now()}.json`;
+      a.href = dlUrl;
+      a.download = `vt2-${activeMode.toLowerCase()}-journal-${Date.now()}.json`;
       a.click();
     });
 }

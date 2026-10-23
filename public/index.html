@@ -129,17 +129,20 @@
             </button>
           </div>
 
-          <!-- Three-Way Execution Mode Toggle (PAPER | DEMO | LIVE) -->
-          <div class="mode-toggle-group" id="executionModeToggle" title="Execution Mode: PAPER (Internal Sim), DEMO (Bitget Simulated), LIVE (Real Funds)">
-            <button class="mode-toggle-btn active" data-mode="PAPER" id="modeTogglePaper" title="PAPER: Internal simulated engine (default)">
-              <span class="mode-toggle-dot"></span> PAPER
-            </button>
-            <button class="mode-toggle-btn" data-mode="DEMO" id="modeToggleDemo" title="DEMO: Bitget demo trading with simulated funds">
-              <span class="mode-toggle-dot"></span> DEMO
-            </button>
-            <button class="mode-toggle-btn" data-mode="LIVE" id="modeToggleLive" title="LIVE: Real funds (Strict local arming only)">
-              <span class="mode-toggle-dot"></span> LIVE
-            </button>
+          <!-- Mode Dropdown Control (PAPER | DEMO | LIVE) -->
+          <div class="mode-dropdown-container" id="modeDropdownContainer" title="Execution Mode: Select PAPER, DEMO, or LIVE">
+            <select id="executionModeSelect" class="form-control form-control-sm mode-select-control mode-color-paper" aria-label="Execution Mode">
+              <option value="PAPER" id="optModePaper">PAPER (simulated)</option>
+              <option value="DEMO" id="optModeDemo">DEMO (Bitget demo funds)</option>
+              <option value="LIVE" id="optModeLive">LIVE (real money)</option>
+            </select>
+          </div>
+
+          <!-- Hidden compatibility buttons for legacy hooks -->
+          <div style="display: none;" id="executionModeToggle">
+            <button class="mode-toggle-btn active" data-mode="PAPER" id="modeTogglePaper"></button>
+            <button class="mode-toggle-btn" data-mode="DEMO" id="modeToggleDemo"></button>
+            <button class="mode-toggle-btn" data-mode="LIVE" id="modeToggleLive"></button>
           </div>
 
           <!-- Strategy Validation Status Pill -->
@@ -149,7 +152,7 @@
 
           <!-- Equities Demo Notice Badge -->
           <div id="demoEquityNotice" class="badge badge-warning" style="display: none; font-size: 11px; padding: 2px 8px;" title="Equities cannot be traded on Bitget demo">
-            Equities: PAPER only, no Bitget demo contracts
+            Equities: PAPER only: no Bitget demo contracts
           </div>
 
           <!-- Market Viewing & Bot Badges -->
@@ -225,6 +228,17 @@
 
       <!-- Main Content Area -->
       <main class="app-container">
+        <!-- Persistent Execution Mode Banner on Every Tab (Task 2) -->
+        <div id="persistentModeBanner" class="persistent-mode-banner banner-paper" role="alert">
+          <div class="persistent-mode-content">
+            <span class="persistent-mode-dot"></span>
+            <div id="persistentModeText">
+              <strong>PAPER (simulated):</strong> Pure simulated paper execution. Zero real capital risk.
+            </div>
+          </div>
+          <div id="persistentModeSubtext" class="persistent-mode-subtext"></div>
+        </div>
+
         <!-- Safety & Status Alert Banner -->
         <div class="alert-banner" id="safetyAlertBanner">
           <div class="alert-banner-content">
