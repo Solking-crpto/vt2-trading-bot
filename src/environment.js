@@ -57,7 +57,7 @@ export function isHosted() {
  */
 export function isLiveTradingAllowed() {
   if (isHosted()) return false;
-  return process.env.LIVE_TRADING_ENABLED === 'true';
+  return process.env.LIVE_TRADING_ENABLED === 'true' && process.env.I_UNDERSTAND_LIVE_RISK === 'true';
 }
 
 /**
@@ -130,9 +130,9 @@ export function armLiveTrading(confirmationPhrase, preflightResult = null) {
     );
   }
 
-  if (process.env.LIVE_TRADING_ENABLED !== 'true') {
+  if (process.env.LIVE_TRADING_ENABLED !== 'true' || process.env.I_UNDERSTAND_LIVE_RISK !== 'true') {
     throw new SafetyViolationError(
-      'LIVE_TRADING_ENABLED environment variable must be explicitly set to "true".',
+      'Both LIVE_TRADING_ENABLED="true" and I_UNDERSTAND_LIVE_RISK="true" environment variables are required.',
       'LIVE_TRADING_FLAG_DISABLED'
     );
   }
@@ -233,6 +233,13 @@ export function setExecutionMode(targetMode, options = {}) {
       assertMainnetExecutionBlocked(targetMode);
     }
     throw new SafetyViolationError(`Unsupported execution mode: ${targetMode}`, 'INVALID_ENVIRONMENT');
+  }
+
+  if (options.hasOpenPositions && normalized !== activeMode) {
+    throw new SafetyViolationError(
+      `Cannot switch execution mode while open positions exist in ${activeMode}. Close all positions first.`,
+      'CANNOT_SWITCH_MODE_WHILE_POSITIONS_OPEN'
+    );
   }
 
   if (isHosted()) {

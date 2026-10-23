@@ -1673,6 +1673,32 @@ export class VT2Server {
             });
           }
 
+          const curMode = getCurrentMode();
+          let hasOpenPositions = false;
+          let openCount = 0;
+          if (curMode === 'PAPER') {
+            if (this.paperEngine && this.paperEngine.positions && this.paperEngine.positions.length > 0) {
+              hasOpenPositions = true;
+              openCount = this.paperEngine.positions.length;
+            }
+          } else {
+            try {
+              const client = new BitgetTradeClient(curMode);
+              const openPositions = await client.getOpenPositions();
+              if (openPositions && openPositions.length > 0) {
+                hasOpenPositions = true;
+                openCount = openPositions.length;
+              }
+            } catch {}
+          }
+
+          if (hasOpenPositions && targetMode !== curMode) {
+            return this.sendJson(res, 400, {
+              error: 'CANNOT_SWITCH_MODE_WHILE_POSITIONS_OPEN',
+              message: `Cannot switch mode while open positions exist in ${curMode} (${openCount} position(s)). Close all positions first.`,
+            });
+          }
+
           if (targetMode === 'LIVE') {
             if (!isLiveArmed()) {
               return this.sendJson(res, 403, {
@@ -1683,7 +1709,7 @@ export class VT2Server {
           }
 
           try {
-            const active = setExecutionMode(targetMode, { allowUnconfiguredDemo: true });
+            const active = setExecutionMode(targetMode, { allowUnconfiguredDemo: true, hasOpenPositions });
             return this.sendJson(res, 200, {
               success: true,
               mode: active,
@@ -1691,7 +1717,7 @@ export class VT2Server {
               notice: active === 'DEMO' ? 'Equities: PAPER only, no Bitget demo contracts' : undefined,
             });
           } catch (err) {
-            return this.sendJson(res, 403, { error: err.code || 'MODE_CHANGE_FAILED', message: err.message });
+            return this.sendJson(res, 400, { error: err.code || 'MODE_CHANGE_FAILED', message: err.message });
           }
         }
       }
@@ -1706,7 +1732,7 @@ export class VT2Server {
         if (!isLiveTradingAllowed()) {
           return this.sendJson(res, 403, {
             error: 'LIVE_TRADING_FLAG_DISABLED',
-            message: 'LIVE_TRADING_ENABLED environment variable is not set to "true".',
+            message: 'Both LIVE_TRADING_ENABLED="true" and I_UNDERSTAND_LIVE_RISK="true" environment variables are required.',
           });
         }
 
@@ -1730,6 +1756,9 @@ export class VT2Server {
 
           armLiveTrading('ENABLE LIVE TRADING', preflight);
           setExecutionMode('LIVE');
+          if (this.autoTrader) {
+            this.autoTrader.pause('Armed LIVE: paused by default until manually started');
+          }
           return this.sendJson(res, 200, {
             success: true,
             mode: 'LIVE',
@@ -1900,11 +1929,24 @@ export class VT2Server {
 
       // 17. Trade Journal
       if (pathname === '/api/journal') {
-        const entries = this.db.getJournalEntries(50);
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const filterMode = urlObj.searchParams.get('mode') || getCurrentMode();
+        const assetClass = urlObj.searchParams.get('assetClass') || null;
+        const entries = this.db.getJournalEntries(50, filterMode, assetClass);
+        const filteredTradeHistory = (filterMode === 'PAPER')
+          ? (assetClass && assetClass.toLowerCase() !== 'both'
+              ? this.paperEngine.tradeHistory.filter(t => {
+                  const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT'].includes(t.symbol?.toUpperCase());
+                  return assetClass.toLowerCase() === (isCrypto ? 'crypto' : 'equity');
+                })
+              : this.paperEngine.tradeHistory)
+          : [];
         return this.sendJson(res, 200, {
           entries,
-          tradeHistory: this.paperEngine.tradeHistory,
-          environment: 'PAPER',
+          tradeHistory: filteredTradeHistory,
+          environment: filterMode,
+          mode: filterMode,
+          assetClass: assetClass || 'both',
         });
       }
 

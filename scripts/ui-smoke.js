@@ -223,6 +223,36 @@ async function run() {
   })()`);
   await new Promise(r => setTimeout(r, 200));
 
+  // Execution Mode Dropdown & Persistent Banner Tests (Task 2)
+  const modeDropdownCheck = await evalInPage(`(() => {
+    const sel = document.getElementById('executionModeSelect');
+    const banner = document.getElementById('persistentModeBanner');
+    if (!sel) return { pass: false, note: 'executionModeSelect not found' };
+    if (!banner) return { pass: false, note: 'persistentModeBanner not found' };
+
+    const isPaper = sel.value === 'PAPER';
+    const hasPaperClass = sel.classList.contains('mode-color-paper');
+    const hasBannerPaper = banner.classList.contains('banner-paper');
+    const optDemo = document.getElementById('optModeDemo');
+    const optLive = document.getElementById('optModeLive');
+
+    const isHosted = window.location.hostname.includes('vercel.app') || window.location.port === '' || !!document.getElementById('demoBanner')?.offsetParent;
+    if (isHosted && window.location.hostname.includes('vercel.app')) {
+      const demoDisabled = optDemo?.disabled === true;
+      const liveDisabled = optLive?.disabled === true;
+      return {
+        pass: isPaper && hasPaperClass && hasBannerPaper && demoDisabled && liveDisabled,
+        note: 'Hosted mode: select=PAPER, DEMO disabled=' + demoDisabled + ', LIVE disabled=' + liveDisabled + ', banner=' + hasBannerPaper
+      };
+    }
+    return {
+      pass: isPaper && hasPaperClass && hasBannerPaper,
+      note: 'Local mode: select=PAPER, color=paper, banner=paper'
+    };
+  })()`);
+  results.push({ item: 'Mode Control: Dropdown & Banner', pass: !!modeDropdownCheck?.pass, note: modeDropdownCheck?.note });
+
+
   // Rescan Button Test
   const rescanCheck = await evalInPage(`(() => {
     const btn = document.getElementById('topRescanBtn');

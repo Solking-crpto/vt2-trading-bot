@@ -518,11 +518,11 @@ export class Database {
     );
   }
 
-  getJournalEntries(limit = 100) {
+  getJournalEntries(limit = 100, mode = null, assetClass = null) {
     const enrich = (row) => {
       const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(row.symbol?.toUpperCase());
-      const assetClass = row.asset_class || row.assetClass || (isCrypto ? 'crypto' : 'equity');
-      const mode = row.mode || row.environment || 'PAPER';
+      const resolvedAssetClass = row.asset_class || row.assetClass || (isCrypto ? 'crypto' : 'equity');
+      const resolvedMode = row.mode || row.environment || 'PAPER';
       const thesis = JSON.parse(row.thesis_json || '{}');
       const strategyId = row.strategy_id || thesis.strategy_id || row.strategy_version || 'v1.0.0';
       const configHash = row.config_hash || thesis.config_hash || null;
@@ -532,23 +532,38 @@ export class Database {
         strategyId,
         config_hash: configHash,
         configHash,
-        mode,
-        assetClass,
-        asset_class: assetClass,
+        mode: resolvedMode,
+        environment: resolvedMode,
+        assetClass: resolvedAssetClass,
+        asset_class: resolvedAssetClass,
         thesis,
         review: JSON.parse(row.review_json || '{}'),
         riskResult: JSON.parse(row.risk_result_json || '{}'),
       };
     };
 
+    let entries = [];
     if (this.isInMemoryFallback) {
-      return [...this.memJournal]
+      entries = [...this.memJournal]
         .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, limit)
         .map(enrich);
+    } else {
+      if (mode) {
+        const stmt = this.db.prepare('SELECT * FROM trade_journal WHERE environment = ? ORDER BY timestamp DESC LIMIT ?');
+        entries = stmt.all(mode, Math.max(limit * 2, 100)).map(enrich);
+      } else {
+        const stmt = this.db.prepare('SELECT * FROM trade_journal ORDER BY timestamp DESC LIMIT ?');
+        entries = stmt.all(Math.max(limit * 2, 100)).map(enrich);
+      }
     }
-    const stmt = this.db.prepare('SELECT * FROM trade_journal ORDER BY timestamp DESC LIMIT ?');
-    return stmt.all(limit).map(enrich);
+
+    if (mode) {
+      entries = entries.filter(e => (e.mode || e.environment)?.toUpperCase() === mode.toUpperCase());
+    }
+    if (assetClass && assetClass.toLowerCase() !== 'both') {
+      entries = entries.filter(e => (e.assetClass || e.asset_class)?.toLowerCase() === assetClass.toLowerCase());
+    }
+    return entries.slice(0, limit);
   }
 
   saveRejectedSetup(setup) {
