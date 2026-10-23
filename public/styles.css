@@ -1328,3 +1328,26 @@ td {
   color: var(--text-secondary);
 }
 
+/* Effective Risk Readout (Task 3) */
+.effective-risk-readout {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.effective-risk-readout strong {
+  color: var(--color-primary);
+}
+
+.effective-risk-readout.is-capped {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fef3c7;
+}
+

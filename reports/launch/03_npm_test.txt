@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: tests/effective-risk.test.js
+ok 1 - Task 3: Default risk percentage is strictly 0.5% and presets include required levels
+ok 2 - Task 3: Small risk sizing is uncapped when within margin and leverage limits
+ok 3 - Task 3: Effective risk is correctly bounded under leverage cap
+ok 4 - Task 3: Effective risk ensures margin used never exceeds 90% of balance
+ok 5 - Task 3: In DEMO and LIVE mode, live-limits caps bound effective risk and show bound cap
+ok 6 - Task 3: Custom values above 10% trigger warning flag, and custom values above 100% are clamped
+ok 7 - Task 3: GET /api/risk/effective-risk returns computed effective risk, caps, and presets
+# Subtest: tests/modes-and-guardrails.test.js
+ok 8 - mode state machine defaults to PAPER mode and is never persisted as LIVE
+ok 9 - LIVE arming is refused without LIVE_TRADING_ENABLED=true in environment
+ok 10 - LIVE arming is refused without I_UNDERSTAND_LIVE_RISK=true even if LIVE_TRADING_ENABLED=true
+ok 11 - LIVE arming is refused when live API credentials are missing
+ok 12 - LIVE arming is refused without exact confirmation phrase "ENABLE LIVE TRADING"
+ok 13 - LIVE arming is refused if preflight check failed
+ok 14 - hosted serverless environment strictly locks execution to PAPER mode
+ok 15 - LIVE mode activates only when armed and auto-disarms on manual trigger or kill switch
+ok 16 - validateLiveOrderCaps rejects orders that exceed hard caps with named cap reason
+ok 17 - asset class profiles enforce distinct crypto and equity rules
+ok 18 - BitgetTradeClient immediately triggers emergency flatten when stop-loss protection is not confirmed
+ok 19 - reconciliation mismatch halts execution and disarms LIVE mode
+ok 20 - kill switch cancels pending orders, flattens open positions, and disarms
+ok 21 - assertNoWithdrawalEndpoint blocks any endpoint with transfer/withdraw keywords
+ok 22 - secret scanner scrubs secrets and prevents leakage in logs and responses
+ok 23 - demo requests carry paptrading header and demo symbols, live requests never carry it
+ok 24 - server mode endpoints enforce allow-list, arming, preview, and preflight
+ok 25 - Task 2: mode switching is blocked when open positions exist in current mode
+ok 26 - Task 2: /api/journal and database support isolated filtering by mode and assetClass
+ok 27 - Task 2: hosted mode cannot switch to DEMO or LIVE even by calling API directly
+# Subtest: tests/serverless-regression-guard.test.js
+ok 28 - Task 0.3 Serverless Regression Guard: isHosted() detects VERCEL=1
+ok 29 - Task 0.3 Serverless Regression Guard: stateless /api/demo/* never returns 401
+ok 30 - Task 0.3 Serverless Regression Guard: /api/mode refuses DEMO and LIVE in serverless
+ok 31 - Task 0.3 Serverless Regression Guard: AI endpoints report disabled in serverless
+ok 32 - Task 0.3 Serverless Regression Guard: /api/orders/live and non-PAPER /api/environment return 403
+ok 33 - Task 0.3 Serverless Regression Guard: HOST and 127.0.0.1 do not affect serverless build
+# Subtest: full suite
+ℹ tests 159
+ℹ suites 0
+ℹ pass 159
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6211.2767
