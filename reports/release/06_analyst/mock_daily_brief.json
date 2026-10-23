@@ -1,0 +1,9 @@
+{
+  "note": "generated from a mocked provider response, not a real model",
+  "MOCK": true,
+  "success": true,
+  "dailyBrief": "• Total Trades: 3 paper trades completed today (2 wins, 1 loss) for a 66.7% win rate and +$64.80 net P&L.\n• Opportunity Pipeline: 42 candidates scanned across US Equities; 39 rejected primarily on 8x friction-to-stop and session filters.\n• Risk Status: Current open positions: 0. Max aggregate open risk: 0.00%. Daily drawdown limit fully intact.",
+  "date": "2026-10-21",
+  "model": "gpt-4o-mini",
+  "disclaimer": "AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules."
+}

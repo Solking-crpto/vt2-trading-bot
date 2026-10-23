@@ -80,7 +80,10 @@ test('VT2Server launches, handles API routes, and enforces mainnet security deni
     // 7. Submit Paper Order
     const paperOrderRes = await fetch(`${baseUrl}/api/orders/paper`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-control-token': server.controlToken,
+      },
       body: JSON.stringify({
         symbol: 'BTCUSDT',
         side: 'LONG',

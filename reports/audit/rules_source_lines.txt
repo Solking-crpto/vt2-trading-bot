@@ -1,0 +1,159 @@
+================================================================================
+AUDIT REPORT: RULES SOURCE LINES (AlphaPortfolioEngine vs StrategyEngine)
+Generated: 2026-10-21T10:40:57.107Z
+================================================================================
+
+1. TARGET FORMULA
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:446:             const targetDistance = stopDistance * rules.stopsAndTargets.minNetRewardToRisk * 1.05;
+  src/backtest/alpha-portfolio-engine.js:447:             const takeProfit = signalSide === 'LONG'
+  src/backtest/alpha-portfolio-engine.js:448:               ? Number((entryPrice + targetDistance).toFixed(4))
+  src/backtest/alpha-portfolio-engine.js:449:               : Number((entryPrice - targetDistance).toFixed(4));
+  Summary: Static target = stopDistance * minNetRewardToRisk (1.5) * 1.05 = stopDistance * 1.575.
+
+StrategyEngine:
+  src/strategy/engine.js:8:   targetAtrMultiplier: 1.8,
+  src/strategy/engine.js:9:   minTargetPercent: 0.011, // 1.1%
+  src/strategy/engine.js:10:   maxTargetPercent: 0.030, // 3.0%
+  src/strategy/engine.js:236:       const targetPct = Math.min(
+  src/strategy/engine.js:237:         this.config.maxTargetPercent,
+  src/strategy/engine.js:238:         Math.max(this.config.minTargetPercent, (atr15m * this.config.targetAtrMultiplier) / entryPrice)
+  src/strategy/engine.js:239:       );
+  src/strategy/engine.js:240:       takeProfit = Number((entryPrice * (1 + targetPct)).toFixed(4));
+  src/strategy/engine.js:250:       const targetPct = Math.min(
+  src/strategy/engine.js:251:         this.config.maxTargetPercent,
+  src/strategy/engine.js:252:         Math.max(this.config.minTargetPercent, (atr15m * this.config.targetAtrMultiplier) / entryPrice)
+  src/strategy/engine.js:253:       );
+  src/strategy/engine.js:254:       takeProfit = Number((entryPrice * (1 - targetPct)).toFixed(4));
+  Summary: ATR-based target = atr15m * targetAtrMultiplier (1.8), clamped between minTargetPercent (1.1%) and maxTargetPercent (3.0%).
+
+2. BENCHMARK CHECK
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:69: export function evaluateBenchmarkTrendAt(spyCandles4h, currentTs) {
+  src/backtest/alpha-portfolio-engine.js:79:     trend: price > ema50 ? 'BULLISH' : 'BEARISH',
+  src/backtest/alpha-portfolio-engine.js:396:         const macroBenchmark = evaluateBenchmarkTrendAt(spy4hCandles, currentTs);
+  src/backtest/alpha-portfolio-engine.js:422:           if (isBullish4h && isBullish15m && macroBenchmark.trend === 'BULLISH') {
+  src/backtest/alpha-portfolio-engine.js:427:           } else if (isBearish4h && isBearish15m && macroBenchmark.trend === 'BEARISH') {
+  Summary: Checks SPYUSDT 4h close > ema50 (BULLISH) or < ema50 (BEARISH). Gating long on BULLISH and short on BEARISH.
+
+StrategyEngine:
+  src/strategy/engine.js:70:   evaluateStockBenchmark(spyCandles4h) {
+  src/strategy/engine.js:87:       trend = 'BULLISH';
+  src/strategy/engine.js:198:     const activeMacroTrend = isEquity ? macroTrend : (btcTrend || macroTrend);
+  src/strategy/engine.js:199:     if (bias === 'LONG' && activeMacroTrend === 'BEARISH') {
+  src/strategy/engine.js:204:         rejectionReason: isEquity ? 'STOCK_BENCHMARK_DIVERGENCE' : 'MACRO_BTC_DIVERGENCE',
+  src/strategy/engine.js:210:     if (bias === 'SHORT' && activeMacroTrend === 'BULLISH') {
+  src/strategy/engine.js:214:         qualified: false,
+  src/strategy/engine.js:360:     const spyCandles = markets['SPYUSDT']?.candles?.['4h'] || markets['SPYUSDT']?.['4h'];
+  src/strategy/engine.js:361:     const stockContext = this.evaluateStockBenchmark(spyCandles);
+  src/strategy/engine.js:373:         macroTrend: isEq ? stockContext.trend : btcContext.trend,
+  Summary: Checks SPYUSDT 4h close > ema50. Rejects longs if BEARISH and rejects shorts if BULLISH with STOCK_BENCHMARK_DIVERGENCE.
+
+3. RVOL CHECK
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  NOT APPLIED (Volume is loaded in data but not inspected or filtered during entry qualification in runPortfolioReplay).
+
+StrategyEngine:
+  src/strategy/engine.js:20:   volumeSpikeThreshold: 1.5,
+  src/strategy/engine.js:279:     const hasVolumeActivity = ind5m.current.isVolumeSpike || (ind5m.current.rvol && ind5m.current.rvol >= 1.2);
+  src/strategy/engine.js:304:       (hasVolumeActivity ? 25 : 10) +
+  Summary: ind5m.current.isVolumeSpike || ind5m.current.rvol >= 1.2 is used for setup scoring (+25 pts vs +10 pts), not a hard rejection filter.
+
+4. 5M LOGIC
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:24: export function synthesize5mFrom15m(candles15m) { (helper synthesize5mFrom15m defined)
+  NOT APPLIED in runPortfolioReplay (Replay timeline iterates 15m candles directly; no 5m confirmation filter is applied to entries).
+
+StrategyEngine:
+  src/strategy/engine.js:140:     const c5m = timeframeCandles['5m'];
+  src/strategy/engine.js:142:     if (!c4h || c4h.length < 50 || !c15m || c15m.length < 30 || !c5m || c5m.length < 30) {
+  src/strategy/engine.js:150:         rejectionReason: 'INSUFFICIENT_CANDLE_DATA',
+  src/strategy/engine.js:157:     const ind5m = computeIndicators(c5m);
+  src/strategy/engine.js:279:     const hasVolumeActivity = ind5m.current.isVolumeSpike || (ind5m.current.rvol && ind5m.current.rvol >= 1.2);
+  Summary: Requires at least 30 5m candles; computes 5m indicators and evaluates volume spike/RVOL on 5m.
+
+5. RSI BAND
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:424:             if (rsi >= rules.indicators.entry15m.rsiLongMin && rsi <= rules.indicators.entry15m.rsiLongMax) {
+  src/backtest/alpha-portfolio-engine.js:429:             if (rsi >= rules.indicators.entry15m.rsiShortMin && rsi <= rules.indicators.entry15m.rsiShortMax) {
+  Summary: Long requires 42 <= rsi <= 68. Short requires 32 <= rsi <= 58 (bounded corridor).
+
+StrategyEngine:
+  src/strategy/engine.js:280:     const rsi15m = ind15m.current.rsi;
+  src/strategy/engine.js:282:     if (bias === 'LONG' && rsi15m > 72) {
+  src/strategy/engine.js:287:         rejectionReason: 'RSI_OVERBOUGHT',
+  src/strategy/engine.js:291:     if (bias === 'SHORT' && rsi15m < 28) {
+  src/strategy/engine.js:296:         rejectionReason: 'RSI_OVERSOLD',
+  Summary: Asymmetric boundary: Long rejected if rsi15m > 72; Short rejected if rsi15m < 28. No inner threshold requirement.
+
+6. 4H ALIGNMENT
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:415:           const isBullish4h = ind4h.current.ema20 > ind4h.current.ema50 && ind4h.current.close > ind4h.current.ema50;
+  src/backtest/alpha-portfolio-engine.js:416:           const isBearish4h = ind4h.current.ema20 < ind4h.current.ema50 && ind4h.current.close < ind4h.current.ema50;
+  Summary: Bullish requires ema20 > ema50 AND close > ema50. Bearish requires ema20 < ema50 AND close < ema50.
+
+StrategyEngine:
+  src/strategy/engine.js:176:     const is4hBullish = ind4h.current.close > ind4h.current.ema20;
+  src/strategy/engine.js:177:     const is4hBearish = ind4h.current.close < ind4h.current.ema20;
+  src/strategy/engine.js:183:     if (is4hBullish && is15mBullish) {
+  src/strategy/engine.js:185:     } else if (is4hBearish && is15mBearish) {
+  src/strategy/engine.js:192:         rejectionReason: 'TIMEFRAME_ALIGNMENT_CONFLICT',
+  Summary: Single EMA comparison: Bullish requires close > ema20. Bearish requires close < ema20.
+
+7. COOLDOWN
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:392:       const inCooldown = lastTradeClosedAt && (currentTs - lastTradeClosedAt < rules.riskEngine.cooldownMinutes * 60 * 1000);
+  src/backtest/alpha-portfolio-engine.js:395:       if (!currentPosition && !pendingOrder && !inCooldown && !isDailyLossLocked && !consecutiveLossBlocked && currentTs >= startTs) {
+  Summary: inCooldown = (currentTs - lastTradeClosedAt < rules.riskEngine.cooldownMinutes * 60 * 1000) with config value 45 minutes.
+
+StrategyEngine / RiskEngine:
+  src/risk-engine.js:206:   // 8. Cooldown check
+  src/risk-engine.js:207:   if (lastTradeClosedAt && timestamp) {
+  src/risk-engine.js:208:     const cooldownPeriod = config.cooldownPeriodMs ?? 30 * 60 * 1000;
+  src/risk-engine.js:209:     const elapsedSinceClose = timestamp - lastTradeClosedAt;
+  src/risk-engine.js:210:     if (elapsedSinceClose < cooldownPeriod) {
+  src/risk-engine.js:214:         reason: 'COOLDOWN_ACTIVE',
+  Summary: StrategyEngine does not track trade state; RiskEngine evaluates cooldown with default 30 minutes (30 * 60 * 1000 ms).
+
+8. STOP CLAMP
+--------------------------------------------------------------------------------
+AlphaPortfolioEngine:
+  src/backtest/alpha-portfolio-engine.js:437:             const stopDistance = Math.min(
+  src/backtest/alpha-portfolio-engine.js:438:               rules.stopsAndTargets.maxStopDistancePercent * entryPrice,
+  src/backtest/alpha-portfolio-engine.js:439:               Math.max(rules.stopsAndTargets.minStopDistancePercent * entryPrice, atr * rules.stopsAndTargets.atrMultiplierStop)
+  src/backtest/alpha-portfolio-engine.js:440:             );
+  Summary: stopDistance = Math.min(0.008 * entry, Math.max(0.005 * entry, atr * 1.5)) -> clamped strictly between 0.5% and 0.8%.
+
+StrategyEngine:
+  src/strategy/engine.js:11:   minStopPercent: 0.005,   // 0.5%
+  src/strategy/engine.js:12:   maxStopPercent: 0.008,   // 0.8%
+  src/strategy/engine.js:228:       const swingLow = Math.min(...c15m.slice(-10).map(c => c.low));
+  src/strategy/engine.js:229:       const atrStop = entryPrice - (atr15m * 1.5);
+  src/strategy/engine.js:230:       const rawStop = Math.max(swingLow, atrStop);
+  src/strategy/engine.js:233:       const boundedStopPct = Math.min(this.config.maxStopPercent, Math.max(this.config.minStopPercent, stopPct));
+  src/strategy/engine.js:234:       stopLoss = Number((entryPrice * (1 - boundedStopPct)).toFixed(4));
+  src/strategy/engine.js:242:       const swingHigh = Math.max(...c15m.slice(-10).map(c => c.high));
+  src/strategy/engine.js:243:       const atrStop = entryPrice + (atr15m * 1.5);
+  src/strategy/engine.js:244:       const rawStop = Math.min(swingHigh, atrStop);
+  src/strategy/engine.js:247:       const boundedStopPct = Math.min(this.config.maxStopPercent, Math.max(this.config.minStopPercent, stopPct));
+  src/strategy/engine.js:248:       stopLoss = Number((entryPrice * (1 + boundedStopPct)).toFixed(4));
+  Summary: rawStop uses max/min of 10-bar swing and 1.5*ATR, then clamp boundedStopPct between 0.5% (minStopPercent) and 0.8% (maxStopPercent).
+
+================================================================================
+BENCHMARK FILTER DISCREPANCY RESOLUTION:
+--------------------------------------------------------------------------------
+In the Prompt 11 report, it was stated that AlphaPortfolioEngine did not apply the benchmark
+filter because "benchmarkFilter" was missing from config.stopsAndTargets. However, empirical
+code inspection of src/backtest/alpha-portfolio-engine.js lines 69-83, 396, 422, and 427 proves
+that evaluateBenchmarkTrendAt(spy4hCandles, currentTs) WAS actively executed on every bar,
+and gated every Long trade on macroBenchmark.trend === "BULLISH" and every Short trade on
+macroBenchmark.trend === "BEARISH". The benchmark filter was applied in the published v1
+backtest engine.
+================================================================================

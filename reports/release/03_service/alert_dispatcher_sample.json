@@ -1,0 +1,14 @@
+{
+  "configured": true,
+  "sampleDispatchedPayload": {
+    "service": "VT2-Trading-Bot",
+    "environment": "PAPER",
+    "timestamp": "2026-10-21T22:46:44.187Z",
+    "level": "CRITICAL",
+    "event": "KILL_SWITCH",
+    "message": "Master emergency kill switch fired",
+    "details": {
+      "openPositionsClosed": 1
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "ablationId": "7_with_rvol_spike",
+  "name": "Add RVOL Spike Filter (>=1.5x)",
+  "overrides": {
+    "enableRvolSpike": true
+  }
+}

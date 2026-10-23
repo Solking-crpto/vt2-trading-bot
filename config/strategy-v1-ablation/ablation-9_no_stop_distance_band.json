@@ -1,0 +1,7 @@
+{
+  "ablationId": "9_no_stop_distance_band",
+  "name": "Disable Stop Distance Band (0.5-0.8%)",
+  "overrides": {
+    "disableStopDistanceBand": true
+  }
+}

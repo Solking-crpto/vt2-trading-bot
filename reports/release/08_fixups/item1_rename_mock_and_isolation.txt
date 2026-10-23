@@ -1,0 +1,13 @@
+﻿Item 1 Fix-up Summary:
+1. Renamed sample_setup_brief.json -> mock_setup_brief.json
+2. Renamed sample_post_trade_review.json -> mock_post_trade_review.json
+3. Renamed sample_daily_brief.json -> mock_daily_brief.json
+4. Added {"MOCK": true, "note": "generated from a mocked provider response, not a real model"} to all mock JSON artifacts
+5. Updated analyst_isolation_check.txt with strictly computed source code facts (zero hardcoded VERIFIED lines)
+
+Files in reports/release/06_analyst/:
+  - analyst_isolation_check.txt
+  - mock_daily_brief.json
+  - mock_post_trade_review.json
+  - mock_setup_brief.json
+  - npm_test_step6.txt

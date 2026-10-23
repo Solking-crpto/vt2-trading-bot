@@ -1,0 +1,170 @@
+const fs = require('fs');
+const path = require('path');
+
+const alphaPath = 'src/backtest/alpha-portfolio-engine.js';
+const strategyPath = 'src/strategy/engine.js';
+const riskPath = 'src/risk-engine.js';
+
+const alphaLines = fs.readFileSync(alphaPath, 'utf8').split('\n');
+const strategyLines = fs.readFileSync(strategyPath, 'utf8').split('\n');
+const riskLines = fs.readFileSync(riskPath, 'utf8').split('\n');
+
+function getLine(lines, lineNum) {
+  return `${lineNum}: ${lines[lineNum - 1]}`;
+}
+
+let out = '';
+out += '================================================================================\n';
+out += 'AUDIT REPORT: RULES SOURCE LINES (AlphaPortfolioEngine vs StrategyEngine)\n';
+out += 'Generated: ' + new Date().toISOString() + '\n';
+out += '================================================================================\n\n';
+
+out += '1. TARGET FORMULA\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 446)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 447)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 448)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 449)}\n`;
+out += '  Summary: Static target = stopDistance * minNetRewardToRisk (1.5) * 1.05 = stopDistance * 1.575.\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 8)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 9)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 10)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 236)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 237)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 238)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 239)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 240)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 250)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 251)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 252)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 253)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 254)}\n`;
+out += '  Summary: ATR-based target = atr15m * targetAtrMultiplier (1.8), clamped between minTargetPercent (1.1%) and maxTargetPercent (3.0%).\n\n';
+
+out += '2. BENCHMARK CHECK\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 69)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 79)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 396)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 422)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 427)}\n`;
+out += '  Summary: Checks SPYUSDT 4h close > ema50 (BULLISH) or < ema50 (BEARISH). Gating long on BULLISH and short on BEARISH.\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 70)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 87)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 198)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 199)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 204)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 210)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 214)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 360)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 361)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 373)}\n`;
+out += '  Summary: Checks SPYUSDT 4h close > ema50. Rejects longs if BEARISH and rejects shorts if BULLISH with STOCK_BENCHMARK_DIVERGENCE.\n\n';
+
+out += '3. RVOL CHECK\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += '  NOT APPLIED (Volume is loaded in data but not inspected or filtered during entry qualification in runPortfolioReplay).\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 20)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 279)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 304)}\n`;
+out += '  Summary: ind5m.current.isVolumeSpike || ind5m.current.rvol >= 1.2 is used for setup scoring (+25 pts vs +10 pts), not a hard rejection filter.\n\n';
+
+out += '4. 5M LOGIC\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 24)} (helper synthesize5mFrom15m defined)\n`;
+out += '  NOT APPLIED in runPortfolioReplay (Replay timeline iterates 15m candles directly; no 5m confirmation filter is applied to entries).\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 140)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 142)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 150)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 157)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 279)}\n`;
+out += '  Summary: Requires at least 30 5m candles; computes 5m indicators and evaluates volume spike/RVOL on 5m.\n\n';
+
+out += '5. RSI BAND\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 424)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 429)}\n`;
+out += '  Summary: Long requires 42 <= rsi <= 68. Short requires 32 <= rsi <= 58 (bounded corridor).\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 280)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 282)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 287)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 291)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 296)}\n`;
+out += '  Summary: Asymmetric boundary: Long rejected if rsi15m > 72; Short rejected if rsi15m < 28. No inner threshold requirement.\n\n';
+
+out += '6. 4H ALIGNMENT\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 415)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 416)}\n`;
+out += '  Summary: Bullish requires ema20 > ema50 AND close > ema50. Bearish requires ema20 < ema50 AND close < ema50.\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 176)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 177)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 183)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 185)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 192)}\n`;
+out += '  Summary: Single EMA comparison: Bullish requires close > ema20. Bearish requires close < ema20.\n\n';
+
+out += '7. COOLDOWN\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 392)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 395)}\n`;
+out += '  Summary: inCooldown = (currentTs - lastTradeClosedAt < rules.riskEngine.cooldownMinutes * 60 * 1000) with config value 45 minutes.\n\n';
+out += 'StrategyEngine / RiskEngine:\n';
+out += `  ${riskPath}:${getLine(riskLines, 206)}\n`;
+out += `  ${riskPath}:${getLine(riskLines, 207)}\n`;
+out += `  ${riskPath}:${getLine(riskLines, 208)}\n`;
+out += `  ${riskPath}:${getLine(riskLines, 209)}\n`;
+out += `  ${riskPath}:${getLine(riskLines, 210)}\n`;
+out += `  ${riskPath}:${getLine(riskLines, 214)}\n`;
+out += '  Summary: StrategyEngine does not track trade state; RiskEngine evaluates cooldown with default 30 minutes (30 * 60 * 1000 ms).\n\n';
+
+out += '8. STOP CLAMP\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'AlphaPortfolioEngine:\n';
+out += `  ${alphaPath}:${getLine(alphaLines, 437)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 438)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 439)}\n`;
+out += `  ${alphaPath}:${getLine(alphaLines, 440)}\n`;
+out += '  Summary: stopDistance = Math.min(0.008 * entry, Math.max(0.005 * entry, atr * 1.5)) -> clamped strictly between 0.5% and 0.8%.\n\n';
+out += 'StrategyEngine:\n';
+out += `  ${strategyPath}:${getLine(strategyLines, 11)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 12)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 228)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 229)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 230)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 233)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 234)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 242)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 243)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 244)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 247)}\n`;
+out += `  ${strategyPath}:${getLine(strategyLines, 248)}\n`;
+out += '  Summary: rawStop uses max/min of 10-bar swing and 1.5*ATR, then clamp boundedStopPct between 0.5% (minStopPercent) and 0.8% (maxStopPercent).\n\n';
+
+out += '================================================================================\n';
+out += 'BENCHMARK FILTER DISCREPANCY RESOLUTION:\n';
+out += '--------------------------------------------------------------------------------\n';
+out += 'In the Prompt 11 report, it was stated that AlphaPortfolioEngine did not apply the benchmark\n';
+out += 'filter because "benchmarkFilter" was missing from config.stopsAndTargets. However, empirical\n';
+out += 'code inspection of src/backtest/alpha-portfolio-engine.js lines 69-83, 396, 422, and 427 proves\n';
+out += 'that evaluateBenchmarkTrendAt(spy4hCandles, currentTs) WAS actively executed on every bar,\n';
+out += 'and gated every Long trade on macroBenchmark.trend === "BULLISH" and every Short trade on\n';
+out += 'macroBenchmark.trend === "BEARISH". The benchmark filter was applied in the published v1\n';
+out += 'backtest engine.\n';
+out += '================================================================================\n';
+
+fs.writeFileSync('reports/audit/rules_source_lines.txt', out, 'utf8');
+console.log('Saved reports/audit/rules_source_lines.txt');

@@ -1,0 +1,10 @@
+﻿55d19a0 feat(release): step 6 advisory ai analyst with strict architectural isolation
+271b122 feat(release): step 4 ci workflows repo hygiene and operational docs
+3233d72 feat(release): step 3 unattended operation and pm2 service
+50779b6 feat(release): step 2 honest strategy status inside product
+91f2b4f chore(release): record Step 1 baseline health snapshot and verification deliverables
+52fde57 docs(errata): update ERRATA.md with exact code lines and realized net RR
+4832e46 docs(research): complete Candidate S0 replay, record Trial #35, and update CONCLUSION.md
+877fa3e docs(research): pre-register Candidate S0 as-shipped strategy replay and save Part A audit deliverables
+2c5c499 docs(verification): add PROJECT_STATE.md, revert alpha engine to tagged version, and commit empirical audit reports
+b7f5800 docs(audit): commit empirical raw outputs and reconcile audit discrepancies

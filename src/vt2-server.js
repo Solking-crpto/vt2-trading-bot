@@ -20,13 +20,38 @@ import { isEligibleContract, isEquityContract, isCryptoContract } from './config
 import { BitgetCryptoProvider, StockMarketProvider } from './adapters/market-provider.js';
 import {
   CURRENT_ENVIRONMENT,
+  EXECUTION_MODES,
+  getCurrentMode,
+  setExecutionMode,
+  isLiveArmed,
+  getLiveArmingStatus,
+  armLiveTrading,
+  disarmLive,
+  isLiveTradingAllowed,
+  isHosted,
+  getCredentialOverview,
+  getDemoCredentialStatus,
+  getLiveCredentialStatus,
   assertMainnetExecutionBlocked,
   validateExecutionMode,
   isMainnetExecutionAllowed,
   isMainnetKillSwitchDisarmed,
   assertLiveExecutionGates,
+  redactSecrets,
+  incrementLiveTradeCount,
 } from './environment.js';
+import { BitgetTradeClient } from './execution/bitget-trade-client.js';
+import { loadProfiles, getProfileForSymbol, getUnderlyingMarketStatus } from './config/profiles.js';
+import { loadLiveLimits, validateLiveOrderCaps } from './config/live-limits.js';
 import { DEFAULT_MARKET_FIXTURES, generateCandleSeries } from './data/market-fixtures.js';
+import {
+  getActiveStrategy,
+  getStrategyValidationStatus,
+  getValidationWarningBlock,
+  REQUIRED_VALIDATION_PHRASE,
+} from './strategy/registry.js';
+import { AlertDispatcher } from './service/alert-dispatcher.js';
+import { AiAnalyst } from './ai/analyst.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,6 +158,9 @@ export class VT2Server {
   constructor(options = {}) {
     this.isDemoReadOnly = process.env.DEPLOY_MODE === 'DEMO_READONLY' || Boolean(process.env.VERCEL) || Boolean(options.demoReadOnly);
     this.port = options.port !== undefined ? options.port : (process.env.PORT || 3000);
+    this.host = options.host || process.env.HOST || '127.0.0.1';
+    this.controlToken = options.controlToken || crypto.randomBytes(24).toString('hex');
+    this.requireControlTokenEnabled = options.requireControlToken !== false;
     const dbPath = options.dbPath || (this.isDemoReadOnly ? ':memory:' : 'data/vt2.db');
     this.db = new Database(dbPath).init();
     this.bitget = new BitgetAdapter({
@@ -171,6 +199,10 @@ export class VT2Server {
     this.sseClients = new Set();
     this.tickInterval = null;
     this.ipRateLimits = new Map();
+    this.alertDispatcher = options.alertDispatcher || new AlertDispatcher();
+    this.aiAnalyst = options.aiAnalyst || new AiAnalyst({ db: this.db });
+    this.lastScanTime = null;
+    this.lastError = null;
 
     // Trade Monitor & Automated Trader
     this.tradeMonitor = new TradeMonitor({
@@ -190,6 +222,7 @@ export class VT2Server {
       coordinator: this.coordinator,
       monitor: this.tradeMonitor,
       sseBroadcast: (data) => this.broadcastSse(data),
+      alertDispatcher: this.alertDispatcher,
     });
 
     this.tradeMonitor.autoTrader = this.autoTrader;
@@ -654,22 +687,96 @@ export class VT2Server {
     return entry.count <= 180;
   }
 
+  validateControlToken(req, body = null) {
+    if (this.isDemoReadOnly || isHosted()) return true;
+    if (!this.requireControlTokenEnabled) return true;
+
+    const headerToken = req.headers['x-control-token'] ||
+                        req.headers['x-vt2-control-token'] ||
+                        (req.headers['authorization']?.startsWith('Bearer ') ? req.headers['authorization'].slice(7).trim() : null);
+    if (headerToken && headerToken === this.controlToken) {
+      return true;
+    }
+    if (body && body.controlToken && body.controlToken === this.controlToken) {
+      return true;
+    }
+    const cookies = req.headers['cookie'] || '';
+    const match = cookies.match(/vt2_control_token=([a-zA-Z0-9_-]+)/);
+    if (match && match[1] === this.controlToken) {
+      return true;
+    }
+    return false;
+  }
+
+  assertControlToken(req, res, body = null) {
+    if (!this.validateControlToken(req, body)) {
+      this.sendJson(res, 401, {
+        error: 'UNAUTHORIZED',
+        message: 'Local control token required for this action.',
+      });
+      return false;
+    }
+    return true;
+  }
+
   start() {
+    setExecutionMode('PAPER');
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
-    this.server.listen(this.port, () => {
-      console.log(`[VT2 Core] Verifiable Trading Technology listening on http://localhost:${this.port}`);
-      console.log(`[VT2 Core] Operating Environment: ${CURRENT_ENVIRONMENT} (Mainnet Strictly Blocked)`);
-      if (this.isDemoReadOnly) {
-        console.log(`[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)`);
-      }
+    const listenPromise = new Promise((resolve) => {
+      this.server.listen(this.port, this.host, () => {
+        console.log(`[VT2 Core] Verifiable Trading Technology listening on http://${this.host}:${this.port}`);
+        console.log(`[VT2 Core] Operating Environment: ${CURRENT_ENVIRONMENT} (Mainnet Strictly Blocked)`);
+        console.log(`[VT2 Security] Local Control Token: ${this.controlToken}`);
+        if (this.isDemoReadOnly) {
+          console.log(`[VT2 Core] Deploy Mode: DEMO_READONLY (In-memory SQLite, live Bitget public data, no persistent timers)`);
+        }
+        resolve(this);
+      });
     });
 
-    // Start background market tick simulation for open paper positions only in local full mode
     if (!this.isDemoReadOnly) {
       this.startBackgroundMarketTicker();
+      this.startFeedMonitor();
+
+      // Dispatch startup alert
+      if (this.alertDispatcher) {
+        this.alertDispatcher.dispatchAlert({
+          event: 'SERVER_STARTED',
+          level: 'INFO',
+          message: `VT2 Server started in PAPER mode on port ${this.port}.`,
+        }).catch(() => {});
+      }
+
+      // Check if autoTrader was running in PAPER mode before shutdown
+      try {
+        const wasRunningPaper = this.db.getSetting('autotrader_was_running_paper', false);
+        if (wasRunningPaper && this.autoTrader) {
+          console.log('[VT2 Core] Auto-resuming Paper AutoTrader from previous running session.');
+          this.autoTrader.start();
+        }
+      } catch (_) {}
     }
 
-    return this;
+    return listenPromise;
+  }
+
+  startFeedMonitor() {
+    this.feedMonitorInterval = setInterval(() => {
+      if (this.isDemoReadOnly || !this.bitget || !this.bitget.wsClient) return;
+      const hb = this.bitget.wsClient.getHeartbeatStatus?.();
+      if (!hb) return;
+      const offline = !hb.isConnected || (hb.dataAgeMs && hb.dataAgeMs > 300000);
+      if (offline && (!this.lastFeedAlertTime || Date.now() - this.lastFeedAlertTime > 600000)) {
+        this.lastFeedAlertTime = Date.now();
+        this.alertDispatcher.dispatchAlert({
+          event: 'FEED_OFFLINE',
+          level: 'CRITICAL',
+          message: 'WebSocket market feed offline (> 5 minutes without message).',
+          details: { dataAgeMs: hb.dataAgeMs, isConnected: hb.isConnected },
+        }).catch(() => {});
+      }
+    }, 60000);
+    if (this.feedMonitorInterval?.unref) this.feedMonitorInterval.unref();
   }
 
   async stop() {
@@ -677,8 +784,18 @@ export class VT2Server {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
+    if (this.feedMonitorInterval) {
+      clearInterval(this.feedMonitorInterval);
+      this.feedMonitorInterval = null;
+    }
     if (this.tradeMonitor) this.tradeMonitor.stop();
-    if (this.autoTrader) this.autoTrader.stop('SERVER_STOP');
+    if (this.autoTrader) {
+      try {
+        const wasRunning = this.autoTrader.status === BOT_STATUS.RUNNING;
+        this.db.saveSetting('autotrader_was_running_paper', wasRunning);
+      } catch (_) {}
+      this.autoTrader.stop('SERVER_STOP');
+    }
     for (const client of this.sseClients) {
       try { client.end(); } catch {}
     }
@@ -734,7 +851,9 @@ export class VT2Server {
                   environment: 'PAPER',
                   symbol: closed.symbol,
                   side: closed.side,
-                  strategyVersion: 'v1.0.0',
+                  strategyVersion: closed.strategyVersion || 'v1.0.0',
+                  strategyId: closed.strategyId || closed.strategy_id || this.activeStrategyId || 'v1-alpha',
+                  configHash: closed.configHash || closed.config_hash || this.activeConfigHash || '33beca48',
                   entryPrice: closed.entryPrice,
                   exitPrice: closed.exitPrice || newPrice,
                   quantity: closed.originalQuantity,
@@ -846,8 +965,19 @@ export class VT2Server {
           database: this.isDemoReadOnly ? 'IN_MEMORY_SQLITE' : 'FILE_SQLITE',
           mainnetExecutionAllowed: isMainnetExecutionAllowed(),
           mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
+          strategyStatus: getStrategyValidationStatus(),
+          strategy: getActiveStrategy(),
           timestamp: Date.now(),
           uptime: process.uptime(),
+        });
+      }
+
+      // 2b. Strategy Validation Status
+      if (pathname === '/api/strategy/status' && req.method === 'GET') {
+        return this.sendJson(res, 200, {
+          status: getStrategyValidationStatus(),
+          strategy: getActiveStrategy(),
+          warning: getValidationWarningBlock(),
         });
       }
 
@@ -907,6 +1037,7 @@ export class VT2Server {
         });
 
         const scan = this.strategy.scanUniverse(liveMarkets);
+        this.lastScanTime = Date.now();
         const durationMs = Date.now() - startTime;
         const isLive = Object.values(liveMarkets).some(m => m.isLive);
         const equityCount = Object.values(liveMarkets).filter(m => m.assetClass === 'EQUITY').length;
@@ -955,6 +1086,7 @@ export class VT2Server {
         const marketMode = parsedUrl.searchParams.get('mode') || this.activeMarketMode || 'stocks';
         const liveMarkets = await this.bitget.getLiveUniverseCandles({ limit, minLiquidity, forceFresh: false, marketMode });
         const scan = this.strategy.scanUniverse(liveMarkets);
+        this.lastScanTime = Date.now();
         const isLive = Object.values(liveMarkets).some(m => m.isLive);
         const equityCount = Object.values(liveMarkets).filter(m => m.assetClass === 'EQUITY').length;
         const cryptoCount = Object.values(liveMarkets).filter(m => m.assetClass === 'CRYPTO').length;
@@ -1029,7 +1161,11 @@ export class VT2Server {
           } catch {}
         }
 
-        return this.sendJson(res, 200, result);
+        return this.sendJson(res, 200, {
+          ...result,
+          strategyStatus: getStrategyValidationStatus(),
+          validationWarning: getValidationWarningBlock(),
+        });
       }
 
       // 8. Account Summary
@@ -1098,7 +1234,9 @@ export class VT2Server {
             environment: 'PAPER',
             symbol: closed.symbol,
             side: closed.side,
-            strategyVersion: 'v1.0.0',
+            strategyVersion: closed.strategyVersion || 'v1.0.0',
+            strategyId: closed.strategyId || closed.strategy_id || this.activeStrategyId || 'v1-alpha',
+            configHash: closed.configHash || closed.config_hash || this.activeConfigHash || '33beca48',
             entryPrice: closed.entryPrice,
             exitPrice: closed.exitPrice,
             quantity: closed.originalQuantity,
@@ -1129,7 +1267,9 @@ export class VT2Server {
             environment: 'PAPER',
             symbol: c.symbol,
             side: c.side,
-            strategyVersion: 'v1.0.0',
+            strategyVersion: c.strategyVersion || 'v1.0.0',
+            strategyId: c.strategyId || c.strategy_id || this.activeStrategyId || 'v1-alpha',
+            configHash: c.configHash || c.config_hash || this.activeConfigHash || '33beca48',
             entryPrice: c.entryPrice,
             exitPrice: c.exitPrice,
             quantity: c.originalQuantity,
@@ -1271,6 +1411,7 @@ export class VT2Server {
       // 11. Submit Paper Order
       if (pathname === '/api/orders/paper' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         validateExecutionMode({ environment: 'PAPER' });
         if (this.isDemoReadOnly) {
           if (body?.state) return this.handleDemoOrder(body, res);
@@ -1288,6 +1429,7 @@ export class VT2Server {
       // 11a. Stateless Demo API: Place Order
       if (pathname === '/api/demo/order' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoOrder(body, res);
       }
 
@@ -1300,12 +1442,14 @@ export class VT2Server {
       // 11c. Stateless Demo API: Close Position
       if (pathname === '/api/demo/close' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoClose(body, res);
       }
 
       // 11d. Stateless Demo API: Close All Positions
       if (pathname === '/api/demo/close-all' && req.method === 'POST') {
         const body = await this.parseJsonBody(req);
+        if (!this.assertControlToken(req, res, body)) return;
         return this.handleDemoCloseAll(body, res);
       }
 
@@ -1436,22 +1580,32 @@ export class VT2Server {
         }
       }
 
-      // 15. Environment Status & Live Activation Gate
-      if (pathname === '/api/environment') {
+      // 15. Mode Management & Environment Guardrails
+      if (pathname === '/api/mode' || pathname === '/api/environment') {
         if (req.method === 'GET') {
           return this.sendJson(res, 200, {
-            activeEnvironment: 'PAPER',
-            availableEnvironments: ['PAPER', 'TESTNET', 'MAINNET'],
+            mode: getCurrentMode(),
+            activeEnvironment: getCurrentMode(),
+            isHosted: isHosted(),
+            liveTradingEnabled: isLiveTradingAllowed(),
+            isLiveArmed: isLiveArmed(),
+            armingStatus: getLiveArmingStatus(),
+            credentials: getCredentialOverview(),
+            limits: loadLiveLimits(),
+            profiles: loadProfiles(),
             mainnetAllowed: isMainnetExecutionAllowed(),
             mainnetKillSwitchDisarmed: isMainnetKillSwitchDisarmed(),
-            credentialsConfigured: this.bitgetAuth.getCredentialStatus().isConfigured,
+            credentialsConfigured: getDemoCredentialStatus().isConfigured || getLiveCredentialStatus().isConfigured,
+            strategyStatus: getStrategyValidationStatus(),
+            strategy: getActiveStrategy(),
+            validationWarning: getValidationWarningBlock(),
           });
         }
-        if (req.method === 'POST') {
-          const body = await this.parseJsonBody(req);
 
-          // Strict Allow-List Enforcement: Only 'PAPER' is permitted.
-          // Recursively inspect all values and keys for forbidden environments
+        if (req.method === 'POST') {
+          const body = await this.parseJsonBody(req).catch(() => ({}));
+
+          // Strict Security Evasion Detection (Recursively scan body for forbidden words like MAINNET)
           const collected = [];
           const collectStrings = (val) => {
             if (typeof val === 'string') {
@@ -1467,11 +1621,15 @@ export class VT2Server {
           };
           collectStrings(body);
 
-          const forbiddenWords = ['MAINNET', 'LIVE', 'PROD', 'PRODUCTION', 'REAL'];
+          const isLegitimateArmedLive = (body.mode === 'LIVE' || body.environment === 'LIVE') && isLiveArmed();
+          const mainnetWords = ['MAINNET', 'PROD', 'PRODUCTION', 'REAL'];
+          if (!isLegitimateArmedLive) {
+            mainnetWords.push('LIVE');
+          }
           for (const s of collected) {
             const up = s.toUpperCase();
-            for (const fw of forbiddenWords) {
-              if (up === fw || up.includes(fw)) {
+            for (const mw of mainnetWords) {
+              if (up === mw || up.includes(mw)) {
                 assertMainnetExecutionBlocked('MAINNET');
                 return this.sendJson(res, 403, {
                   error: 'MAINNET_EXECUTION_BLOCKED',
@@ -1482,29 +1640,262 @@ export class VT2Server {
             }
           }
 
-          // Allow-List Check: If any environment is specified, it must be strictly 'PAPER'
-          const target = (body.targetEnvironment || body.environment || body.target || body.env || body.mode || 'PAPER');
-          const targetNormalized = typeof target === 'string' ? target.trim().toUpperCase() : 'INVALID';
-          if (targetNormalized !== 'PAPER') {
-            assertMainnetExecutionBlocked(targetNormalized);
+          // Hosted / Serverless enforcement
+          if (isHosted()) {
+            const rawTarget = body.mode || body.targetEnvironment || body.environment || body.target || body.env || 'PAPER';
+            if (rawTarget !== 'PAPER') {
+              return this.sendJson(res, 403, {
+                error: 'SERVERLESS_MODE_LOCKED',
+                message: 'Hosted deployment operates exclusively in PAPER mode. DEMO and LIVE modes are prohibited on hosted sites.',
+                securityAlert: true,
+              });
+            }
+            setExecutionMode('PAPER');
+            return this.sendJson(res, 200, { success: true, mode: 'PAPER', environment: 'PAPER' });
+          }
+
+          if (!this.assertControlToken(req, res, body)) return;
+
+          // Determine requested mode (must be exactly 'PAPER', 'DEMO', or 'LIVE')
+          let targetMode = body.mode || body.targetEnvironment || body.environment || body.target || body.env;
+          if (typeof targetMode !== 'string') {
             return this.sendJson(res, 403, {
-              error: 'MAINNET_EXECUTION_BLOCKED',
-              message: 'CRITICAL SECURITY INTERCEPTION: Live Mainnet execution is strictly disabled. Only PAPER mode is permitted.',
-              securityAlert: true,
+              error: 'INVALID_ENVIRONMENT',
+              message: 'Mode must be a string: PAPER, DEMO, or LIVE',
             });
           }
 
-          return this.sendJson(res, 200, { success: true, environment: 'PAPER' });
+          // Case-sensitivity and allow-list check: only exact 'PAPER', 'DEMO', 'LIVE'
+          if (targetMode !== 'PAPER' && targetMode !== 'DEMO' && targetMode !== 'LIVE') {
+            return this.sendJson(res, 403, {
+              error: 'INVALID_ENVIRONMENT',
+              message: `Unsupported mode "${targetMode}". Only PAPER, DEMO, and LIVE are permitted.`,
+            });
+          }
+
+          if (targetMode === 'LIVE') {
+            if (!isLiveArmed()) {
+              return this.sendJson(res, 403, {
+                error: 'LIVE_NOT_ARMED',
+                message: 'LIVE mode requires explicit arming. Arm the terminal with "ENABLE LIVE TRADING" and passing preflight checks first.',
+              });
+            }
+          }
+
+          try {
+            const active = setExecutionMode(targetMode, { allowUnconfiguredDemo: true });
+            return this.sendJson(res, 200, {
+              success: true,
+              mode: active,
+              environment: active,
+              notice: active === 'DEMO' ? 'Equities: PAPER only, no Bitget demo contracts' : undefined,
+            });
+          } catch (err) {
+            return this.sendJson(res, 403, { error: err.code || 'MODE_CHANGE_FAILED', message: err.message });
+          }
         }
       }
 
-      // 16. Live Mainnet Order Interception Guard (Strict Denial)
-      if (pathname === '/api/orders/live' || pathname === '/api/orders/mainnet') {
-        assertMainnetExecutionBlocked('MAINNET');
-        return this.sendJson(res, 403, {
-          error: 'MAINNET_EXECUTION_BLOCKED',
-          message: 'Real live mainnet trading is strictly prohibited.',
+      // 15b. LIVE Arming Endpoint
+      if (pathname === '/api/mode/arm-live' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'HOSTED_LIVE_PROHIBITED', message: 'Hosted deployment cannot arm live trading.' });
+        }
+        if (!isLiveTradingAllowed()) {
+          return this.sendJson(res, 403, {
+            error: 'LIVE_TRADING_FLAG_DISABLED',
+            message: 'LIVE_TRADING_ENABLED environment variable is not set to "true".',
+          });
+        }
+
+        if (body.confirmationPhrase !== 'ENABLE LIVE TRADING') {
+          return this.sendJson(res, 400, {
+            error: 'INVALID_ARMING_PHRASE',
+            message: 'Confirmation phrase must exactly match "ENABLE LIVE TRADING".',
+          });
+        }
+
+        try {
+          const client = new BitgetTradeClient('LIVE', { allowUnarmedForTesting: true });
+          const preflight = await client.preflight({ attestationChecked: Boolean(body.attestationChecked) });
+          if (!preflight.passed) {
+            return this.sendJson(res, 400, {
+              error: 'PREFLIGHT_FAILED',
+              message: 'Preflight verification failed.',
+              preflight,
+            });
+          }
+
+          armLiveTrading('ENABLE LIVE TRADING', preflight);
+          setExecutionMode('LIVE');
+          return this.sendJson(res, 200, {
+            success: true,
+            mode: 'LIVE',
+            armingStatus: getLiveArmingStatus(),
+            preflight,
+          });
+        } catch (err) {
+          return this.sendJson(res, 400, { error: err.code || 'ARMING_FAILED', message: err.message });
+        }
+      }
+
+      // 15c. LIVE Disarm Endpoint
+      if (pathname === '/api/mode/disarm-live' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        const resDisarm = disarmLive('USER_MANUAL_DISARM');
+        return this.sendJson(res, 200, { success: true, mode: 'PAPER', disarmed: true });
+      }
+
+      // 15d. Preflight Check Endpoint
+      if (pathname === '/api/mode/preflight' && req.method === 'POST') {
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'HOSTED_PREFLIGHT_PROHIBITED', message: 'Hosted site cannot execute exchange preflight.' });
+        }
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        const targetMode = body.mode === 'LIVE' ? 'LIVE' : 'DEMO';
+        try {
+          const client = new BitgetTradeClient(targetMode, { allowUnarmedForTesting: true });
+          const result = await client.preflight({ attestationChecked: Boolean(body.attestationChecked) });
+          return this.sendJson(res, result.passed ? 200 : 400, result);
+        } catch (err) {
+          return this.sendJson(res, 400, { passed: false, error: err.message });
+        }
+      }
+
+      // 15e. Order Preview with Profiles, Limits and Max Dollar Loss
+      if (pathname === '/api/orders/preview' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        const sym = body.symbol || 'BTCUSDT';
+        const profile = getProfileForSymbol(sym);
+        const limits = loadLiveLimits();
+        const price = Number(body.price || body.entryPrice || 100);
+        const qty = Number(body.quantity || body.size || 0.01);
+        const notional = Number((price * qty).toFixed(2));
+        const side = (body.side || 'LONG').toUpperCase();
+        const stopLoss = Number(body.stopLoss || (side === 'LONG' ? price * 0.98 : price * 1.02));
+        const takeProfit = Number(body.takeProfit || (side === 'LONG' ? price * 1.05 : price * 0.95));
+        const perUnitLoss = Math.abs(price - stopLoss);
+        const maxDollarLoss = Number((perUnitLoss * qty).toFixed(2));
+        const underlyingStatus = getUnderlyingMarketStatus();
+
+        const capCheck = validateLiveOrderCaps({
+          symbol: sym,
+          entryPrice: price,
+          quantity: qty,
+          leverage: body.leverage || 1,
+        }, {
+          currentOpenNotional: this.paperEngine.positions.reduce((s, p) => s + (p.currentQuantity * p.entryPrice), 0),
+          openPositionsCount: this.paperEngine.positions.length,
+          todayRealizedLoss: 0,
+          completedLiveTradesCount: getLiveArmingStatus().confirmedTradesCompleted,
         });
+
+        return this.sendJson(res, 200, {
+          symbol: sym,
+          side,
+          quantity: qty,
+          entryPrice: price,
+          notionalUsd: notional,
+          leverage: body.leverage || 1,
+          stopLoss,
+          takeProfit,
+          maxDollarLoss,
+          profile,
+          underlyingStatus,
+          capCheck,
+          requiresManualConfirm: capCheck.requiresManualConfirm,
+          strategyStatus: getStrategyValidationStatus(),
+          validationWarning: getValidationWarningBlock(),
+        });
+      }
+
+      // 15f. Exchange Reconciliation Endpoint
+      if (pathname === '/api/exchange/reconcile' && req.method === 'POST') {
+        const curMode = getCurrentMode();
+        if (curMode === 'PAPER') {
+          return this.sendJson(res, 200, { reconciled: true, mode: 'PAPER', message: 'Paper engine is self-contained.' });
+        }
+        try {
+          const client = new BitgetTradeClient(curMode);
+          const rec = await client.reconcile();
+          return this.sendJson(res, rec.reconciled ? 200 : 409, rec);
+        } catch (err) {
+          return this.sendJson(res, 500, { reconciled: false, error: err.message, mode: curMode });
+        }
+      }
+
+      // 15g. Exchange & Paper Kill Switch
+      if (pathname === '/api/exchange/kill-switch' && req.method === 'POST') {
+        const curMode = getCurrentMode();
+        const results = {
+          mode: curMode,
+          paperClosed: this.paperEngine.cancelAllOrdersAndClosePositions(),
+          exchange: null,
+        };
+
+        if (curMode !== 'PAPER') {
+          try {
+            const client = new BitgetTradeClient(curMode);
+            results.exchange = await client.killSwitch();
+          } catch (e) {
+            results.exchange = { error: e.message };
+          }
+        }
+
+        disarmLive('KILL_SWITCH_TRIGGERED');
+        return this.sendJson(res, 200, { success: true, results });
+      }
+
+      // 16. Live Mainnet Order Interception Guard & Execution
+      if (pathname === '/api/orders/live' || pathname === '/api/orders/mainnet') {
+        if (!isLiveArmed() || getCurrentMode() !== 'LIVE') {
+          assertMainnetExecutionBlocked('MAINNET');
+          return this.sendJson(res, 403, {
+            error: 'MAINNET_EXECUTION_BLOCKED',
+            message: 'Real live mainnet trading is strictly prohibited without active arming.',
+            securityAlert: true,
+          });
+        }
+
+        // Armed LIVE execution path
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        try {
+          const client = new BitgetTradeClient('LIVE');
+          if (body.dryRun) {
+            const preview = client.formatDryRunOrder(body);
+            return this.sendJson(res, 200, preview);
+          }
+          const orderResult = await client.placeOrderWithProtection(body);
+          incrementLiveTradeCount();
+          return this.sendJson(res, 200, { success: true, orderResult });
+        } catch (err) {
+          return this.sendJson(res, 400, {
+            error: err.code || 'ORDER_REJECTED',
+            message: err.message,
+          });
+        }
+      }
+
+      // 16b. Demo Order Placement
+      if (pathname === '/api/orders/demo' && req.method === 'POST') {
+        if (isHosted()) {
+          return this.sendJson(res, 403, { error: 'SERVERLESS_MODE_LOCKED', message: 'Demo trading unavailable on hosted site.' });
+        }
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        try {
+          const client = new BitgetTradeClient('DEMO');
+          const orderResult = await client.placeOrderWithProtection(body);
+          return this.sendJson(res, 200, { success: true, orderResult });
+        } catch (err) {
+          return this.sendJson(res, 400, {
+            error: err.code || 'ORDER_REJECTED',
+            message: err.message,
+          });
+        }
       }
 
       // 17. Trade Journal
@@ -1601,9 +1992,43 @@ export class VT2Server {
       // 20. Comprehensive System Health
       if (pathname === '/api/system/health') {
         const mem = process.memoryUsage();
+        const uptime = Math.floor(process.uptime());
+
+        let wsMessageAgeMs = null;
+        if (this.bitget && this.bitget.wsClient && typeof this.bitget.wsClient.getHeartbeatStatus === 'function') {
+          const hb = this.bitget.wsClient.getHeartbeatStatus();
+          wsMessageAgeMs = hb.dataAgeMs ?? hb.heartbeatAgeMs ?? null;
+        }
+
+        let dbSizeBytes = 0;
+        try {
+          const dbPath = path.resolve('data/vt2.db');
+          if (fs.existsSync(dbPath)) {
+            dbSizeBytes = fs.statSync(dbPath).size;
+          }
+        } catch (_) {}
+
+        let feedStatus = this.bitget?.lastHealthCheck?.status;
+        if (!feedStatus || feedStatus === 'INITIALIZING') {
+          try {
+            const health = await this.bitget.checkHealth();
+            feedStatus = health?.status || 'INITIALIZING';
+          } catch (_) {
+            feedStatus = this.bitget?.lastHealthCheck?.status || 'INITIALIZING';
+          }
+        }
+
         return this.sendJson(res, 200, {
           status: 'HEALTHY',
-          uptimeSeconds: Math.floor(process.uptime()),
+          uptime,
+          uptimeSeconds: uptime,
+          lastScanTime: this.lastScanTime,
+          lastBotCycle: this.autoTrader?.lastCycleTime ?? null,
+          wsMessageAgeMs,
+          dbSizeBytes,
+          currentMode: getCurrentMode(),
+          armingState: getLiveArmingStatus(),
+          lastError: this.lastError || null,
           nodeVersion: process.version,
           platform: process.platform,
           memoryMb: {
@@ -1615,7 +2040,7 @@ export class VT2Server {
             positions: this.paperEngine.positions.length,
             tradeHistory: this.paperEngine.tradeHistory.length,
           },
-          feedStatus: this.bitget.lastHealthCheck?.status || 'INITIALIZING',
+          feedStatus: feedStatus || 'INITIALIZING',
         });
       }
 
@@ -1832,6 +2257,7 @@ export class VT2Server {
       }
       if (pathname === '/api/autotrading/stop-and-close-all' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         if (this.isDemoReadOnly) {
           if (body?.state) {
             return this.handleDemoCloseAll({ ...body, exitReason: 'AUTOTRADING_STOP_CLOSE_ALL' }, res);
@@ -1848,6 +2274,7 @@ export class VT2Server {
       }
       if (pathname === '/api/autotrading/kill-switch' && req.method === 'POST') {
         const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
         if (this.isDemoReadOnly) {
           if (body?.state) {
             return this.handleDemoCloseAll({ ...body, exitReason: 'KILL_SWITCH_TRIGGERED' }, res);
@@ -1911,6 +2338,46 @@ export class VT2Server {
         }
       }
 
+      // 20j. Advisory AI Analyst Endpoints
+      if (pathname === '/api/ai/status' && req.method === 'GET') {
+        return this.sendJson(res, 200, this.aiAnalyst.getStatus());
+      }
+      if (pathname === '/api/ai/brief' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        const brief = await this.aiAnalyst.generateSetupBrief(body);
+        return this.sendJson(res, brief.success ? 200 : 400, brief);
+      }
+      if (pathname === '/api/ai/review' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        const review = await this.aiAnalyst.generatePostTradeReview(body);
+        return this.sendJson(res, review.success ? 200 : 400, review);
+      }
+      if (pathname === '/api/ai/daily' && req.method === 'POST') {
+        const body = await this.parseJsonBody(req).catch(() => ({}));
+        if (!this.assertControlToken(req, res, body)) return;
+        const daily = await this.aiAnalyst.generateDailyBrief(body);
+        return this.sendJson(res, daily.success ? 200 : 400, daily);
+      }
+
+      // 20k. Local Control Token Query Endpoint (Loopback only)
+      if (pathname === '/api/control/token' && req.method === 'GET') {
+        const remote = req.socket?.remoteAddress || '';
+        const isLoopback = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1' || remote.includes('127.0.0.1');
+        if (!isLoopback) {
+          return this.sendJson(res, 403, {
+            error: 'FORBIDDEN',
+            message: 'Control token retrieval is restricted exclusively to local loopback interface.',
+          });
+        }
+        return this.sendJson(res, 200, {
+          controlToken: this.controlToken,
+          host: this.host,
+          port: this.port,
+        });
+      }
+
       // 21. Static File Serving (Frontend)
       return this.serveStatic(req, res, pathname);
 
@@ -1952,6 +2419,28 @@ export class VT2Server {
     }
 
     const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.html') {
+      try {
+        let html = fs.readFileSync(filePath, 'utf8');
+        const injection = `<script>window.VT2_CONTROL_TOKEN = "${this.controlToken}";</script>`;
+        if (html.includes('<head>')) {
+          html = html.replace('<head>', `<head>\n  ${injection}`);
+        } else {
+          html = `${injection}\n${html}`;
+        }
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Set-Cookie': `vt2_control_token=${this.controlToken}; Path=/; SameSite=Strict`,
+        });
+        res.end(html);
+        return;
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Error loading HTML');
+        return;
+      }
+    }
+
     const mimeTypes = {
       '.html': 'text/html; charset=utf-8',
       '.css': 'text/css; charset=utf-8',

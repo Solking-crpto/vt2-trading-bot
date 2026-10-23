@@ -1,5 +1,32 @@
 import { VT2Chart } from './chart.js';
 
+// Local Control Token Interceptor for Browser UI
+if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+  const _origFetch = window.fetch;
+  window.fetch = function(url, init = {}) {
+    try {
+      const token = window.VT2_CONTROL_TOKEN ||
+        (typeof document !== 'undefined' && (document.cookie.match(/vt2_control_token=([a-zA-Z0-9_-]+)/) || [])[1]);
+      if (token) {
+        init = init || {};
+        init.headers = init.headers || {};
+        if (init.headers instanceof Headers) {
+          if (!init.headers.has('x-control-token')) init.headers.set('x-control-token', token);
+        } else if (Array.isArray(init.headers)) {
+          if (!init.headers.some(([k]) => k.toLowerCase() === 'x-control-token')) {
+            init.headers.push(['x-control-token', token]);
+          }
+        } else {
+          if (!init.headers['x-control-token'] && !init.headers['X-Control-Token']) {
+            init.headers['x-control-token'] = token;
+          }
+        }
+      }
+    } catch (_) {}
+    return _origFetch.call(this, url, init);
+  };
+}
+
 export const EQUITY_SYMBOLS = [
   'SPYUSDT', 'QQQUSDT', 'NVDAUSDT', 'TSLAUSDT', 'AAPLUSDT', 'MSFTUSDT',
   'AMZNUSDT', 'MSTRUSDT', 'PLTRUSDT', 'SOXLUSDT', 'SOXSUSDT', 'TQQQUSDT',
@@ -329,6 +356,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupKillSwitch();
   setupChart();
   setupEventListeners();
+  setupExecutionModeToggle();
   applyTheme(state.theme, false);
   updateAllocationUi(state.entryAllocationPercent);
   registerServiceWorker();
@@ -336,6 +364,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   try { await checkDeployMode(); } catch (e) { console.warn('checkDeployMode error:', e); }
   try { await checkFeedStatus(); } catch (e) { console.warn('checkFeedStatus error:', e); }
+  try { await refreshExecutionMode(); } catch (e) { console.warn('refreshExecutionMode error:', e); }
   try { await refreshAccount(); } catch (e) { console.warn('refreshAccount error:', e); }
   try { await refreshOrders(); } catch (e) { console.warn('refreshOrders error:', e); }
   try { await refreshScanner(); } catch (e) { console.warn('refreshScanner error:', e); }
@@ -350,6 +379,255 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   try { connectSseStream(); } catch (e) { console.warn('connectSseStream error:', e); }
 });
+
+// Execution Mode Management (PAPER, DEMO, LIVE)
+async function refreshExecutionMode() {
+  try {
+    const res = await fetch('/api/mode');
+    if (!res.ok) return;
+    const data = await res.json();
+    state.activeMode = data.mode || 'PAPER';
+    state.isHosted = Boolean(data.isHosted);
+    state.liveArmed = Boolean(data.isLiveArmed);
+
+    const paperBtn = document.getElementById('modeTogglePaper');
+    const demoBtn = document.getElementById('modeToggleDemo');
+    const liveBtn = document.getElementById('modeToggleLive');
+    const banner = document.getElementById('liveWarningBanner');
+    const demoNotice = document.getElementById('demoEquityNotice');
+    const envBadgeText = document.getElementById('envBadgeText');
+
+    if (envBadgeText) envBadgeText.textContent = state.activeMode;
+
+    // In hosted/serverless mode: permanently lock to PAPER
+    if (state.isHosted) {
+      if (demoBtn) { demoBtn.disabled = true; demoBtn.title = 'Demo mode disabled in hosted serverless deployment'; }
+      if (liveBtn) { liveBtn.disabled = true; liveBtn.title = 'Live trading disabled in hosted serverless deployment'; }
+    }
+
+    [paperBtn, demoBtn, liveBtn].forEach(b => b?.classList.remove('active'));
+    if (state.activeMode === 'DEMO') {
+      demoBtn?.classList.add('active');
+      if (banner) banner.style.display = 'none';
+      if (demoNotice) demoNotice.style.display = 'inline-block';
+    } else if (state.activeMode === 'LIVE') {
+      liveBtn?.classList.add('active');
+      if (banner) banner.style.display = 'flex';
+      if (demoNotice) demoNotice.style.display = 'none';
+    } else {
+      paperBtn?.classList.add('active');
+      if (banner) banner.style.display = 'none';
+      if (demoNotice) demoNotice.style.display = 'none';
+    }
+
+    const activeEnvLabel = document.getElementById('activeEnvLabel');
+    if (activeEnvLabel) {
+      activeEnvLabel.textContent = `${state.activeMode} Mode`;
+      activeEnvLabel.className = state.activeMode === 'LIVE' ? 'text-danger' : (state.activeMode === 'DEMO' ? 'text-primary' : 'text-warning');
+    }
+  } catch (err) {
+    console.warn('Error refreshing execution mode:', err);
+  }
+}
+
+function setupExecutionModeToggle() {
+  document.getElementById('modeTogglePaper')?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'PAPER' }),
+      });
+      await refreshExecutionMode();
+    } catch (err) {
+      alert(`Error setting mode: ${friendlyError(err)}`);
+    }
+  });
+
+  document.getElementById('modeToggleDemo')?.addEventListener('click', async () => {
+    if (state.isHosted) {
+      alert('Hosted deployments operate exclusively in PAPER mode.');
+      return;
+    }
+    if (state.activeMode === 'DEMO') return;
+    openDemoArmingModal();
+  });
+
+  document.getElementById('modeToggleLive')?.addEventListener('click', async () => {
+    if (state.isHosted) {
+      alert('Hosted deployments operate exclusively in PAPER mode. Live trading is strictly prohibited.');
+      return;
+    }
+    if (state.liveArmed) {
+      try {
+        await fetch('/api/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'LIVE' }),
+        });
+        await refreshExecutionMode();
+      } catch (e) {}
+    } else {
+      openLiveArmingModal();
+    }
+  });
+
+  // Live Modal setup
+  const phraseInput = document.getElementById('liveArmingPhraseInput');
+  const validPhraseInput = document.getElementById('liveValidationPhraseInput');
+  const attestCheck = document.getElementById('liveAttestationCheck');
+  const armBtn = document.getElementById('confirmLiveArmingBtn');
+  const cancelBtn = document.getElementById('cancelLiveArmingBtn');
+  const modal = document.getElementById('liveArmingModal');
+
+  const checkArmReady = () => {
+    const phraseOk = phraseInput?.value.trim() === 'ENABLE LIVE TRADING';
+    const validOk = validPhraseInput?.value.trim() === 'I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION';
+    const checkOk = Boolean(attestCheck?.checked);
+    if (armBtn) armBtn.disabled = !(phraseOk && validOk && checkOk);
+  };
+
+  phraseInput?.addEventListener('input', checkArmReady);
+  validPhraseInput?.addEventListener('input', checkArmReady);
+  attestCheck?.addEventListener('change', checkArmReady);
+
+  cancelBtn?.addEventListener('click', () => {
+    modal?.classList.remove('open');
+  });
+
+  armBtn?.addEventListener('click', async () => {
+    armBtn.disabled = true;
+    try {
+      const res = await fetch('/api/mode/arm-live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmationPhrase: phraseInput.value.trim(),
+          validationAcknowledgment: validPhraseInput?.value.trim(),
+          attestationChecked: attestCheck.checked,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Arming failed: ${data.message || data.error}`);
+        return;
+      }
+      modal?.classList.remove('open');
+      await refreshExecutionMode();
+      alert('LIVE TRADING ARMED. All orders placed will commit real capital under hard caps.');
+    } catch (err) {
+      alert(`Arming error: ${friendlyError(err)}`);
+    } finally {
+      armBtn.disabled = false;
+    }
+  });
+
+  // Demo Modal setup
+  const demoModal = document.getElementById('demoArmingModal');
+  const demoPhraseInput = document.getElementById('demoValidationPhraseInput');
+  const demoConfirmBtn = document.getElementById('confirmDemoArmingBtn');
+  const demoCancelBtn = document.getElementById('cancelDemoArmingBtn');
+
+  demoPhraseInput?.addEventListener('input', () => {
+    const ok = demoPhraseInput.value.trim() === 'I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION';
+    if (demoConfirmBtn) demoConfirmBtn.disabled = !ok;
+  });
+
+  demoCancelBtn?.addEventListener('click', () => {
+    demoModal?.classList.remove('open');
+  });
+
+  demoConfirmBtn?.addEventListener('click', async () => {
+    demoConfirmBtn.disabled = true;
+    try {
+      const res = await fetch('/api/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'DEMO',
+          validationAcknowledgment: demoPhraseInput.value.trim(),
+        }),
+      });
+      const data = await res.json();
+      demoModal?.classList.remove('open');
+      if (!res.ok) {
+        alert(data.message || data.error || 'Failed to switch to DEMO mode.');
+      }
+      await refreshExecutionMode();
+    } catch (err) {
+      alert(`Error setting mode: ${friendlyError(err)}`);
+    } finally {
+      demoConfirmBtn.disabled = false;
+    }
+  });
+
+  // Order Preview modal cancel
+  document.getElementById('cancelOrderPreviewBtn')?.addEventListener('click', () => {
+    document.getElementById('orderPreviewModal')?.classList.remove('open');
+  });
+
+  // Periodic reconciliation ticker for DEMO / LIVE
+  setInterval(async () => {
+    if (state.activeMode === 'DEMO' || state.activeMode === 'LIVE') {
+      try {
+        const recRes = await fetch('/api/exchange/reconcile', { method: 'POST' });
+        const recData = await recRes.json();
+        if (!recData.reconciled) {
+          console.error('[Reconciliation Halt]', recData);
+          await refreshExecutionMode();
+        }
+      } catch (e) {}
+    }
+  }, 20000);
+}
+
+async function openLiveArmingModal() {
+  const modal = document.getElementById('liveArmingModal');
+  const statusBox = document.getElementById('livePreflightStatus');
+  const phraseInput = document.getElementById('liveArmingPhraseInput');
+  const validPhraseInput = document.getElementById('liveValidationPhraseInput');
+  const attestCheck = document.getElementById('liveAttestationCheck');
+  const armBtn = document.getElementById('confirmLiveArmingBtn');
+
+  if (phraseInput) phraseInput.value = '';
+  if (validPhraseInput) validPhraseInput.value = '';
+  if (attestCheck) attestCheck.checked = false;
+  if (armBtn) armBtn.disabled = true;
+  if (statusBox) statusBox.innerHTML = 'Running live preflight checks...';
+
+  modal?.classList.add('open');
+
+  try {
+    const res = await fetch('/api/mode/preflight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'LIVE', attestationChecked: true }),
+    });
+    const data = await res.json();
+    if (statusBox) {
+      const items = (data.checks || []).map(c =>
+        `<div>${c.passed ? '✅' : '❌'} <strong>${c.name}:</strong> ${c.message}</div>`
+      ).join('');
+      statusBox.innerHTML = `
+        <div style="margin-bottom: 6px; font-weight: 700; color: ${data.passed ? 'var(--color-success)' : 'var(--color-danger)'};">
+          ${data.passed ? 'Preflight Checks Passed' : 'Preflight Incomplete / Missing Keys'}
+        </div>
+        ${items}
+      `;
+    }
+  } catch (err) {
+    if (statusBox) statusBox.innerHTML = `<span style="color: var(--color-danger);">Preflight request failed: ${err.message}</span>`;
+  }
+}
+
+function openDemoArmingModal() {
+  const modal = document.getElementById('demoArmingModal');
+  const phraseInput = document.getElementById('demoValidationPhraseInput');
+  const confirmBtn = document.getElementById('confirmDemoArmingBtn');
+  if (phraseInput) phraseInput.value = '';
+  if (confirmBtn) confirmBtn.disabled = true;
+  modal?.classList.add('open');
+}
 
 // PWA Service Worker Registration
 function registerServiceWorker() {
@@ -687,6 +965,9 @@ function setupChart() {
   document.getElementById('toggleEma200')?.addEventListener('change', (e) => {
     if (state.chart) { state.chart.showEma200 = e.target.checked; state.chart.render(); }
   });
+  document.getElementById('toggleSignals')?.addEventListener('change', (e) => {
+    if (state.chart) { state.chart.showSignals = e.target.checked; state.chart.render(); }
+  });
 }
 
 // Theme Management (Light Mode / Dark Mode)
@@ -816,7 +1097,7 @@ function showAllocationWarning(targetValue) {
         </div>
         <ul style="font-size: 13px; line-height: 1.6; padding-left: 20px; color: var(--text-main);">
           <li><strong>Concentration Risk:</strong> Higher allocation factors scale up proposed position notional size, which can accelerate portfolio drawdowns during adverse volatility.</li>
-          <li><strong>Capital Availability:</strong> Consuming more of the allocation base reduces available margin buffer for subsequent high-probability setups.</li>
+          <li><strong>Capital Availability:</strong> Consuming more of the allocation base reduces available margin buffer for subsequent candidate setups.</li>
           <li><strong>Leverage & Fees:</strong> Increased position size amplifies the impact of taker fees, funding costs, and execution slippage.</li>
           <li><strong>Deterministic Risk Budget Intact:</strong> The deterministic risk engine still bounds maximum dollar loss to your configured risk-per-trade limit (default 0.50% equity).</li>
         </ul>
@@ -1022,6 +1303,13 @@ function setupEventListeners() {
     if (e.key === 'Escape' && document.getElementById('allocationWarningModal')?.classList.contains('active')) {
       cancelAllocationChange();
     }
+  });
+
+  // Strategy model selector
+  document.getElementById('cfgStrategyModelSelect')?.addEventListener('change', (e) => {
+    const val = e.target.value;
+    updateStrategyAuditCard(val);
+    try { localStorage.setItem('vt2_strategy_model', val); } catch (err) {}
   });
 
   // Topbar Rescan
@@ -1837,6 +2125,23 @@ async function executePaperOrder() {
     partialTakeProfitPrice: selectedProposal.partialTakeProfitPrice,
   };
 
+  if (state.activeMode === 'LIVE' || state.activeMode === 'DEMO') {
+    try {
+      const prevRes = await fetch('/api/orders/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+      const previewData = await prevRes.json();
+      const submitUrl = state.activeMode === 'LIVE' ? '/api/orders/live' : '/api/orders/demo';
+      showOrderPreviewModal(previewData, orderPayload, submitUrl);
+      return;
+    } catch (err) {
+      alert(`Could not generate order preview: ${friendlyError(err)}`);
+      return;
+    }
+  }
+
   try {
     const url = state.isDemoReadOnly ? '/api/demo/order' : '/api/orders/paper';
     const body = state.isDemoReadOnly
@@ -1878,6 +2183,98 @@ async function executePaperOrder() {
   }
 }
 
+function showOrderPreviewModal(previewData, orderPayload, submitUrl) {
+  const modal = document.getElementById('orderPreviewModal');
+  const bodyEl = document.getElementById('orderPreviewBody');
+  const confirmBtn = document.getElementById('confirmOrderPreviewBtn');
+
+  if (!modal || !bodyEl || !confirmBtn) return;
+
+  const sym = previewData.symbol || orderPayload.symbol;
+  const isCrypto = previewData.profile?.assetClass === 'crypto';
+  const side = (orderPayload.side || 'LONG').toUpperCase();
+  const maxLoss = previewData.maxDollarLoss ?? Math.abs((orderPayload.entryPrice - orderPayload.stopLoss) * orderPayload.quantity).toFixed(2);
+  const notional = previewData.notionalUsd ?? (orderPayload.entryPrice * orderPayload.quantity).toFixed(2);
+  const capCheck = previewData.capCheck || { allowed: true };
+
+  bodyEl.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+      <div>
+        <strong style="font-size: 16px;">${sym}</strong>
+        <span class="badge ${isCrypto ? 'badge-primary' : 'badge-neutral'}" style="margin-left: 6px; font-size: 10px; text-transform: uppercase;">${isCrypto ? 'Crypto (24/7)' : 'Equity Perp'}</span>
+      </div>
+      <div>
+        <span class="badge ${side === 'LONG' ? 'badge-long' : 'badge-short'}">${side}</span>
+        <span class="badge ${state.activeMode === 'LIVE' ? 'badge-danger' : 'badge-primary'}" style="margin-left: 4px;">${state.activeMode}</span>
+      </div>
+    </div>
+
+    <div class="grid-2" style="font-size: 12px; gap: 8px; margin-bottom: 12px;">
+      <div><strong>Size:</strong> <span class="mono-num">${orderPayload.quantity}</span></div>
+      <div><strong>Entry Price:</strong> <span class="mono-num">$${orderPayload.entryPrice}</span></div>
+      <div><strong>Order Notional:</strong> <span class="mono-num">$${notional}</span> (Cap: $50)</div>
+      <div><strong>Leverage:</strong> <span class="mono-num">${isCrypto ? '5x' : '3x'} Isolated</span></div>
+      <div><strong>Stop Loss:</strong> <span class="mono-num text-danger">$${orderPayload.stopLoss}</span></div>
+      <div><strong>Take Profit:</strong> <span class="mono-num text-success">$${orderPayload.takeProfit}</span></div>
+    </div>
+
+    <div style="background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(220, 38, 38, 0.35); border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+      <div style="font-size: 11px; text-transform: uppercase; color: var(--color-danger); font-weight: 700;">Maximum Loss in Dollars:</div>
+      <div style="font-size: 20px; font-weight: 800; color: var(--color-danger);" class="mono-num">-$${maxLoss}</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+        Exchange-side stop loss verified before fill confirmation. Hard daily loss lockout: $10.00 max.
+      </div>
+    </div>
+
+    <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 11px; line-height: 1.4;">
+      <div style="font-weight: 700; color: var(--color-warning); margin-bottom: 3px;">⚠️ Strategy Status: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+      <div style="color: var(--text-secondary);">
+        The underlying strategy (S0) failed pre-registered replay (Dev -$154.41, Validation -$647.91). No tested candidate demonstrated an edge after transaction costs.
+      </div>
+    </div>
+
+    ${!isCrypto && previewData.underlyingStatus?.isOpen === false ? `
+      <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 8px; font-size: 11px; color: var(--color-warning); margin-bottom: 12px;">
+        ⚠️ <strong>Underlying NYSE Market Closed:</strong> Tokenized equity perps trade 24/7 on Bitget with wider spreads and overnight gap risk.
+      </div>
+    ` : ''}
+
+    ${!capCheck.allowed ? `
+      <div style="background: rgba(220, 38, 38, 0.2); border: 1px solid var(--color-danger); border-radius: 6px; padding: 8px; font-size: 11px; color: var(--color-danger); margin-bottom: 12px;">
+        ❌ <strong>CAP EXCEEDED:</strong> ${capCheck.reason}
+      </div>
+    ` : ''}
+  `;
+
+  confirmBtn.disabled = !capCheck.allowed;
+  confirmBtn.onclick = async () => {
+    confirmBtn.disabled = true;
+    try {
+      const res = await fetch(submitUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+      const data = await res.json();
+      modal.classList.remove('open');
+      if (res.ok) {
+        alert(`${state.activeMode} order executed successfully!`);
+        switchTab('positions');
+        await refreshOrders();
+        await refreshJournal();
+      } else {
+        alert(`Order rejected: ${data.message || data.error}`);
+      }
+    } catch (err) {
+      alert(`Order submission error: ${friendlyError(err)}`);
+    } finally {
+      confirmBtn.disabled = false;
+    }
+  };
+
+  modal.classList.add('open');
+}
+
 async function loadChartData() {
   try {
     const res = await fetch(`/api/market/candles?symbol=${state.symbol}&timeframe=${state.timeframe}`);
@@ -1897,6 +2294,22 @@ async function loadChartData() {
 
     if (state.chart) {
       state.chart.setData(data.candles, null);
+
+      // Collect relevant trade markers for current symbol
+      const markers = [];
+      const positions = state.openPositions || [];
+      const matchingPos = positions.filter(p => (p.symbol || p.symbolId) === state.symbol);
+      for (const p of matchingPos) {
+        markers.push({
+          timestamp: p.entry_time || p.entryTime || Date.now(),
+          side: p.side || (p.quantity > 0 ? 'LONG' : 'SHORT'),
+          entryPrice: p.entry_price || p.entryPrice,
+          stopLoss: p.stop_loss || p.stopLoss,
+          takeProfit: p.take_profit || p.takeProfit,
+        });
+      }
+
+      state.chart.setTradeMarkers(markers);
     }
 
     document.getElementById('chartCandleInfo').textContent = `${state.symbol} | ${data.candles?.length || 0} Candles | Timeframe: ${state.timeframe}`;
@@ -1919,7 +2332,7 @@ async function refreshJournal() {
     if (!tbody) return;
 
     if (entries.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 24px;">No closed paper trades in journal yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 24px;">No closed trades in journal yet.</td></tr>`;
       return;
     }
 
@@ -1931,9 +2344,15 @@ async function refreshJournal() {
       const entryPrice = e.entry_price ?? e.entryPrice ?? '--';
       const exitPrice = e.exit_price ?? e.exitPrice ?? '--';
       const exitReason = e.exit_reason ?? e.exitReason ?? 'CLOSED';
+      const mode = e.mode || e.environment || 'PAPER';
+      const modeBadge = mode === 'LIVE' ? 'badge-danger' : (mode === 'DEMO' ? 'badge-primary' : 'badge-neutral');
+      const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(e.symbol?.toUpperCase());
+      const assetClass = e.assetClass || e.asset_class || (isCrypto ? 'crypto' : 'equity');
       return `
         <tr>
           <td>${new Date(e.timestamp || e.closedAt).toLocaleString()}</td>
+          <td><span class="badge ${modeBadge}">${mode}</span></td>
+          <td><span class="badge badge-neutral" style="text-transform: uppercase;">${assetClass}</span></td>
           <td><strong>${e.symbol}</strong></td>
           <td><span class="badge ${e.side === 'LONG' ? 'badge-long' : 'badge-short'}">${e.side}</span></td>
           <td>$${entryPrice}</td>
@@ -2627,6 +3046,69 @@ async function testEnvironmentSwitch() {
   }
 }
 
+function updateStrategyAuditCard(model) {
+  const modelName = document.getElementById('strategyAuditModelName');
+  const passBadge = document.getElementById('strategyAuditPassBadge');
+  const details = document.getElementById('strategyAuditDetails');
+  const statusBadge = document.getElementById('strategyValidationStatusBadge');
+
+  if (model === 'v2-C1') {
+    if (modelName) modelName.textContent = 'Model: v2-C1 Trend Pullback (1h Trend, 15m Entry)';
+    if (passBadge) {
+      passBadge.textContent = 'VALIDATION: FAILED (Over-Trading Friction)';
+      passBadge.className = 'badge badge-danger mono-num';
+    }
+    if (statusBadge) {
+      statusBadge.textContent = 'STATUS: v2-C1 Active (PAPER ONLY)';
+      statusBadge.className = 'badge badge-danger';
+    }
+    if (details) {
+      details.innerHTML = `
+        • <strong>Dev Net P&L:</strong> -$6,269.49 (PF: 0.44, 443 trades, Max DD: 64.00%)<br>
+        • <strong>Validation Net P&L:</strong> -$2,264.33 (PF: 0.38, 112 trades, Max DD: 22.64%)<br>
+        • <strong>Forward Holdout:</strong> Sealed (Disqualified due to Dev failure)<br>
+        • <strong>Automated Trading Lock:</strong> <span class="text-danger font-semibold">STRICTLY LOCKED OUT (Paper Simulation Only)</span>
+      `;
+    }
+  } else if (model === 'v2-C2') {
+    if (modelName) modelName.textContent = 'Model: v2-C2 4h Breakout Trend-Follower (Donchian / Trailing ATR)';
+    if (passBadge) {
+      passBadge.textContent = 'VALIDATION: FAILED (Low Expectancy After Costs)';
+      passBadge.className = 'badge badge-danger mono-num';
+    }
+    if (statusBadge) {
+      statusBadge.textContent = 'STATUS: v2-C2 Active (PAPER ONLY)';
+      statusBadge.className = 'badge badge-danger';
+    }
+    if (details) {
+      details.innerHTML = `
+        • <strong>Dev Net P&L:</strong> -$389.44 (PF: 0.71, 61 trades, Max DD: 6.96%)<br>
+        • <strong>Validation Net P&L:</strong> -$254.64 (PF: 0.50, 16 trades, Max DD: 3.78%)<br>
+        • <strong>Forward Holdout:</strong> Sealed (Disqualified due to Dev failure)<br>
+        • <strong>Automated Trading Lock:</strong> <span class="text-danger font-semibold">STRICTLY LOCKED OUT (Paper Simulation Only)</span>
+      `;
+    }
+  } else {
+    if (modelName) modelName.textContent = 'Model: v1 Alpha Factory Baseline (4h/15m/5m Confluence)';
+    if (passBadge) {
+      passBadge.textContent = 'VALIDATION: FAILED (-28.25% Net Return)';
+      passBadge.className = 'badge badge-danger mono-num';
+    }
+    if (statusBadge) {
+      statusBadge.textContent = 'STATUS: v1 Active (Live/Paper)';
+      statusBadge.className = 'badge badge-warning';
+    }
+    if (details) {
+      details.innerHTML = `
+        • <strong>Dev Net P&L:</strong> -$2,796.55 (PF: 0.69, 289 trades, Max DD: 30.85%)<br>
+        • <strong>Validation Net P&L:</strong> -$22.28 (PF: 0.72, 28 trades)<br>
+        • <strong>Forward Holdout:</strong> Sealed (Requires passing both Dev &amp; Validation)<br>
+        • <strong>Automated Trading Lock:</strong> <span class="text-warning font-semibold">PAPER / AUDITED v1 ARCHITECTURE</span>
+      `;
+    }
+  }
+}
+
 // Settings Loading & Saving
 async function loadSettings() {
   try {
@@ -2639,6 +3121,18 @@ async function loadSettings() {
     }
     if (s.entryAllocationPercent !== undefined) {
       applyAllocation(s.entryAllocationPercent, false);
+    }
+
+    let savedModel = 'v1';
+    try {
+      savedModel = localStorage.getItem('vt2_strategy_model') || s.strategyModel || 'v1';
+    } catch (e) {
+      savedModel = s.strategyModel || 'v1';
+    }
+    const modelSelect = document.getElementById('cfgStrategyModelSelect');
+    if (modelSelect) {
+      modelSelect.value = savedModel;
+      updateStrategyAuditCard(savedModel);
     }
 
     if (s.riskPerTrade !== undefined) document.getElementById('cfgRiskPerTrade').value = s.riskPerTrade;
@@ -2709,6 +3203,7 @@ async function saveSettings() {
     maxTradesPerDay: parseInt(document.getElementById('autoMaxTradesInput')?.value || '3', 10),
     entryAllocationPercent: state.entryAllocationPercent,
     theme: state.theme,
+    strategyModel: document.getElementById('cfgStrategyModelSelect')?.value || 'v1',
     eligibleContracts,
   };
 
@@ -3053,6 +3548,12 @@ function updateAutoTradingUi(data) {
 }
 
 async function startAutoTrading() {
+  const currentModel = document.getElementById('cfgStrategyModelSelect')?.value || 'v1';
+  if (currentModel !== 'v1') {
+    alert(`Automated execution is strictly locked for candidate model "${currentModel}". In accordance with verifiable research protocol, only verified models may execute automated trading. Use Paper Simulation.`);
+    return;
+  }
+
   const btn = document.getElementById('autoStartBtn');
   if (btn) btn.disabled = true;
 

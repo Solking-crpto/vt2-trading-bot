@@ -1,0 +1,152 @@
+{
+  "version": "2.0.0-preregistered",
+  "preregisteredAt": "2026-10-19T11:45:00.000Z",
+  "baselineStrategy": "v1 (VT2 Alpha Factory Frozen v1.0.0)",
+  "splits": {
+    "dev": {
+      "name": "Dev (v1 In-Sample)",
+      "startDate": "2026-05-11T00:00:00.000Z",
+      "endDate": "2026-09-10T00:00:00.000Z",
+      "days": 122,
+      "purpose": "Ablation and candidate parameter calibration"
+    },
+    "validation": {
+      "name": "Validation (v1 Out-of-Sample / Contaminated Validation)",
+      "startDate": "2026-09-10T00:00:00.000Z",
+      "endDate": "2026-10-10T00:00:00.000Z",
+      "days": 30,
+      "purpose": "Confirmation segment (already observed in v1 reporting, strictly labeled contaminated)"
+    },
+    "forwardHoldout": {
+      "name": "Forward Holdout (Fresh Unseen Out-of-Sample)",
+      "startDate": "2026-10-10T00:00:00.000Z",
+      "endDate": "2026-10-19T11:00:00.000Z",
+      "days": 9.5,
+      "purpose": "Strict single-eval test on candidates that pass both Dev and Validation"
+    }
+  },
+  "passCriteria": {
+    "requiredSegments": ["dev", "validation"],
+    "netPnlGreaterThanZero": true,
+    "minProfitFactor": 1.15,
+    "minTradeCount": 30,
+    "maxDrawdownPercent": 20.0,
+    "statisticallyWeakThreshold": 30,
+    "singleHoldoutEvaluationOnly": true
+  },
+  "costModel": {
+    "takerFeeRate": 0.0006,
+    "makerFeeRate": 0.0002,
+    "baseSlippageRate": 0.0002,
+    "slippageSensitivityMultiplier": 2.0,
+    "slippageSensitivityRate": 0.0004,
+    "fundingRate8h": 0.0001,
+    "limitOrderFillRule": "TRADES_THROUGH_ONLY",
+    "ambiguousBarResolution": "STOP_FIRST",
+    "fillTiming": "NEXT_BAR_OPEN"
+  },
+  "riskEngine": {
+    "riskPerTradePercent": 0.005,
+    "maxDailyLossPercent": 0.02,
+    "maxConsecutiveLosses": 3,
+    "maxAggregateOpenRiskPercent": 0.01,
+    "maxConcurrentPositions": 3,
+    "cooldownMinutes": 0,
+    "maxSignalAgeMinutes": null,
+    "actOnBarClose": true,
+    "correlationGroups": {
+      "NASDAQ_100": ["QQQUSDT", "TQQQUSDT", "SQQQUSDT"],
+      "SEMICONDUCTOR": ["SOXLUSDT", "SOXSUSDT"],
+      "SP500": ["SPYUSDT"]
+    }
+  },
+  "candidates": [
+    {
+      "id": "C0",
+      "name": "v1 Baseline",
+      "description": "Full v1 Alpha Factory multi-rule confluence strategy, for baseline comparison only",
+      "type": "BASELINE"
+    },
+    {
+      "id": "C1",
+      "name": "Trend Pullback (1h Trend, 15m Entry)",
+      "description": "Trend pullback on 15m into EMA20 with 1h EMA20/50 regime filter, fixed 2.5R target, breakeven stop at +1R, and 5x cost gate",
+      "timeframes": {
+        "trend": "1h",
+        "entry": "15m"
+      },
+      "rules": {
+        "trendFilter": {
+          "long": "1h close > EMA50 AND 1h EMA20 > EMA50",
+          "short": "1h close < EMA50 AND 1h EMA20 < EMA50"
+        },
+        "entryTrigger": {
+          "long": "15m close > EMA20 after at least one 15m close < EMA20 within last 6 bars",
+          "short": "15m close < EMA20 after at least one 15m close > EMA20 within last 6 bars"
+        },
+        "stopLoss": {
+          "type": "ATR_MULTIPLE",
+          "period": 14,
+          "multiplier": 1.5,
+          "timeframe": "15m"
+        },
+        "takeProfit": {
+          "type": "FIXED_R_MULTIPLE",
+          "multiplier": 2.5
+        },
+        "breakevenTrigger": {
+          "rMultiple": 1.0,
+          "offsetPercent": 0.0005
+        },
+        "costGate": {
+          "minTargetDistanceMultipleOfRoundTrip": 5.0
+        }
+      },
+      "equitySessionModes": ["E0", "E1"]
+    },
+    {
+      "id": "C2",
+      "name": "4h Breakout Trend-Follower",
+      "description": "4h 20-bar Donchian breakout aligned with EMA50 and volume confirmation, 2x ATR stop, trailing 3x ATR exit or 4h EMA20 close, 5x cost gate",
+      "timeframes": {
+        "trend": "4h",
+        "entry": "4h"
+      },
+      "rules": {
+        "trendAndBreakout": {
+          "long": "4h close > EMA50 AND 4h close > highest high of last 20 bars AND 4h volume >= 1.0x 20-bar SMA volume",
+          "short": "4h close < EMA50 AND 4h close < lowest low of last 20 bars AND 4h volume >= 1.0x 20-bar SMA volume"
+        },
+        "stopLoss": {
+          "type": "ATR_MULTIPLE",
+          "period": 14,
+          "multiplier": 2.0,
+          "timeframe": "4h"
+        },
+        "exitRules": {
+          "trailingAtrStopMultiplier": 3.0,
+          "ema20CrossExit": true,
+          "fixedTarget": null
+        },
+        "costGate": {
+          "minExpectedGainMultipleOfRoundTrip": 5.0
+        }
+      },
+      "equitySessionModes": ["E0", "E1"]
+    }
+  ],
+  "equitySessionVariants": {
+    "E0": {
+      "name": "All-Hours",
+      "description": "Trade 24/7 without session filtering"
+    },
+    "E1": {
+      "name": "US Regular Trading Hours (RTH)",
+      "timezone": "America/New_York",
+      "marketOpen": "09:30",
+      "marketClose": "16:00",
+      "holidayCalendar": "NYSE",
+      "description": "Entries permitted strictly during US cash market regular trading hours (09:30-16:00 ET)"
+    }
+  }
+}

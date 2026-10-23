@@ -20,3 +20,5 @@ media/audio/
 
 .vercel/
 .vercel
+scratch/
+logs/

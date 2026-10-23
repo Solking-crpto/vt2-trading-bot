@@ -1,0 +1,334 @@
+{
+  "qualified": [
+    {
+      "symbol": "SNXXUSDT",
+      "underlyingTicker": "SNXX",
+      "assetClass": "EQUITY",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": true,
+      "underlyingSession": "After-Hours Session",
+      "qualified": true,
+      "side": "SHORT",
+      "score": 80.3,
+      "entryPrice": 9.973,
+      "stopLoss": 10.0528,
+      "takeProfit": 9.7606,
+      "partialTakeProfitPrice": 9.8633,
+      "rewardRisk": {
+        "grossRR": 2.6617,
+        "netRR": 2.1164,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628627429,
+      "indicators": {
+        "price": 9.973,
+        "ema20_4h": 10.049961,
+        "ema50_15m": 10.207392,
+        "rsi_15m": 43.57,
+        "atr_15m": 0.117996,
+        "atr_4h": 0.49011,
+        "rvol_5m": 0.25,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "SHORT trend aligned across 4h and 15m timeframes",
+        "S&P 500 macro benchmark (SPY) context is BEARISH",
+        "Net Reward-to-Risk is 2.1164:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    },
+    {
+      "symbol": "XAUUSDT",
+      "underlyingTicker": "XAU",
+      "assetClass": "EQUITY",
+      "leveragedInfo": {
+        "isLeveragedOrInverse": false,
+        "label": null,
+        "direction": null,
+        "leverage": null,
+        "groupId": null
+      },
+      "underlyingMarketClosed": true,
+      "underlyingSession": "After-Hours Session",
+      "qualified": true,
+      "side": "SHORT",
+      "score": 56.3,
+      "entryPrice": 4124.93,
+      "stopLoss": 4145.5547,
+      "takeProfit": 4079.5558,
+      "partialTakeProfitPrice": 4079.5558,
+      "rewardRisk": {
+        "grossRR": 2.2,
+        "netRR": 1.5,
+        "totalCostPercent": 0.0014
+      },
+      "timestamp": 1792628627429,
+      "indicators": {
+        "price": 4124.93,
+        "ema20_4h": 4142.315747,
+        "ema50_15m": 4137.310486,
+        "rsi_15m": 32.68,
+        "atr_15m": 4.714371,
+        "atr_4h": 20.106554,
+        "rvol_5m": 1.03,
+        "isVolumeSpike": false
+      },
+      "reasons": [
+        "SHORT trend aligned across 4h and 15m timeframes",
+        "S&P 500 macro benchmark (SPY) context is BEARISH",
+        "Net Reward-to-Risk is 1.5:1 after modeled exchange fees and slippage",
+        "Standard volume condition"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "symbol": "SOXLUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "KORUUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SPCXUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SOXSUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "SKHYNIXUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "CLUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "MUUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1691) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "TSLAUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "MSTRUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "SNDKUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SKHYUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "BZUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "STOCK_BENCHMARK_DIVERGENCE",
+      "explanation": "Cannot take Long equity setup while S&P 500 macro benchmark (SPY) is BEARISH."
+    },
+    {
+      "symbol": "ETHUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "XAGUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "BTCUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "IOSTUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "MACRO_BTC_DIVERGENCE",
+      "explanation": "Cannot take Short crypto setup while Bitcoin macro trend is BULLISH."
+    },
+    {
+      "symbol": "DOODUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "XRPUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SOLUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "MACRO_BTC_DIVERGENCE",
+      "explanation": "Cannot take Short crypto setup while Bitcoin macro trend is BULLISH."
+    },
+    {
+      "symbol": "ZECUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "NEARUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "HYPEUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.1122) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "WLDUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.0657) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "SUIUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "PEPEUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "ENAUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "SPYUSDT",
+      "assetClass": "EQUITY",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "PUMPUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INSUFFICIENT_NET_REWARD_RISK",
+      "explanation": "Proposed setup net R:R (1.4279) is below minimum requirement (1.5)."
+    },
+    {
+      "symbol": "JCTUSDT",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "TIMEFRAME_ALIGNMENT_CONFLICT",
+      "explanation": "4h trend (BULL) conflicts with 15m trend (BEAR)."
+    },
+    {
+      "symbol": "_meta",
+      "assetClass": "CRYPTO",
+      "qualified": false,
+      "rejectionReason": "INELIGIBLE_CONTRACT",
+      "explanation": "_meta is not on the verified eligible perpetual contract list."
+    }
+  ],
+  "btcContext": {
+    "trend": "BULLISH",
+    "btcPrice": 84161.1,
+    "ema50": 82628.997145,
+    "ema200": null,
+    "reason": "BTC 4h price $84,161.1 vs EMA50 $82629.00"
+  },
+  "stockContext": {
+    "trend": "BEARISH",
+    "benchmarkPrice": 771.01,
+    "ema50": 771.315129,
+    "benchmark": "SPY",
+    "reason": "S&P 500 (SPY) 4h price $771.01 vs EMA $771.32"
+  },
+  "timestamp": 1792628627562,
+  "dataSource": "BITGET_V2_LIVE",
+  "isLive": true,
+  "durationMs": 8103,
+  "marketMode": "both",
+  "partial": false,
+  "meta": {
+    "isPartial": false,
+    "scannedCount": 31,
+    "targetCount": 31,
+    "durationMs": 4944
+  },
+  "counts": {
+    "total": 31,
+    "equity": 16,
+    "crypto": 15
+  },
+  "scannedCount": 31
+}

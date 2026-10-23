@@ -1,0 +1,31 @@
+{
+  "status": "HEALTHY",
+  "uptime": 3,
+  "uptimeSeconds": 3,
+  "lastScanTime": null,
+  "lastBotCycle": null,
+  "wsMessageAgeMs": null,
+  "dbSizeBytes": 339968,
+  "currentMode": "PAPER",
+  "armingState": {
+    "isArmed": false,
+    "armedAt": null,
+    "expiresAt": null,
+    "remainingSeconds": 0,
+    "disarmReason": null,
+    "confirmedTradesCompleted": 0
+  },
+  "lastError": null,
+  "nodeVersion": "v26.9.0",
+  "platform": "win32",
+  "memoryMb": {
+    "heapUsed": "12.3",
+    "heapTotal": "17.5",
+    "rss": "75.0"
+  },
+  "databaseRecords": {
+    "positions": 15,
+    "tradeHistory": 0
+  },
+  "feedStatus": "ONLINE"
+}

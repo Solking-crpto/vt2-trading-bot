@@ -1,0 +1,177 @@
+[
+  {
+    "symbol": "SPYUSDT",
+    "total15m": 15239,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "QQQUSDT",
+    "total15m": 15239,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "NVDAUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "TSLAUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "AAPLUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "MSFTUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "AMZNUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "MSTRUSDT",
+    "total15m": 4038,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "PLTRUSDT",
+    "total15m": 15438,
+    "total4h": 1000,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "SOXLUSDT",
+    "total15m": 14800,
+    "total4h": 1000,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "SOXSUSDT",
+    "total15m": 4000,
+    "total4h": 200,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "TQQQUSDT",
+    "total15m": 1000,
+    "total4h": 1053,
+    "lastTs": 1792413900000,
+    "lastDate": "2026-10-19T12:45:00.000Z"
+  },
+  {
+    "symbol": "SQQQUSDT",
+    "total15m": 15439,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "MUUSDT",
+    "total15m": 15439,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "AMDUSDT",
+    "total15m": 15439,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "SNDKUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "SMCIUSDT",
+    "total15m": 10038,
+    "total4h": 919,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "AVGOUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "QCOMUSDT",
+    "total15m": 13871,
+    "total4h": 919,
+    "lastTs": 1791660600000,
+    "lastDate": "2026-10-10T19:30:00.000Z"
+  },
+  {
+    "symbol": "BAUSDT",
+    "total15m": 2200,
+    "total4h": 200,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "WMTUSDT",
+    "total15m": 14600,
+    "total4h": 1053,
+    "lastTs": 1791660600000,
+    "lastDate": "2026-10-10T19:30:00.000Z"
+  },
+  {
+    "symbol": "COSTUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "RKLBUSDT",
+    "total15m": 15438,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "AMATUSDT",
+    "total15m": 6200,
+    "total4h": 1053,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  },
+  {
+    "symbol": "BTCUSDT",
+    "total15m": 15438,
+    "total4h": 1052,
+    "lastTs": 1792414800000,
+    "lastDate": "2026-10-19T13:00:00.000Z"
+  }
+]

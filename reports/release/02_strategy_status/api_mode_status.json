@@ -1,0 +1,144 @@
+{
+  "mode": "PAPER",
+  "activeEnvironment": "PAPER",
+  "isHosted": false,
+  "liveTradingEnabled": false,
+  "isLiveArmed": false,
+  "armingStatus": {
+    "isArmed": false,
+    "armedAt": null,
+    "expiresAt": null,
+    "remainingSeconds": 0,
+    "disarmReason": null,
+    "confirmedTradesCompleted": 0
+  },
+  "credentials": {
+    "hosted": false,
+    "currentMode": "PAPER",
+    "liveEnabledInEnv": false,
+    "demo": {
+      "hasKey": false,
+      "hasSecret": false,
+      "hasPassphrase": false,
+      "isConfigured": false
+    },
+    "live": {
+      "hasKey": false,
+      "hasSecret": false,
+      "hasPassphrase": false,
+      "isConfigured": false
+    },
+    "arming": {
+      "isArmed": false,
+      "armedAt": null,
+      "expiresAt": null,
+      "remainingSeconds": 0,
+      "disarmReason": null,
+      "confirmedTradesCompleted": 0
+    }
+  },
+  "limits": {
+    "maxNotionalPerOrderUsd": 50,
+    "maxTotalOpenNotionalUsd": 100,
+    "maxRiskPerTradePct": 0.0025,
+    "maxDailyLossUsd": 10,
+    "maxOpenPositions": 1,
+    "maxLeverage": {
+      "equity": 3,
+      "crypto": 5
+    },
+    "allowedSymbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SPYUSDT",
+      "QQQUSDT",
+      "NVDAUSDT",
+      "AAPLUSDT",
+      "MSFTUSDT",
+      "AMZNUSDT"
+    ],
+    "confirmFirstNTrades": 3,
+    "enforceStrictestWins": true
+  },
+  "profiles": {
+    "crypto": {
+      "assetClass": "crypto",
+      "name": "Crypto Futures",
+      "tradingHours": "24/7",
+      "maxLeverage": 5,
+      "showFundingRateOnPreview": true,
+      "feeRatesSource": "CONTRACT_SPEC",
+      "maxDailyTrades": 5,
+      "maxNotionalPerOrderUsd": 50,
+      "gapRiskWarning": false,
+      "demoSupported": true,
+      "demoSymbolPrefix": "S",
+      "demoProductType": "susdt-futures",
+      "demoMarginCoin": "SUSDT"
+    },
+    "equity": {
+      "assetClass": "equity",
+      "name": "Tokenized US Equity Perps",
+      "tradingHours": "24/7_UNDERLYING_RTH",
+      "timezone": "America/New_York",
+      "maxLeverage": 3,
+      "underlyingMarketOpen": "09:30",
+      "underlyingMarketClose": "16:00",
+      "showUnderlyingMarketBadge": true,
+      "equityEntriesWhenUnderlyingClosed": "ALLOW_WITH_WARNING",
+      "gapRiskNoteOnPreview": true,
+      "gapRiskWarning": "Overnight & weekend holds carry equity gap risk upon US market open.",
+      "maxDailyTrades": 3,
+      "maxNotionalPerOrderUsd": 50,
+      "feeRatesSource": "CONTRACT_SPEC",
+      "demoSupported": false,
+      "demoUnavailableReason": "Equities: PAPER only, no Bitget demo contracts"
+    }
+  },
+  "mainnetAllowed": false,
+  "mainnetKillSwitchDisarmed": false,
+  "credentialsConfigured": false,
+  "strategyStatus": "UNVALIDATED: failed pre-registered replay (trial 35)",
+  "strategy": {
+    "id": "S0",
+    "code": "S0",
+    "name": "VT2 As-Shipped Strategy (S0)",
+    "description": "Multi-timeframe momentum and trend-pullback scanner with ATR targets, 0.5%-0.8% stops, and SPY macro gating.",
+    "status": "UNVALIDATED: failed pre-registered replay (trial 35)",
+    "isValidated": false,
+    "trialNumber": 35,
+    "verdict": "FAIL",
+    "conclusionStatement": "The app as shipped has no demonstrated edge on this data.",
+    "metrics": {
+      "dev": {
+        "window": "2026-05-11 to 2026-09-11",
+        "trades": 348,
+        "winRate": "40.80%",
+        "netPnl": -154.41,
+        "profitFactor": 0.99,
+        "maxDrawdown": "19.69%",
+        "realizedNetRR": "1.4305:1"
+      },
+      "validation": {
+        "window": "2026-09-11 to 2026-10-10",
+        "trades": 34,
+        "winRate": "23.53%",
+        "netPnl": -647.91,
+        "profitFactor": 0.48,
+        "maxDrawdown": "25.07%",
+        "realizedNetRR": "1.5597:1"
+      }
+    },
+    "advisoryNotice": "UNVALIDATED: failed pre-registered replay (trial 35). S0 produced -$154.41 (PF 0.99) on Dev and -$647.91 (PF 0.48) on Validation. No tested candidate demonstrated an edge after costs.",
+    "requiresValidationAcknowledgment": true
+  },
+  "validationWarning": {
+    "status": "UNVALIDATED: failed pre-registered replay (trial 35)",
+    "isValidated": false,
+    "trial": 35,
+    "verdict": "FAIL",
+    "message": "UNVALIDATED: failed pre-registered replay (trial 35). S0 produced -$154.41 (PF 0.99) on Dev and -$647.91 (PF 0.48) on Validation. No tested candidate demonstrated an edge after costs.",
+    "conclusion": "The app as shipped has no demonstrated edge on this data.",
+    "requiredAcknowledgment": "I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION"
+  }
+}

@@ -12,8 +12,13 @@
   "scripts": {
     "start": "node start.js",
     "dev": "node --watch start.js",
+    "service:start": "pm2 start ecosystem.config.cjs",
+    "service:stop": "pm2 stop ecosystem.config.cjs",
+    "service:status": "pm2 status",
     "test": "node --test --test-force-exit --test-timeout=60000",
     "backtest:alpha": "node scripts/run-alpha-backtest.js",
+    "backtest:v2": "node scripts/run-v2-backtest.js",
+    "forward:report": "node scripts/forward-report.js",
     "ui-smoke": "node scripts/ui-smoke.js"
   },
   "keywords": [
@@ -27,5 +32,8 @@
   "author": "VT2 Engineering Team",
   "license": "ISC",
   "type": "module",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "pm2": "^7.1.0"
+  }
 }

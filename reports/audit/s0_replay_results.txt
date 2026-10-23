@@ -1,0 +1,55 @@
+================================================================================
+VT2 CANDIDATE S0: AS-SHIPPED LIVE STRATEGY REPLAY RESULTS
+Generated: 2026-10-21T11:27:41.010Z
+Pre-registration Commit: 877fa3e81610d9d39883fe2b6f23791b0d2233cb
+================================================================================
+
+SPLIT 1: DEV (2026-05-11 00:00 UTC to 2026-09-11 15:00 UTC)
+--------------------------------------------------------------------------------
+Trades: 348 (Wins: 142, Losses: 206)
+Win Rate: 40.8%
+Net P&L ($): -154.41
+Profit Factor: 0.99
+Max Drawdown (%): 19.69%
+Average Win ($): $77.12
+Average Loss ($): -$53.91
+Realized Net R:R: 1.4305:1
+Expectancy per Trade ($): $-0.44
+Cost Sensitivity (Dev):
+  0x Costs (Gross): Net P&L $3171.88, PF 1.26
+  1x Costs (Baseline): Net P&L $-154.41, PF 0.99
+  2x Costs (Stress): Net P&L $-2500.81, PF 0.76
+
+SPLIT 2: VALIDATION (2026-09-11 15:00 UTC to 2026-10-10 19:30 UTC)
+--------------------------------------------------------------------------------
+Trades: 34 (Wins: 8, Losses: 26)
+Win Rate: 23.53%
+Net P&L ($): -647.91
+Profit Factor: 0.48
+Max Drawdown (%): 25.07%
+Average Win ($): $74.73
+Average Loss ($): -$47.91
+Realized Net R:R: 1.5597:1
+Expectancy per Trade ($): $-19.06
+Cost Sensitivity (Val):
+  0x Costs (Gross): Net P&L $-558.03, PF 0.67
+  1x Costs (Baseline): Net P&L $-647.91, PF 0.48
+  2x Costs (Stress): Net P&L $-529.64, PF 0.36
+
+FORWARD HOLDOUT:
+--------------------------------------------------------------------------------
+STATUS: STRICTLY CLOSED / UNOPENED (S0 did not pass Dev/Val criteria).
+
+PASS / FAIL EVALUATION:
+--------------------------------------------------------------------------------
+1. Net Return > 0: FAIL (Dev: $-154.41, Val: $-647.91)
+2. Profit Factor >= 1.25: FAIL (Dev: 0.99, Val: 0.48)
+3. Trades >= 30: PASS (Dev: 348, Val: 34)
+4. Max Drawdown <= 15%: FAIL (Dev: 19.69%, Val: 25.07%)
+5. Positive at 2x Costs: FAIL (Dev: $-2500.81, Val: $-529.64)
+OVERALL VERDICT: FAIL
+
+CONCLUSION STATEMENT:
+--------------------------------------------------------------------------------
+The app as shipped has no demonstrated edge on this data.
+================================================================================

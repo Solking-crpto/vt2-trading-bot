@@ -21,6 +21,7 @@ export class Database {
     this.memJournal = [];
     this.memRejected = [];
     this.memBacktests = [];
+    this.memAiAnalyst = [];
   }
 
   init() {
@@ -136,6 +137,8 @@ export class Database {
         symbol TEXT NOT NULL,
         side TEXT NOT NULL,
         strategy_version TEXT NOT NULL,
+        strategy_id TEXT,
+        config_hash TEXT,
         entry_price REAL NOT NULL,
         exit_price REAL NOT NULL,
         quantity REAL NOT NULL,
@@ -178,7 +181,55 @@ export class Database {
         parameters_json TEXT NOT NULL,
         trades_json TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS ai_analyst_records (
+        id TEXT PRIMARY KEY,
+        timestamp INTEGER NOT NULL,
+        feature TEXT NOT NULL,
+        symbol TEXT,
+        trade_id TEXT,
+        prompt_hash TEXT NOT NULL,
+        setup_hash TEXT,
+        model TEXT NOT NULL,
+        prompt_text TEXT NOT NULL,
+        response_text TEXT NOT NULL,
+        verdict TEXT,
+        ai_verdict TEXT,
+        ai_confidence REAL,
+        reasons TEXT,
+        ai_reasoning TEXT,
+        invalidation_conditions TEXT,
+        rule_decision TEXT,
+        trade_outcome TEXT,
+        realized_pnl REAL,
+        actual_pnl REAL
+      );
     `);
+
+    try {
+      this.db.exec("ALTER TABLE trade_journal ADD COLUMN strategy_id TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE trade_journal ADD COLUMN config_hash TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN trade_id TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN ai_verdict TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN ai_confidence REAL;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN ai_reasoning TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN rule_decision TEXT;");
+    } catch (_) {}
+    try {
+      this.db.exec("ALTER TABLE ai_analyst_records ADD COLUMN actual_pnl REAL;");
+    } catch (_) {}
   }
 
   saveSetting(key, value) {
@@ -403,15 +454,33 @@ export class Database {
   }
 
   saveJournalEntry(entry) {
+    const mode = entry.mode || entry.environment || 'PAPER';
+    const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(entry.symbol?.toUpperCase());
+    const assetClass = entry.assetClass || entry.asset_class || (isCrypto ? 'crypto' : 'equity');
+    const strategyId = entry.strategyId || entry.strategy_id || entry.strategyVersion || 'v1.0.0';
+    const configHash = entry.configHash || entry.config_hash || null;
+    const thesis = {
+      ...(entry.thesis || {}),
+      strategy_id: strategyId,
+      config_hash: configHash,
+    };
+
     if (this.isInMemoryFallback) {
       const row = {
         id: entry.id,
         position_id: entry.positionId,
         timestamp: entry.timestamp,
-        environment: entry.environment || 'PAPER',
+        environment: mode,
+        mode,
+        asset_class: assetClass,
+        assetClass,
         symbol: entry.symbol,
         side: entry.side,
-        strategy_version: entry.strategyVersion || 'v1.0.0',
+        strategy_version: entry.strategyVersion || strategyId,
+        strategy_id: strategyId,
+        strategyId,
+        config_hash: configHash,
+        configHash,
         entry_price: entry.entryPrice,
         exit_price: entry.exitPrice,
         quantity: entry.quantity,
@@ -420,10 +489,10 @@ export class Database {
         holding_time_ms: entry.holdingTimeMs || 0,
         fees_paid: entry.feesPaid,
         exit_reason: entry.exitReason,
-        thesis_json: JSON.stringify(entry.thesis || {}),
+        thesis_json: JSON.stringify(thesis),
         review_json: JSON.stringify(entry.review || {}),
         risk_result_json: JSON.stringify(entry.riskResult || {}),
-        is_simulated: 1,
+        is_simulated: mode === 'LIVE' ? 0 : 1,
       };
       this.memJournal.push(row);
       return;
@@ -431,41 +500,55 @@ export class Database {
     const stmt = this.db.prepare(`
       INSERT INTO trade_journal (
         id, position_id, timestamp, environment, symbol, side,
-        strategy_version, entry_price, exit_price, quantity, realized_pnl,
+        strategy_version, strategy_id, config_hash, entry_price, exit_price, quantity, realized_pnl,
         roi_percent, holding_time_ms, fees_paid, exit_reason,
         thesis_json, review_json, risk_result_json, is_simulated
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      entry.id, entry.positionId, entry.timestamp, entry.environment || 'PAPER',
-      entry.symbol, entry.side, entry.strategyVersion || 'v1.0.0',
+      entry.id, entry.positionId, entry.timestamp, mode,
+      entry.symbol, entry.side, entry.strategyVersion || strategyId,
+      strategyId, configHash,
       entry.entryPrice, entry.exitPrice, entry.quantity, entry.realizedPnl,
       entry.roiPercent, entry.holdingTimeMs || 0, entry.feesPaid, entry.exitReason,
-      JSON.stringify(entry.thesis || {}), JSON.stringify(entry.review || {}),
-      JSON.stringify(entry.riskResult || {})
+      JSON.stringify(thesis), JSON.stringify(entry.review || {}),
+      JSON.stringify(entry.riskResult || {}),
+      mode === 'LIVE' ? 0 : 1
     );
   }
 
   getJournalEntries(limit = 100) {
+    const enrich = (row) => {
+      const isCrypto = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'SBTCSUSDT', 'SETHSUSDT', 'SXRPSUSDT'].includes(row.symbol?.toUpperCase());
+      const assetClass = row.asset_class || row.assetClass || (isCrypto ? 'crypto' : 'equity');
+      const mode = row.mode || row.environment || 'PAPER';
+      const thesis = JSON.parse(row.thesis_json || '{}');
+      const strategyId = row.strategy_id || thesis.strategy_id || row.strategy_version || 'v1.0.0';
+      const configHash = row.config_hash || thesis.config_hash || null;
+      return {
+        ...row,
+        strategy_id: strategyId,
+        strategyId,
+        config_hash: configHash,
+        configHash,
+        mode,
+        assetClass,
+        asset_class: assetClass,
+        thesis,
+        review: JSON.parse(row.review_json || '{}'),
+        riskResult: JSON.parse(row.risk_result_json || '{}'),
+      };
+    };
+
     if (this.isInMemoryFallback) {
       return [...this.memJournal]
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, limit)
-        .map(row => ({
-          ...row,
-          thesis: JSON.parse(row.thesis_json || '{}'),
-          review: JSON.parse(row.review_json || '{}'),
-          riskResult: JSON.parse(row.risk_result_json || '{}'),
-        }));
+        .map(enrich);
     }
     const stmt = this.db.prepare('SELECT * FROM trade_journal ORDER BY timestamp DESC LIMIT ?');
-    return stmt.all(limit).map(row => ({
-      ...row,
-      thesis: JSON.parse(row.thesis_json || '{}'),
-      review: JSON.parse(row.review_json || '{}'),
-      riskResult: JSON.parse(row.risk_result_json || '{}'),
-    }));
+    return stmt.all(limit).map(enrich);
   }
 
   saveRejectedSetup(setup) {
@@ -573,6 +656,171 @@ export class Database {
       parameters: JSON.parse(row.parameters_json || '{}'),
       trades: JSON.parse(row.trades_json || '[]'),
     }));
+  }
+
+  saveAiAnalystRecord(rec) {
+    const verdict = rec.aiVerdict || rec.verdict || null;
+    const reasons = rec.aiReasoning || rec.reasons || null;
+    const actualPnl = rec.actualPnl ?? rec.realizedPnl ?? null;
+    const tradeOutcome = rec.tradeOutcome || (actualPnl !== null ? (actualPnl > 0 ? 'WIN' : 'LOSS') : null);
+
+    if (this.isInMemoryFallback) {
+      this.memAiAnalyst.unshift({
+        ...rec,
+        verdict,
+        aiVerdict: verdict,
+        reasons,
+        aiReasoning: reasons,
+        actualPnl,
+        realizedPnl: actualPnl,
+        tradeOutcome,
+      });
+      if (this.memAiAnalyst.length > 500) this.memAiAnalyst.pop();
+      return;
+    }
+
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO ai_analyst_records (
+        id, timestamp, feature, symbol, trade_id, prompt_hash, setup_hash, model,
+        prompt_text, response_text, verdict, ai_verdict, ai_confidence,
+        reasons, ai_reasoning, invalidation_conditions, rule_decision,
+        trade_outcome, realized_pnl, actual_pnl
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      rec.id, rec.timestamp || Date.now(), rec.feature, rec.symbol || null,
+      rec.tradeId || null, rec.promptHash, rec.setupHash || null, rec.model,
+      rec.promptText, rec.responseText, verdict, verdict,
+      rec.aiConfidence ?? null, reasons, reasons, rec.invalidationConditions || null,
+      rec.ruleDecision || null, tradeOutcome, actualPnl, actualPnl
+    );
+  }
+
+  getAiAnalystRecordByHash(promptHash) {
+    if (this.isInMemoryFallback) {
+      return this.memAiAnalyst.find(r => r.promptHash === promptHash) || null;
+    }
+    const stmt = this.db.prepare('SELECT * FROM ai_analyst_records WHERE prompt_hash = ? LIMIT 1');
+    const row = stmt.get(promptHash);
+    return row || null;
+  }
+
+  updateAiAnalystOutcome(symbolOrSetupHashOrTradeId, outcome, pnl = null, tradeId = null) {
+    const actualPnl = pnl !== null ? Number(pnl) : null;
+    const tradeOutcome = outcome || (actualPnl !== null ? (actualPnl > 0 ? 'WIN' : 'LOSS') : null);
+
+    if (this.isInMemoryFallback) {
+      const match = this.memAiAnalyst.find(r =>
+        (r.symbol === symbolOrSetupHashOrTradeId ||
+         r.setupHash === symbolOrSetupHashOrTradeId ||
+         r.tradeId === symbolOrSetupHashOrTradeId ||
+         r.id === symbolOrSetupHashOrTradeId) &&
+        !r.tradeOutcome
+      );
+      if (match) {
+        match.tradeOutcome = tradeOutcome;
+        match.realizedPnl = actualPnl;
+        match.actualPnl = actualPnl;
+        if (tradeId) match.tradeId = tradeId;
+      }
+      return;
+    }
+
+    const stmt = this.db.prepare(`
+      UPDATE ai_analyst_records
+      SET trade_outcome = ?, realized_pnl = ?, actual_pnl = ?, trade_id = COALESCE(?, trade_id)
+      WHERE (symbol = ? OR setup_hash = ? OR trade_id = ? OR id = ?) AND trade_outcome IS NULL
+    `);
+    stmt.run(
+      tradeOutcome,
+      actualPnl,
+      actualPnl,
+      tradeId || null,
+      symbolOrSetupHashOrTradeId,
+      symbolOrSetupHashOrTradeId,
+      symbolOrSetupHashOrTradeId,
+      symbolOrSetupHashOrTradeId
+    );
+  }
+
+  getAiAnalystEvaluationStats() {
+    let rows = [];
+    if (this.isInMemoryFallback) {
+      rows = this.memAiAnalyst.filter(r => (r.verdict || r.aiVerdict) && (r.tradeOutcome || r.realizedPnl !== null || r.actualPnl !== null));
+    } else {
+      const stmt = this.db.prepare(`
+        SELECT
+          COALESCE(ai_verdict, verdict) AS verdict,
+          trade_outcome,
+          COALESCE(actual_pnl, realized_pnl) AS pnl
+        FROM ai_analyst_records
+        WHERE (ai_verdict IS NOT NULL OR verdict IS NOT NULL)
+          AND (trade_outcome IS NOT NULL OR actual_pnl IS NOT NULL OR realized_pnl IS NOT NULL)
+      `);
+      rows = stmt.all();
+    }
+
+    const totalEvaluated = rows.length;
+    if (totalEvaluated < 30) {
+      return {
+        sampleSize: totalEvaluated,
+        isStatisticallyEvaluated: false,
+        message: `Sample size too small to evaluate AI performance (${totalEvaluated}/30)`,
+        passTradesCount: 0,
+        passWinRate: null,
+        skipTradesCount: 0,
+        skipWinRate: null,
+        correlationWithPnl: null,
+      };
+    }
+
+    // Pass trades
+    const passRows = rows.filter(r => (r.verdict || '').toUpperCase() === 'PASS');
+    const passWinners = passRows.filter(r => Number(r.pnl) > 0 || r.trade_outcome === 'WIN');
+    const passWinRate = passRows.length > 0 ? (passWinners.length / passRows.length) : null;
+
+    // Skip trades
+    const skipRows = rows.filter(r => (r.verdict || '').toUpperCase() === 'SKIP');
+    const skipWinners = skipRows.filter(r => Number(r.pnl) > 0 || r.trade_outcome === 'WIN');
+    const skipWinRate = skipRows.length > 0 ? (skipWinners.length / skipRows.length) : null;
+
+    // Pearson Correlation between numeric verdict (PASS=1, CAUTION=0.5, SKIP=0) and P&L
+    const pairs = rows.map(r => {
+      const v = (r.verdict || '').toUpperCase();
+      const score = v === 'PASS' ? 1.0 : v === 'CAUTION' ? 0.5 : 0.0;
+      const pnl = Number(r.pnl) || 0;
+      return { x: score, y: pnl };
+    });
+
+    const n = pairs.length;
+    const sumX = pairs.reduce((acc, p) => acc + p.x, 0);
+    const sumY = pairs.reduce((acc, p) => acc + p.y, 0);
+    const meanX = sumX / n;
+    const meanY = sumY / n;
+
+    let numerator = 0;
+    let denomX = 0;
+    let denomY = 0;
+    for (const p of pairs) {
+      const dx = p.x - meanX;
+      const dy = p.y - meanY;
+      numerator += dx * dy;
+      denomX += dx * dx;
+      denomY += dy * dy;
+    }
+
+    const denom = Math.sqrt(denomX * denomY);
+    const correlationWithPnl = denom === 0 ? 0 : Number((numerator / denom).toFixed(4));
+
+    return {
+      sampleSize: totalEvaluated,
+      isStatisticallyEvaluated: true,
+      passTradesCount: passRows.length,
+      passWinRate,
+      skipTradesCount: skipRows.length,
+      skipWinRate,
+      correlationWithPnl,
+    };
   }
 
   close() {

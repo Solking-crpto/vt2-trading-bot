@@ -1,0 +1,47 @@
+{
+  "symbol": "BTCUSDT",
+  "side": "LONG",
+  "quantity": 0.0005,
+  "entryPrice": 60000,
+  "notionalUsd": 30,
+  "leverage": 1,
+  "stopLoss": 59000,
+  "takeProfit": 63000,
+  "maxDollarLoss": 0.5,
+  "profile": {
+    "assetClass": "crypto",
+    "name": "Crypto Futures",
+    "tradingHours": "24/7",
+    "maxLeverage": 5,
+    "showFundingRateOnPreview": true,
+    "feeRatesSource": "CONTRACT_SPEC",
+    "maxDailyTrades": 5,
+    "maxNotionalPerOrderUsd": 50,
+    "gapRiskWarning": false,
+    "demoSupported": true,
+    "demoSymbolPrefix": "S",
+    "demoProductType": "susdt-futures",
+    "demoMarginCoin": "SUSDT"
+  },
+  "underlyingStatus": {
+    "isOpen": false,
+    "session": "CLOSED",
+    "timezone": "America/New_York",
+    "rthSchedule": "09:30 - 16:00 ET (Mon-Fri, ex. NYSE Holidays)"
+  },
+  "capCheck": {
+    "allowed": false,
+    "error": "MAX_TOTAL_OPEN_NOTIONAL_EXCEEDED",
+    "reason": "Projected total open notional ($1656.23) exceeds maxTotalOpenNotionalUsd cap of $100"
+  },
+  "strategyStatus": "UNVALIDATED: failed pre-registered replay (trial 35)",
+  "validationWarning": {
+    "status": "UNVALIDATED: failed pre-registered replay (trial 35)",
+    "isValidated": false,
+    "trial": 35,
+    "verdict": "FAIL",
+    "message": "UNVALIDATED: failed pre-registered replay (trial 35). S0 produced -$154.41 (PF 0.99) on Dev and -$647.91 (PF 0.48) on Validation. No tested candidate demonstrated an edge after costs.",
+    "conclusion": "The app as shipped has no demonstrated edge on this data.",
+    "requiredAcknowledgment": "I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION"
+  }
+}

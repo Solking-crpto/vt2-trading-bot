@@ -1,0 +1,33 @@
+========================================================================
+VT2 STEP 6: COMPUTED ADVISORY AI ANALYST ARCHITECTURAL AUDIT
+========================================================================
+Timestamp: 2026-10-21T23:45:00.000Z
+Analyzed Module: src/ai/analyst.js
+Total Lines: 404
+Total Bytes: 13568
+
+1. Static Imports Analysis:
+   Total import statements: 2
+   Line 15: import crypto from 'node:crypto';
+   Line 16: import { redactSecrets, isHosted } from '../environment.js';
+   Distinct imported modules: ["node:crypto","../environment.js"]
+   Forbidden module regex: /execution|order|trade-client|auto-trader|monitor|authenticated/i
+   Matching forbidden module count: 0
+   Matching forbidden modules: []
+
+2. Class Prototype Inspection:
+   Total prototype properties: 7
+   Method names: ["constructor","getStatus","checkDailyReset","callProvider","generateSetupBrief","generatePostTradeReview","generateDailyBrief"]
+   Forbidden execution methods list: ["placeOrder","submitOrder","cancelOrder","closePosition","modifyOrder","executeOrder","executeTrade","trade","buy","sell"]
+   Matching forbidden execution method count: 0
+   Matching forbidden execution methods: []
+
+3. Computed Security & Invariant Cross-References in Source:
+   - Secret redaction call (redactSecrets): line 30
+   - Untrusted envelope ([UNTRUSTED_EXTERNAL_DATA): line 39
+   - Hosted environment lockout (isHosted): line 76
+   - Daily call cap check (this.callsToday >= this.dailyCap): line 122
+   - In-memory hash cache lookup (this.cache.has): line 132
+   - Exported DEFAULT_DAILY_CALL_CAP: 50
+   - Exported AI_DISCLAIMER: "AI-generated, not validated. Does not constitute investment advice. Final trade decision remains with deterministic rules."
+========================================================================

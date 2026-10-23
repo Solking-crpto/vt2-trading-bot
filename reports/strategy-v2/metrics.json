@@ -1,0 +1,318 @@
+{
+  "generatedAt": "2026-10-19T13:25:09.145Z",
+  "protocol": "VT2 Strategy v2 Pre-Registered Evaluation",
+  "preregistrationCommit": "dc2aa78107583955ac6731f4324d2803e8401f07",
+  "passCriteria": {
+    "netPnlGreaterThanZero": true,
+    "minProfitFactor": 1.15,
+    "minTradeCount": 30,
+    "maxDrawdownPercent": 20
+  },
+  "passingCandidatesCount": 0,
+  "passingCandidates": [],
+  "forwardHoldoutOpened": false,
+  "trials": [
+    {
+      "candidateId": "C0",
+      "candidateName": "v1 Baseline",
+      "sessionMode": "E0",
+      "splitId": "dev",
+      "tradeCount": 288,
+      "winRate": 38.89,
+      "netPnl": -3194.64,
+      "profitFactor": 0.66,
+      "maxDrawdownPct": 32.9,
+      "annualizedSharpe": 0,
+      "annualizedSortino": 0,
+      "turnover": 258,
+      "totalCosts": null,
+      "sensitivity2xNetPnl": -4132.44,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": false
+      }
+    },
+    {
+      "candidateId": "C0",
+      "candidateName": "v1 Baseline",
+      "sessionMode": "E0",
+      "splitId": "validation",
+      "tradeCount": 62,
+      "winRate": 43.55,
+      "netPnl": -531.89,
+      "profitFactor": 0.76,
+      "maxDrawdownPct": 6.58,
+      "annualizedSharpe": 0,
+      "annualizedSortino": 0,
+      "turnover": 258,
+      "totalCosts": null,
+      "sensitivity2xNetPnl": -837.23,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": true
+      }
+    },
+    {
+      "candidateId": "C1",
+      "candidateName": "Trend Pullback (1h/15m)",
+      "sessionMode": "E0",
+      "splitId": "dev",
+      "tradeCount": 443,
+      "winRate": 14.67,
+      "netPnl": -6269.49,
+      "profitFactor": 0.44,
+      "totalReturnPct": -62.69,
+      "maxDrawdownPct": 64,
+      "annualizedSharpe": -14.46,
+      "annualizedSortino": -12.77,
+      "turnover": 578.49,
+      "totalCosts": 4701.62,
+      "totalFees": 3470.28,
+      "totalSlippage": 1156.81,
+      "totalFunding": 74.53,
+      "bootstrapCI": {
+        "mean": -0.1981,
+        "lower80": -0.2566,
+        "upper80": -0.1366
+      },
+      "sensitivity2xNetPnl": -6590.38,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": false
+      }
+    },
+    {
+      "candidateId": "C1",
+      "candidateName": "Trend Pullback (1h/15m)",
+      "sessionMode": "E0",
+      "splitId": "validation",
+      "tradeCount": 112,
+      "winRate": 12.5,
+      "netPnl": -2264.33,
+      "profitFactor": 0.38,
+      "totalReturnPct": -22.64,
+      "maxDrawdownPct": 22.64,
+      "annualizedSharpe": -24.22,
+      "annualizedSortino": -14.96,
+      "turnover": 204.71,
+      "totalCosts": 1655.1,
+      "totalFees": 1228.17,
+      "totalSlippage": 409.29,
+      "totalFunding": 17.64,
+      "bootstrapCI": {
+        "mean": -0.2473,
+        "lower80": -0.3316,
+        "upper80": -0.1648
+      },
+      "sensitivity2xNetPnl": -2635.01,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": false
+      }
+    },
+    {
+      "candidateId": "C1",
+      "candidateName": "Trend Pullback (1h/15m)",
+      "sessionMode": "E1",
+      "splitId": "dev",
+      "tradeCount": 254,
+      "winRate": 10.63,
+      "netPnl": -4079.9,
+      "profitFactor": 0.37,
+      "totalReturnPct": -40.8,
+      "maxDrawdownPct": 40.8,
+      "annualizedSharpe": -10.42,
+      "annualizedSortino": -10.01,
+      "turnover": 358.16,
+      "totalCosts": 2918.16,
+      "totalFees": 2148.63,
+      "totalSlippage": 716.23,
+      "totalFunding": 53.3,
+      "bootstrapCI": {
+        "mean": -0.2408,
+        "lower80": -0.3076,
+        "upper80": -0.1778
+      },
+      "sensitivity2xNetPnl": -4891.62,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": false
+      }
+    },
+    {
+      "candidateId": "C1",
+      "candidateName": "Trend Pullback (1h/15m)",
+      "sessionMode": "E1",
+      "splitId": "validation",
+      "tradeCount": 64,
+      "winRate": 9.38,
+      "netPnl": -1671.86,
+      "profitFactor": 0.26,
+      "totalReturnPct": -16.72,
+      "maxDrawdownPct": 16.79,
+      "annualizedSharpe": -14.68,
+      "annualizedSortino": -12.18,
+      "turnover": 122.74,
+      "totalCosts": 1020.01,
+      "totalFees": 742.68,
+      "totalSlippage": 247.56,
+      "totalFunding": 29.77,
+      "bootstrapCI": {
+        "mean": -0.2206,
+        "lower80": -0.3497,
+        "upper80": -0.0748
+      },
+      "sensitivity2xNetPnl": -1613.92,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": true
+      }
+    },
+    {
+      "candidateId": "C2",
+      "candidateName": "4h Breakout Trend-Follower",
+      "sessionMode": "E0",
+      "splitId": "dev",
+      "tradeCount": 61,
+      "winRate": 34.43,
+      "netPnl": -389.44,
+      "profitFactor": 0.71,
+      "totalReturnPct": -3.89,
+      "maxDrawdownPct": 6.96,
+      "annualizedSharpe": -1.65,
+      "annualizedSortino": -2.5,
+      "turnover": 33.24,
+      "totalCosts": 378.96,
+      "totalFees": 201.57,
+      "totalSlippage": 67.19,
+      "totalFunding": 110.19,
+      "bootstrapCI": {
+        "mean": -0.2275,
+        "lower80": -0.633,
+        "upper80": 0.207
+      },
+      "sensitivity2xNetPnl": -105.86,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": true
+      }
+    },
+    {
+      "candidateId": "C2",
+      "candidateName": "4h Breakout Trend-Follower",
+      "sessionMode": "E0",
+      "splitId": "validation",
+      "tradeCount": 16,
+      "winRate": 25,
+      "netPnl": -254.64,
+      "profitFactor": 0.5,
+      "totalReturnPct": -2.55,
+      "maxDrawdownPct": 3.78,
+      "annualizedSharpe": -4.7,
+      "annualizedSortino": -5.73,
+      "turnover": 10.06,
+      "totalCosts": 113.99,
+      "totalFees": 63.68,
+      "totalSlippage": 21.23,
+      "totalFunding": 29.09,
+      "bootstrapCI": {
+        "mean": -0.7369,
+        "lower80": -1.3775,
+        "upper80": -0.0806
+      },
+      "sensitivity2xNetPnl": -380.56,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": false,
+        "passDd": true
+      }
+    },
+    {
+      "candidateId": "C2",
+      "candidateName": "4h Breakout Trend-Follower",
+      "sessionMode": "E1",
+      "splitId": "dev",
+      "tradeCount": 47,
+      "winRate": 29.79,
+      "netPnl": -782.29,
+      "profitFactor": 0.37,
+      "totalReturnPct": -7.82,
+      "maxDrawdownPct": 7.96,
+      "annualizedSharpe": -5.01,
+      "annualizedSortino": -5.62,
+      "turnover": 27.57,
+      "totalCosts": 305.56,
+      "totalFees": 168.67,
+      "totalSlippage": 56.23,
+      "totalFunding": 80.66,
+      "bootstrapCI": {
+        "mean": -0.5628,
+        "lower80": -0.8991,
+        "upper80": -0.1991
+      },
+      "sensitivity2xNetPnl": -493.54,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": true,
+        "passDd": true
+      }
+    },
+    {
+      "candidateId": "C2",
+      "candidateName": "4h Breakout Trend-Follower",
+      "sessionMode": "E1",
+      "splitId": "validation",
+      "tradeCount": 12,
+      "winRate": 16.67,
+      "netPnl": -339.04,
+      "profitFactor": 0.27,
+      "totalReturnPct": -3.39,
+      "maxDrawdownPct": 3.41,
+      "annualizedSharpe": -6.05,
+      "annualizedSortino": -7.72,
+      "turnover": 9.52,
+      "totalCosts": 103.68,
+      "totalFees": 58.78,
+      "totalSlippage": 19.6,
+      "totalFunding": 25.3,
+      "bootstrapCI": {
+        "mean": -0.7875,
+        "lower80": -1.2042,
+        "upper80": -0.3475
+      },
+      "sensitivity2xNetPnl": -195.56,
+      "isPassing": false,
+      "criteria": {
+        "passNetPnl": false,
+        "passPf": false,
+        "passTrades": false,
+        "passDd": true
+      }
+    }
+  ]
+}

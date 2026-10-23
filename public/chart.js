@@ -15,6 +15,8 @@ export class VT2Chart {
     this.showEma200 = true;
     this.showRsi = true;
     this.showVolume = true;
+    this.showSignals = true;
+    this.tradeMarkers = [];
     this.theme = options.theme || (typeof document !== 'undefined' ? (document.documentElement.getAttribute('data-theme') || 'dark') : 'dark');
 
     this.padding = { top: 20, right: 70, bottom: 30, left: 10 };
@@ -30,6 +32,11 @@ export class VT2Chart {
   setData(candles, indicators = null) {
     this.candles = candles || [];
     this.indicators = indicators;
+    this.render();
+  }
+
+  setTradeMarkers(markers = []) {
+    this.tradeMarkers = markers;
     this.render();
   }
 
@@ -205,9 +212,88 @@ export class VT2Chart {
 
     // 4. Overlays: EMA 20, 50, 200
     if (this.indicators) {
-      this.drawLineSeries(this.indicators.ema20, '#38bdf8', getY, candleWidth); // Sky blue EMA 20
-      this.drawLineSeries(this.indicators.ema50, '#fbbf24', getY, candleWidth); // Amber EMA 50
-      this.drawLineSeries(this.indicators.ema200, '#a855f7', getY, candleWidth); // Purple EMA 200
+      if (this.showEma20) this.drawLineSeries(this.indicators.ema20, '#38bdf8', getY, candleWidth); // Sky blue EMA 20
+      if (this.showEma50) this.drawLineSeries(this.indicators.ema50, '#fbbf24', getY, candleWidth); // Amber EMA 50
+      if (this.showEma200) this.drawLineSeries(this.indicators.ema200, '#a855f7', getY, candleWidth); // Purple EMA 200
+    }
+
+    // 4b. Trade Signal Markers & Stop / Target Overlays
+    if (this.showSignals && this.tradeMarkers && this.tradeMarkers.length > 0 && candles.length > 0) {
+      for (const tm of this.tradeMarkers) {
+        let cIdx = -1;
+        for (let i = 0; i < candles.length; i++) {
+          const cTs = candles[i].timestamp;
+          if (cTs === tm.timestamp || Math.abs(cTs - (tm.timestamp || tm.entryTime)) < 15 * 60 * 1000) {
+            cIdx = i;
+            break;
+          }
+        }
+
+        const markerX = cIdx >= 0
+          ? padding.left + (cIdx * candleWidth) + (candleWidth / 2)
+          : padding.left + Math.max(0, candles.length - 2) * candleWidth + (candleWidth / 2);
+
+        const isLong = tm.side === 'LONG';
+        const entryY = getY(tm.entryPrice);
+
+        // Marker triangle arrow
+        ctx.fillStyle = isLong ? greenColor : redColor;
+        ctx.beginPath();
+        if (isLong) {
+          const arrowTipY = Math.min(height - padding.bottom - 20, entryY + 14);
+          ctx.moveTo(markerX, arrowTipY);
+          ctx.lineTo(markerX - 6, arrowTipY + 12);
+          ctx.lineTo(markerX + 6, arrowTipY + 12);
+        } else {
+          const arrowTipY = Math.max(padding.top + 20, entryY - 14);
+          ctx.moveTo(markerX, arrowTipY);
+          ctx.lineTo(markerX - 6, arrowTipY - 12);
+          ctx.lineTo(markerX + 6, arrowTipY - 12);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Entry line
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(markerX, entryY);
+        ctx.lineTo(width - padding.right, entryY);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText(`ENTRY: ${tm.entryPrice}`, width - padding.right + 4, entryY + 3);
+
+        // Stop Loss line
+        if (tm.stopLoss) {
+          const slY = getY(tm.stopLoss);
+          ctx.strokeStyle = redColor;
+          ctx.beginPath();
+          ctx.moveTo(markerX, slY);
+          ctx.lineTo(width - padding.right, slY);
+          ctx.stroke();
+
+          ctx.fillStyle = redColor;
+          ctx.fillText(`SL: ${tm.stopLoss}`, width - padding.right + 4, slY + 3);
+        }
+
+        // Take Profit line
+        if (tm.takeProfit) {
+          const tpY = getY(tm.takeProfit);
+          ctx.strokeStyle = greenColor;
+          ctx.beginPath();
+          ctx.moveTo(markerX, tpY);
+          ctx.lineTo(width - padding.right, tpY);
+          ctx.stroke();
+
+          ctx.fillStyle = greenColor;
+          ctx.fillText(`TP: ${tm.takeProfit}`, width - padding.right + 4, tpY + 3);
+        }
+
+        ctx.setLineDash([]);
+      }
     }
 
     // 5. RSI Subplot

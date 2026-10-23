@@ -4,8 +4,21 @@
 **Hackathon Submission:** Bitget AI Hackathon S2 — **Track 1: Alpha Factory**  
 **Sub-Theme:** **Open Theme** (Execution-Aware, Risk-Budgeted Alpha on Tokenized US Equity Perpetuals)  
 **Strategy Hash:** `541c10ab1dcae7bbaaebe5d8c465730bd118747b`  
-**Test Suite:** **94 Tests Passing (0 Failures)**  
-**Operating Environment:** Strictly `PAPER` (Mainnet Blocked)  
+**Test Suite:** **121 Tests Passing (0 Failures)**  
+**Operating Environment:** Strictly `PAPER` (Default; Multi-Factor Local Arming)  
+
+---
+
+## ⚠️ Status and Limits
+
+### What Is Validated
+- **Infrastructure & Plumbed Safety:** 122 automated unit and integration tests passing (0 failures), verifying contract specifications, candle integrity checks, Node.js SQLite persistence, and Bitget V2 REST/WebSocket feeds.
+- **Deterministic Risk Controls:** Hard risk boundaries (0.5% risk per trade), daily loss circuit breakers (2% paper, $10.00 live), 3 consecutive loss pause, 30-minute cooldown, and 1-position concurrency caps.
+- **Security & Mode Perimeter:** Default PAPER mode, DEMO mode (Bitget paptrading for crypto contracts), and LIVE mode (strictly local, multi-factor arming, $50 max order notional, withdrawal endpoint blocking).
+
+### What Is NOT Validated
+- **No Profitable Edge:** The as-shipped strategy (**S0**) **failed its pre-registered replay (trial 35)**. In audited replay, S0 produced Dev net -$154.41 (PF 0.99, 348 trades) and Validation net -$647.91 (PF 0.48, 34 trades). No tested strategy candidate demonstrated an edge after taker fees and slippage.
+- **Forward Performance:** Forward holdout data remains un-opened. VT2 makes **zero claims of profitability or alpha**.
 
 > [!NOTE]
 > **Research Audit & Methodology Corrections (October 2026)**  
@@ -86,7 +99,7 @@ The interface operates in strictly verified **PAPER** mode connected directly to
 
 ## 📖 What is VT2?
 
-**VT2** is an institutional-grade quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.
+**VT2** is an experimental quantitative trading bot and research terminal built for **Bitget USDT-Margined Tokenized US Equity Perpetuals** (RWA contracts such as SPY, QQQ, NVDA, TSLA, AAPL, MSFT). It combines multi-timeframe algorithmic market scanning, multi-agent quantitative deliberation, deterministic risk budgeting, and an execution-aware walk-forward backtesting engine.
 
 VT2 was engineered specifically to solve the execution and risk realities of trading tokenized equities 24/7: accounting for underlying TradFi exchange hours, adverse funding carry, taker fee drag, and order quantity step-size quantization without endangering real capital.
 
@@ -180,21 +193,68 @@ http://localhost:3000
 
 ---
 
-## 🛡️ Safety Design & Environment Allow-List
+## 🛡️ Trading Modes and Safety Architecture
 
-VT2 guarantees **zero live capital risk**:
-- **Environment Allow-List:** Only the literal string `'PAPER'` is permitted by the runtime. Any payload containing `MAINNET`, `LIVE`, `PROD`, `REAL`, whitespace variants, or nested evasion shapes returns HTTP 403 `MAINNET_EXECUTION_BLOCKED`.
-- **API Guard:** Endpoints `/api/orders/live` and `/api/orders/mainnet` unconditionally return HTTP 403 with a security alert log.
-- **Zero Withdrawal Permissions:** No withdrawal logic or private key signing infrastructure exists in the codebase.
-- **Durable Audit Trail:** All vetoes and risk engine rejections are permanently recorded in SQLite (`data/vt2.db`).
+VT2 implements a multi-tier execution hierarchy designed to eliminate unintended financial risk while providing verifiable quantitative research tools:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        VT2 EXECUTION MODES                             │
+├─────────────────┬──────────────────────┬───────────────────────────────┤
+│ PAPER (Default) │ DEMO (Bitget Sim)    │ LIVE (Real Capital, Local)    │
+│ • Internal Sim  │ • Bitget Paptrading  │ • Strictly Local (Never Web)  │
+│ • Zero Risk     │ • paptrading: 1      │ • Multi-Factor Arming         │
+│ • Hosted Forever│ • SUSDT Futures Only │ • Hard Caps ($50 Notional)    │
+│ • Real Feeds    │ • Equities: Paper    │ • 12-Hour Auto-Disarm         │
+└─────────────────┴──────────────────────┴───────────────────────────────┘
+```
+
+### 1. Three-Tier Execution Hierarchy
+- **PAPER (Internal Simulation, Default):** Completely self-contained deterministic simulation with real Bitget market tick streaming, fee modeling (0.05% taker), slippage (0.02%), and bracket stop logic. Terminal starts in PAPER mode by default on every process launch. The live hosted site ([https://vt2-trading-bot.vercel.app](https://vt2-trading-bot.vercel.app)) is **permanently locked to PAPER mode** (`DEPLOY_MODE=DEMO_READONLY`) and can never read credentials or enter DEMO/LIVE.
+- **DEMO (Bitget Simulated Trading):** Connects to Bitget's official Paptrading infrastructure using `paptrading: 1` headers and `susdt-futures` contracts.
+  - *Contract Coverage Discovery:* Bitget operates **no testnet**; it provides demo trading for select crypto contracts only (`SBTCSUSDT`, `SETHSUSDT`, `SXRPSUSDT`). **Zero tokenized equity demo contracts exist on Bitget.** Therefore, US equities run in internal PAPER simulation when in DEMO mode, indicated clearly in the terminal UI: *"Equities: PAPER only, no Bitget demo contracts"*.
+- **LIVE (Real Funds, Local Machine Only):** Real-money futures execution on Bitget. Permitted **strictly on local machines**, requiring affirmative multi-factor arming, passing preflight checks, and adherence to hard-coded risk caps.
+
+### 2. Multi-Factor LIVE Arming Protocol
+Arming live order execution requires meeting all criteria simultaneously:
+1. `LIVE_TRADING_ENABLED=true` set in local `.env` (gitignored).
+2. Live credentials configured (`BITGET_LIVE_API_KEY/SECRET/PASSPHRASE`).
+3. Automated Preflight Pass: Server clock skew < 1,000ms, account equity queried, position mode verified (`one_way_mode`), margin mode set to `isolated`, and leverage verified within caps.
+4. User Attestation: Explicit checkbox confirmation attesting to trade-only API key permissions with withdrawal/transfer permissions disabled and IP whitelist configured.
+5. Exact Confirmation String: User must type `ENABLE LIVE TRADING` in the modal dialog.
+
+**Auto-Disarm Guarantees:**
+Arming exists solely in volatile process memory and is never written to disk or database. The terminal immediately disarms and reverts to PAPER mode upon:
+- Server restart or process termination.
+- Expiration of the 12-hour maximum session timer.
+- Emergency Kill Switch activation.
+- Daily loss limit breach ($10.00 max daily loss).
+- Exchange position reconciliation mismatch.
+
+### 3. Hard Caps & Deterministic Safeguards (`config/live-limits.json`)
+Conservative limits enforced by code regardless of user settings (stricter rule always wins):
+- **Max Notional per Order:** $50.00 USD.
+- **Max Total Open Notional:** $100.00 USD across all positions.
+- **Max Risk per Trade:** Min(strategy setting, 0.25% of equity).
+- **Max Daily Loss Lockout:** $10.00 USD.
+- **Max Open Positions:** 1 position concurrently.
+- **Max Leverage:** Crypto: 5x isolated; Equities: 3x isolated.
+- **Symbol Allow-List:** `[BTCUSDT, ETHUSDT, SPYUSDT, QQQUSDT, NVDAUSDT, AAPLUSDT, MSFTUSDT, AMZNUSDT]`.
+- **First-N Trade Preview:** The first 3 live trades require manual preview confirmation displaying symbol, side, size, notional, leverage, stop, target, and **maximum dollar loss**.
+
+### 4. Exchange Execution & Stop-Loss Guarantees
+- **Mandatory Exchange-Side Stop-Loss:** All orders carry preset stop-loss and take-profit parameters so protection survives client crashes. If the exchange fails to confirm active stop-loss protection, the client immediately triggers `emergencyFlatten` (reduce-only market order) and halts execution.
+- **Reconciliation Engine (15–30s):** Continuous background reconciliation compares exchange positions to local state. Any unexpected position or size drift immediately halts execution, alerts, and disarms LIVE mode.
+- **Architectural Withdrawal Interception:** `assertNoWithdrawalEndpoint` inspects all request paths and permanently rejects any URL containing `withdraw`, `transfer`, `wallet`, or `subaccount/transfer` with `WITHDRAWAL_OPERATION_BLOCKED`.
+- **Zero Secret Exposure:** Credentials and HMAC signatures are sanitized and redacted (`[REDACTED]`) from logs, responses, and dry-run outputs. A dry-run CLI tool (`node scripts/live-dry-run.js`) validates live request generation without transmitting orders.
 
 ---
 
-## ⚖️ Honest Quantitative Limitations & Backtest Findings
+## ⚖️ Honest Quantitative Validation & Performance Notice
 
-The Alpha Factory portfolio backtest was conducted under strict, non-negotiable quantitative honesty:
+VT2 adheres to strict quantitative and scientific research integrity:
+1. **Validation Rule:** *No strategy is validated as profitable unless `reports/strategy-v2/` documents audited out-of-sample edge.*
+2. **v1 Baseline Performance:** Over the 151.7-day backtest, the v1 Alpha Factory baseline generated -$2,818.83 Net P&L (-28.25% return) across 287 trades, with $3,430.65 consumed by taker fees (0.05%), slippage (0.02%), and funding carry. High-turnover trend breakout models on tokenized equities suffer severe friction without maker rebates or volatility gating.
+3. **TradFi Market Hours:** Tokenized equity perpetuals trade 24/7 on Bitget, whereas underlying NYSE/NASDAQ markets trade 09:30–16:00 ET Monday–Friday. Trading off-market hours entails wider bid-ask spreads, overnight gap risk, and potential basis dislocations.
+4. **Deterministic Deliberation:** All agents evaluate deterministic market, trend, and risk metrics without relying on unconstrained LLM hallucinations.
 
-1. **Transaction Cost Drag:** Over the 151.7-day backtest, the strategy executed 287 trades (258.47x portfolio turnover). Due to institutional taker fees (0.05% per fill: $2,223.72), realistic slippage (0.02% per fill: $889.52), and funding carry ($317.42), total trading friction reached **$3,430.65** on a $10,000 account. This resulted in a net portfolio return of **-28.25%** (-$2,818.83 Net P&L; In-Sample: -23.13%, Out-of-Sample: -6.66%), demonstrating that automated breakout strategies on tokenized perps require maker order execution (to earn maker rebates) or volatility throttling to survive execution friction.
-2. **Net R:R is a Design Filter, Not Edge:** All qualified setups require net R:R >= 1.5. Targets are constructed using ATR multipliers bounded by this floor. A net R:R of 1.5 is a design requirement, not proof of market alpha.
-3. **Dual-Market Liquidity Mismatch:** While Bitget tokenized equity perps trade 24/7 continuously, underlying NYSE/NASDAQ exchanges trade only 09:30–16:00 ET Monday–Friday. Weekend and overnight trading carries wider spreads and basis divergence against underlying spot shares.
-4. **No LLM Decision-Making:** VT2 does not use external generative AI models to generate live orders. All deliberation agents operate on deterministic mathematical rules.

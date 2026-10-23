@@ -1,0 +1,98 @@
+{
+  "protocol": "VT2 Strategy v2 Round 2 Pre-Registration",
+  "version": "2.0.0-r2",
+  "registrationDate": "2026-10-19T21:40:00.000Z",
+  "executionRules": {
+    "costGate": {
+      "enabled": true,
+      "minStopDistanceMultiplierOfCost": 8.0,
+      "description": "Skip entry unless stop distance % >= 8 x round-trip cost %"
+    },
+    "costAssumptions": {
+      "equity": {
+        "takerFeeRate": 0.0006,
+        "makerFeeRate": 0.0002,
+        "slippageRate": 0.0002,
+        "fundingRate8h": 0.0001
+      },
+      "crypto": {
+        "takerFeeRate": 0.0006,
+        "makerFeeRate": 0.0002,
+        "slippageRate": 0.0002,
+        "fundingRate8h": 0.0001
+      }
+    }
+  },
+  "passCriteria": {
+    "netPnlGreaterThanZero": true,
+    "minProfitFactor": 1.25,
+    "minTradeCount": 30,
+    "maxDrawdownPercent": 15.0,
+    "positiveAt2xCosts": true
+  },
+  "candidates": [
+    {
+      "id": "R2-A",
+      "name": "4h Donchian Breakout Trend-Follower",
+      "timeframe": "4h",
+      "entryRule": {
+        "channelPeriod": 55,
+        "longCondition": "bar.high > highestHighOfPrior55Bars",
+        "shortCondition": "bar.low < lowestLowOfPrior55Bars",
+        "orderType": "STOP_MARKET",
+        "fillTiming": "NEXT_BAR_OPEN_WITH_SLIPPAGE"
+      },
+      "riskAndExit": {
+        "atrPeriod": 14,
+        "initialStopAtrMult": 3.0,
+        "trailingStopAtrMult": 3.0,
+        "trailingReference": "EXTREME_CLOSE",
+        "takeProfitTarget": null,
+        "riskPerTradePercent": 0.005,
+        "maxConcurrentPositions": 3
+      }
+    },
+    {
+      "id": "R2-B",
+      "name": "15m Pullback in 1h Trend (Maker-Only)",
+      "timeframe": "15m_with_1h_trend",
+      "entryRule": {
+        "trendTimeframe": "1h",
+        "trendCondition": {
+          "long": "1h.ema20 > 1h.ema50 && 1h.close > 1h.ema50",
+          "short": "1h.ema20 < 1h.ema50 && 1h.close < 1h.ema50"
+        },
+        "orderType": "LIMIT_MAKER",
+        "limitPrice": "15m.ema20",
+        "orderExpiryBars": 4,
+        "fillCondition": "THROUGH_TICK",
+        "makerFeeApplied": true,
+        "entrySlippage": 0.0
+      },
+      "riskAndExit": {
+        "atrPeriod": 14,
+        "initialStopAtrMult": 2.0,
+        "targetRewardRiskRatio": 3.0,
+        "riskPerTradePercent": 0.005,
+        "maxConcurrentPositions": 3
+      }
+    }
+  ],
+  "splits": {
+    "dev": {
+      "startTs": 1778520600000,
+      "endTs": 1789138800000,
+      "description": "Dev / In-Sample (2026-05-11T17:30 to 2026-09-11T15:00)"
+    },
+    "validation": {
+      "startTs": 1789138800000,
+      "endTs": 1791660000000,
+      "description": "Validation / Out-of-Sample (2026-09-11T15:00 to 2026-10-10T00:00)"
+    },
+    "forwardHoldout": {
+      "startTs": 1791660000000,
+      "endTs": 1792440000000,
+      "description": "Forward Holdout (2026-10-10T00:00 to 2026-10-19). STRICTLY LOCKED."
+    }
+  }
+}

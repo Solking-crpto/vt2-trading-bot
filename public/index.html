@@ -104,6 +104,12 @@
 
     <!-- Main Application Container -->
     <div class="app-main">
+      <!-- Persistent LIVE Warning Banner -->
+      <div id="liveWarningBanner" class="live-warning-banner" style="display: none;">
+        <span class="live-pulse-dot"></span>
+        <span>🚨 LIVE: REAL MONEY &mdash; ALL EXECUTED ORDERS USE REAL CAPITAL ON BITGET (CAPS ENFORCED) 🚨</span>
+      </div>
+
       <!-- Slim Top Status Bar -->
       <header class="topbar">
         <div class="topbar-left">
@@ -123,6 +129,29 @@
             </button>
           </div>
 
+          <!-- Three-Way Execution Mode Toggle (PAPER | DEMO | LIVE) -->
+          <div class="mode-toggle-group" id="executionModeToggle" title="Execution Mode: PAPER (Internal Sim), DEMO (Bitget Simulated), LIVE (Real Funds)">
+            <button class="mode-toggle-btn active" data-mode="PAPER" id="modeTogglePaper" title="PAPER: Internal simulated engine (default)">
+              <span class="mode-toggle-dot"></span> PAPER
+            </button>
+            <button class="mode-toggle-btn" data-mode="DEMO" id="modeToggleDemo" title="DEMO: Bitget demo trading with simulated funds">
+              <span class="mode-toggle-dot"></span> DEMO
+            </button>
+            <button class="mode-toggle-btn" data-mode="LIVE" id="modeToggleLive" title="LIVE: Real funds (Strict local arming only)">
+              <span class="mode-toggle-dot"></span> LIVE
+            </button>
+          </div>
+
+          <!-- Strategy Validation Status Pill -->
+          <div id="strategyValidationStatusPill" class="badge badge-warning" style="font-size: 10.5px; padding: 2px 7px; white-space: nowrap;" title="Strategy S0 Validation Status: Failed pre-registered replay (trial 35)">
+            ⚠️ UNVALIDATED (trial 35)
+          </div>
+
+          <!-- Equities Demo Notice Badge -->
+          <div id="demoEquityNotice" class="badge badge-warning" style="display: none; font-size: 11px; padding: 2px 8px;" title="Equities cannot be traded on Bitget demo">
+            Equities: PAPER only, no Bitget demo contracts
+          </div>
+
           <!-- Market Viewing & Bot Badges -->
           <div class="market-status-pills" style="display: flex; gap: 6px; align-items: center;">
             <span class="badge badge-neutral" id="viewingMarketBadge" style="font-size: 11px; padding: 2px 7px;">Viewing: Stocks</span>
@@ -134,10 +163,10 @@
             ⏱ COOLDOWN: <span id="headerCooldownTime" class="mono-num">29:45</span>
           </div>
 
-          <!-- Strict Safety Badge -->
-          <div class="safety-badge" id="envBadge" title="Mainnet execution is architecturally blocked on server and client.">
+          <!-- Legacy Safety Badge Reference (hidden fallback) -->
+          <div class="safety-badge" id="envBadge" style="display: none;" title="Execution mode status">
             <span class="safety-dot"></span>
-            <span>PAPER TRADING ONLY</span>
+            <span id="envBadgeText">PAPER</span>
           </div>
 
           <div class="feed-indicator" id="feedIndicator">
@@ -399,6 +428,9 @@
                 <label style="font-size: 11px; color: #a855f7; display: flex; align-items: center; gap: 4px;">
                   <input type="checkbox" id="toggleEma200" checked> EMA 200
                 </label>
+                <label style="font-size: 11px; color: #10b981; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" id="toggleSignals" checked> Signals &amp; Stops
+                </label>
               </div>
             </div>
 
@@ -422,6 +454,19 @@
               </div>
             </div>
             <button class="btn btn-primary" id="runDeliberationBtn">⚡ Deliberate Top Candidate</button>
+          </div>
+
+          <!-- Strategy Validation Status Banner -->
+          <div class="alert-banner" style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); margin-bottom: 16px;">
+            <div class="alert-banner-content">
+              <span style="font-size: 20px;">⚠️</span>
+              <div>
+                <div style="font-weight: 700; color: var(--color-warning);">Strategy Status: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                  S0 produced Dev net -$154.41 (PF 0.99, 348 trades) and Validation net -$647.91 (PF 0.48, 34 trades). No tested candidate demonstrated an edge after costs. Deliberation is advisory and educational only.
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Account Gate Active Banner (Cooldown, Lockout, Pause) -->
@@ -546,6 +591,19 @@
             </div>
             <div class="section-actions">
               <span class="badge badge-long" id="autoStatusBadge">BOT: STOPPED</span>
+            </div>
+          </div>
+
+          <!-- Strategy Validation Status Banner -->
+          <div class="alert-banner" style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); margin-bottom: 16px;">
+            <div class="alert-banner-content">
+              <span style="font-size: 20px;">⚠️</span>
+              <div>
+                <div style="font-weight: 700; color: var(--color-warning);">Strategy Status: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                  S0 produced Dev net -$154.41 (PF 0.99, 348 trades) and Validation net -$647.91 (PF 0.48, 34 trades). No tested candidate demonstrated an edge after costs. Automated execution operates strictly in simulated Paper Mode.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -823,6 +881,8 @@
               <thead>
                 <tr>
                   <th>Time</th>
+                  <th>Mode</th>
+                  <th>Class</th>
                   <th>Symbol</th>
                   <th>Side</th>
                   <th>Entry</th>
@@ -835,7 +895,7 @@
                 </tr>
               </thead>
               <tbody id="journalTableBody">
-                <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No trades closed yet.</td></tr>
+                <tr><td colspan="12" style="text-align: center; color: var(--text-muted);">No trades closed yet.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1171,6 +1231,38 @@
                 <span>☀️ Light Mode <small style="color: var(--text-muted); font-weight: normal;">(Clean Plain White)</small></span>
               </label>
             </div>
+          <!-- Strategy Architecture Selector (Paper Mode Only) -->
+          <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <div class="card-title" style="margin-bottom: 0;">Strategy Engine Architecture (Paper Mode)</div>
+              <span class="badge badge-warning" id="strategyValidationStatusBadge">STATUS: v1 Active (v2 Paper Only)</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+              Select active strategy model for Paper Simulation. In accordance with verifiable research protocol, candidate strategies that fail Dev/Validation criteria are strictly locked out of Automated Trading.
+            </p>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label>Active Strategy Model</label>
+              <select id="cfgStrategyModelSelect" class="form-control" style="font-weight: 600;">
+                <option value="v1">v1 Alpha Factory Baseline (4h/15m/5m Confluence) — Paper/Live Default</option>
+                <option value="v2-C1">v2-C1: Trend Pullback (1h Trend, 15m Entry, 2.5R, 5x Cost Gate) — PAPER ONLY</option>
+                <option value="v2-C2">v2-C2: 4h Breakout Trend-Follower (Donchian Breakout, Trailing ATR) — PAPER ONLY</option>
+              </select>
+            </div>
+
+            <!-- Validation Audit Card -->
+            <div id="strategyAuditCard" style="background: var(--bg-secondary); padding: 12px 14px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                <span style="font-weight: 600; color: var(--text-primary);" id="strategyAuditModelName">Model: v1 Alpha Factory Baseline</span>
+                <span class="badge badge-danger mono-num" id="strategyAuditPassBadge">VALIDATION: FAILED (-28.25%)</span>
+              </div>
+              <div style="color: var(--text-secondary); font-size: 11px; line-height: 1.6;" id="strategyAuditDetails">
+                • <strong>Dev Net P&L:</strong> -$2,796.55 (PF: 0.69, 289 trades, Max DD: 30.85%)<br>
+                • <strong>Validation Net P&L:</strong> -$22.28 (PF: 0.72, 28 trades)<br>
+                • <strong>Forward Holdout:</strong> Sealed (Requires passing both Dev &amp; Validation)<br>
+                • <strong>Automated Trading Lock:</strong> <span class="text-danger font-semibold">LOCKED OUT (Paper Simulation Only)</span>
+              </div>
+            </div>
           </div>
 
           <div class="grid-2">
@@ -1489,6 +1581,116 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="cancelKillSwitchBtn">Cancel</button>
         <button class="btn btn-danger" id="confirmKillSwitchBtn">ENGAGE KILL SWITCH</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Arming Modal -->
+  <div class="modal-overlay" id="liveArmingModal" role="dialog" aria-modal="true" aria-labelledby="liveArmingTitle">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header" style="border-bottom: 2px solid var(--color-danger);">
+        <span style="font-size: 28px; color: var(--color-danger);">🚨</span>
+        <div>
+          <div class="modal-title text-danger" id="liveArmingTitle">ARM LIVE TRADING TERMINAL</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Real Money Execution With Deterministic Guardrails</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+          <strong style="color: var(--color-danger);">⚠️ HIGH RISK WARNING</strong>
+          <p style="font-size: 11.5px; margin-top: 4px; line-height: 1.5;">
+            You are about to arm real-money live order execution. Orders placed will commit real funds on Bitget futures under strict hard caps ($50 max/order, $10 max daily loss).
+          </p>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--color-warning); border-radius: 6px; padding: 10px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: var(--color-warning); font-size: 11.5px;">STRATEGY STATUS: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px;">
+            S0 replay produced Dev net -$154.41 (PF 0.99) and Validation net -$647.91 (PF 0.48). No candidate demonstrated an edge after costs.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-weight: 600; font-size: 12px; margin-bottom: 6px;">1. Live Preflight &amp; Key Status</div>
+          <div id="livePreflightStatus" style="font-size: 11.5px; background: var(--bg-card); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-family: var(--font-mono);">
+            Checking preflight status...
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer;">
+            <input type="checkbox" id="liveAttestationCheck" style="margin-top: 2px;" />
+            <span>I attest that my Bitget API key has <strong>trade-only permissions</strong>, withdrawals/transfers are <strong>strictly disabled</strong>, and IP whitelist is configured.</span>
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: 600;">2. Type <code style="color: var(--color-danger);">ENABLE LIVE TRADING</code>:</label>
+          <input type="text" id="liveArmingPhraseInput" class="form-control" placeholder="ENABLE LIVE TRADING" autocomplete="off" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 12px; font-weight: 600;">3. Type <code style="color: var(--color-warning);">I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION</code>:</label>
+          <input type="text" id="liveValidationPhraseInput" class="form-control" placeholder="I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION" autocomplete="off" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelLiveArmingBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmLiveArmingBtn" disabled>ARM LIVE TERMINAL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Arming Modal -->
+  <div class="modal-overlay" id="demoArmingModal" role="dialog" aria-modal="true" aria-labelledby="demoArmingTitle">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header" style="border-bottom: 2px solid var(--primary-color);">
+        <span style="font-size: 28px; color: var(--primary-color);">🧪</span>
+        <div>
+          <div class="modal-title" id="demoArmingTitle">SWITCH TO BITGET DEMO TRADING</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Simulated Exchange Execution (Bitget Paptrading)</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--color-warning); border-radius: 6px; padding: 10px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: var(--color-warning); font-size: 12px;">STRATEGY STATUS: UNVALIDATED: failed pre-registered replay (trial 35)</div>
+          <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
+            The as-shipped strategy (S0) failed pre-registered replay (Dev -$154.41, Validation -$647.91). No tested strategy candidate demonstrated an edge after transaction costs.
+          </div>
+        </div>
+
+        <div style="background: var(--bg-card); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 11.5px; margin-bottom: 14px;">
+          <strong>Bitget Demo Scope:</strong> Bitget Paptrading supports select crypto perpetuals only (BTC, ETH, XRP). Equities have no Bitget demo contracts and will remain in local PAPER simulation.
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 12px; font-weight: 600;">Type <code style="color: var(--color-warning);">I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION</code> to confirm:</label>
+          <input type="text" id="demoValidationPhraseInput" class="form-control" placeholder="I UNDERSTAND THIS STRATEGY HAS NOT PASSED VALIDATION" autocomplete="off" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDemoArmingBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmDemoArmingBtn" disabled>SWITCH TO DEMO MODE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Preview & First-N Confirmation Modal -->
+  <div class="modal-overlay" id="orderPreviewModal" role="dialog" aria-modal="true" aria-labelledby="orderPreviewTitle">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <span style="font-size: 26px;">📋</span>
+        <div>
+          <div class="modal-title" id="orderPreviewTitle">Order Execution Preview</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="orderPreviewSubtitle">Pre-execution verification &amp; dollar-loss caps</div>
+        </div>
+      </div>
+      <div class="modal-body" id="orderPreviewBody">
+        <!-- Injected dynamically by vt2-ui.js -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelOrderPreviewBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmOrderPreviewBtn">Confirm &amp; Place Order</button>
       </div>
     </div>
   </div>

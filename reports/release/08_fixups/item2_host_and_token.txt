@@ -1,0 +1,34 @@
+﻿[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: e3d203b8da72e203c7c61b28aed0af0775c058f30a99b98f
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: ecde0acd1b3c3c4fa67048e3e59fe88f2e418da00bde216a
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: 3c0d3392f4e819c0aa2e62a06cc45d320ee6b698cd4fafb5
+Γ£ö Host Binding & Local Control Token - Default 127.0.0.1 Binding (44.8609ms)
+Γ£ö Host Binding & Local Control Token - HOST Env Override (10.7402ms)
+Γ£ö Host Binding & Local Control Token - Random Token Generation & Console Log (11.1027ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: c8d7e52603b95afec3f86c45df66c9b1050a0da3815b80bc
+Γ£ö Host Binding & Local Control Token - Protected Endpoints Reject Without Token (401) (48.5662ms)
+[AlertDispatcher] Alerts disabled: ALERT_WEBHOOK_URL or TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured.
+[VT2 Core] Verifiable Trading Technology listening on http://127.0.0.1:0
+[VT2 Core] Operating Environment: PAPER (Mainnet Strictly Blocked)
+[VT2 Security] Local Control Token: c88bfd01a2f6c92cd8b0cb89e65df4996231bc592641358b
+Γ£ö Host Binding & Local Control Token - Protected Endpoints Accept With Token (43.5221ms)
+Γ£ö Host Binding & Local Control Token - Browser UI Injected Script & Loopback Retrieval (35.0919ms)
+Γä╣ tests 6
+Γä╣ suites 0
+Γä╣ pass 6
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 1518.7533
