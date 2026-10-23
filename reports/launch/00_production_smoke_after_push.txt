@@ -1,0 +1,37 @@
+﻿[UI Smoke] Target URL: https://vt2-trading-bot.vercel.app
+[UI Smoke] Launching Edge from: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+[UI Smoke] Debug port: 9719, temp profile: C:\Users\DELL\AppData\Local\Temp\edge-smoke-9ntdKm
+[UI Smoke] Connected to CDP page target: about:blank
+[UI Smoke] Navigating to https://vt2-trading-bot.vercel.app...
+
+--- UI Smoke Test Results ---
+| UI Component / Interaction | Status | Details |
+| :------------------------- | :----: | :------ |
+| Tab: Overview              | PASS | Visible (display: block, .active) |
+| Tab: Market Scanner        | PASS | Visible (display: block, .active) |
+| Tab: Interactive Chart     | PASS | Visible (display: block, .active) |
+| Tab: AI Deliberation       | PASS | Visible (display: block, .active) |
+| Tab: Verification Suite    | PASS | Visible (display: block, .active) |
+| Tab: Automated Trading     | PASS | Visible (display: block, .active) |
+| Tab: Positions & Orders    | PASS | Visible (display: block, .active) |
+| Tab: Risk Engine           | PASS | Visible (display: block, .active) |
+| Tab: Trade Journal         | PASS | Visible (display: block, .active) |
+| Tab: Backtesting           | PASS | Visible (display: block, .active) |
+| Tab: System Health         | PASS | Visible (display: block, .active) |
+| Tab: Alpha Factory Report  | PASS | Visible (display: block, .active) |
+| Tab: Settings & Risk       | PASS | Visible (display: block, .active) |
+| Demo: Default Mode is Stocks | PASS | Viewing: Stocks |
+| Mode Switcher: STOCKS      | PASS | PASS |
+| Mode Switcher: CRYPTO      | PASS | PASS |
+| Mode Switcher: BOTH        | PASS | PASS |
+| Action: Top Rescan Button  | PASS | PASS |
+| Demo: Place Paper Order UI | PASS | Position count: 1, hasActiveRow: true |
+| Demo: Position Appears with P&L | PASS | Position row visible in table |
+| Demo: Close Position & Journal | PASS | Journal entry recorded |
+| Demo: Persistence Across Reload | PASS | Account history persisted in localStorage |
+| Demo: Bot Start & Cycle Loop | PASS | Status: WAITING, Events: Yes |
+
+--- Captured JavaScript Exceptions & Errors ---
+Zero uncaught exceptions (Runtime.exceptionThrown: 0)
+
+[UI Smoke] Result: ALL PASS (100% components operational, zero uncaught errors)
